@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.14.5/dist/sweetalert2.all.min.js"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        .input-container {
+            position: relative;
+        }
+        .eye-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #666;
+        }
+        .error-message {
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+        .input-error {
+            border-color: #ef4444 !important;
+        }
+        .error-alert {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Different colors for different types of alerts */
+        .error-alert.bg-yellow-50 {
+            border-left: 4px solid #eab308;
+        }
+
+        .error-alert.bg-red-50 {
+            border-left: 4px solid #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-sm border border-gray-200">
+            <div class="text-center">
+                <h2 class="text-3xl font-bold text-gray-900">Sign In</h2>
+            </div>
+
+            <form class="mt-8 space-y-6" id="signInForm" method="post">
+                <!-- Server-side error message -->
+                <% if (error) { %>
+                    <div class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded relative mb-4" role="alert">
+                        <%= error %>
+                    </div>
+                <% } %>
+
+                <!-- Email Input -->
+                <div>
+                    <div class="input-container">
+                        <input id="email" name="email" type="email" 
+                               class="appearance-none rounded relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
+                               placeholder="Email">
+                    </div>
+                    <div class="error-message text-red-500 text-sm mt-1" id="emailError"></div>
+                </div>
+
+                <!-- Password Input -->
+                <div>
+                    <div class="input-container">
+                        <input id="password" name="password" type="password"  
+                               class="appearance-none rounded relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
+                               placeholder="Password">
+                        <i class="fa-regular fa-eye eye-icon" id="togglePassword"></i>
+                    </div>
+                    <div class="error-message text-red-500 text-sm mt-1" id="passwordError"></div>
+                </div>
+
+                <!-- Forgot Password -->
+                <div class="flex items-center justify-end">
+                    <div class="text-sm">
+                        <a href="/forgot-password" class="text-gray-600 hover:text-green-500">
+                            Forgot Password?
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Login Button -->
+                <div>
+                    <button type="submit" id="submitButton"
+                            class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-full text-white bg-green-500 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        <span id="buttonText">Login</span>
+                        <span id="loadingSpinner" class="hidden">
+                            <i class="fas fa-spinner fa-spin ml-2"></i>
+                        </span>
+                    </button>
+                </div>
+
+                <!-- Divider -->
+                <div class="flex items-center my-4">
+                    <div class="flex-grow border-t border-gray-300"></div>
+                    <span class="px-3 text-gray-500 text-sm">or</span>
+                    <div class="flex-grow border-t border-gray-300"></div>
+                </div>
+
+                <!-- Google Login Button -->
+                <div>
+                    <a href="/auth/google" id="googleLogin"
+                       class="w-full flex items-center justify-center py-3 px-4 border border-gray-300 rounded-full text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                        <img src="/images/google.svg" 
+                             alt="Google logo" 
+                             class="w-5 h-5 mr-2">
+                        Continue with Google
+                    </a>
+                </div>
+
+                <!-- Register Link -->
+                <div class="text-center text-sm">
+                    <span class="text-gray-600">Don't have an account?</span>
+                    <a href="/signup" class="font-medium text-green-600 hover:text-green-500 ml-1">
+                        Register
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('signInForm');
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            const emailError = document.getElementById('emailError');
+            const passwordError = document.getElementById('passwordError');
+            const submitButton = document.getElementById('submitButton');
+            const buttonText = document.getElementById('buttonText');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+
+            // Toggle password visibility
+            const togglePassword = document.getElementById('togglePassword');
+            togglePassword.addEventListener('click', function() {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                this.classList.toggle('fa-eye');
+                this.classList.toggle('fa-eye-slash');
+            });
+
+            // Show error function
+            function showError(element, message) {
+                element.textContent = message;
+                element.parentElement.querySelector('input').classList.add('border-red-500');
+            }
+
+            // Clear error function
+            function clearError(element) {
+                element.textContent = '';
+                element.parentElement.querySelector('input').classList.remove('border-red-500');
+            }
+
+            // Form submission
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                // Clear previous errors
+                clearError(emailError);
+                clearError(passwordError);
+
+                // Validate inputs
+                let isValid = true;
+                const email = emailInput.value.trim();
+                const password = passwordInput.value.trim();
+
+                if (!email) {
+                    showError(emailError, 'Email is required');
+                    isValid = false;
+                }
+
+                if (!password) {
+                    showError(passwordError, 'Password is required');
+                    isValid = false;
+                }
+
+                if (!isValid) return;
+
+                // Show loading state
+                submitButton.disabled = true;
+                buttonText.textContent = 'Signing in...';
+                loadingSpinner.classList.remove('hidden');
+
+                try {
+                    const response = await fetch('/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            email: email,
+                            password: password
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        window.location.href = '/';
+                    } else {
+                        // Remove any existing error messages
+                        const existingError = form.querySelector('.error-alert');
+                        if (existingError) {
+                            existingError.remove();
+                        }
+
+                        // Handle specific error cases
+                        if (response.status === 403) {
+                            // Account blocked or deleted - show as general error
+                            const errorDiv = document.createElement('div');
+                            errorDiv.className = 'error-alert bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded relative mb-4';
+                            errorDiv.textContent = data.message;
+                            form.insertBefore(errorDiv, form.firstChild);
+                        } 
+                        else if (data.message.toLowerCase().includes('google')) {
+                            // Google account - show as general error
+                            const errorDiv = document.createElement('div');
+                            errorDiv.className = 'error-alert bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded relative mb-4';
+                            errorDiv.innerHTML = `${data.message}. <a href="/auth/google" class="underline">Click here to sign in with Google</a>`;
+                            form.insertBefore(errorDiv, form.firstChild);
+                        }
+                        else if (data.message.toLowerCase().includes('email')) {
+                            showError(emailError, data.message);
+                        } 
+                        else if (data.message.toLowerCase().includes('password')) {
+                            showError(passwordError, data.message);
+                        } 
+                        else {
+                            // General error
+                            const errorDiv = document.createElement('div');
+                            errorDiv.className = 'error-alert bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded relative mb-4';
+                            errorDiv.textContent = data.message;
+                            form.insertBefore(errorDiv, form.firstChild);
+                        }
+                    }
+                } catch (error) {
+                    // Network error
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'error-alert bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded relative mb-4';
+                    errorDiv.textContent = 'Network error. Please try again.';
+                    form.insertBefore(errorDiv, form.firstChild);
+                } finally {
+                    // Reset loading state
+                    submitButton.disabled = false;
+                    buttonText.textContent = 'Login';
+                    loadingSpinner.classList.add('hidden');
+                }
+            });
+
+            // Real-time validation
+            emailInput.addEventListener('input', function() {
+                if (this.value.trim()) {
+                    clearError(emailError);
+                }
+            });
+
+            passwordInput.addEventListener('input', function() {
+                if (this.value.trim()) {
+                    clearError(passwordError);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

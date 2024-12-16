@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ecobazar - Add Category</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    :root {
+      --primary-dark: #1f2937;
+      --secondary-dark: #111827;
+      --accent-blue: #3b82f6;
+      --text-primary: #e5e7eb;
+      --text-secondary: #9ca3af;
+    }
+
+    body {
+      background-color: var(--secondary-dark);
+      color: var(--text-primary);
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes glowPulse {
+      0% {
+        box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
+      }
+
+      50% {
+        box-shadow: 0 0 15px rgba(59, 130, 246, 0.8);
+      }
+
+      100% {
+        box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
+      }
+    }
+
+    .fade-in-up {
+      animation: fadeInUp 0.6s ease-out forwards;
+    }
+
+    .form-container {
+      background: var(--primary-dark);
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .form-container:hover {
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+      border-color: rgba(59, 130, 246, 0.4);
+    }
+
+    .form-input {
+      background: rgba(17, 24, 39, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-primary);
+      transition: all 0.3s ease;
+    }
+
+    .form-input:focus {
+      background: rgba(17, 24, 39, 0.95);
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 34px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #4b5563;
+      transition: .4s;
+      border-radius: 34px;
+    }
+
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 26px;
+      width: 26px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked+.toggle-slider {
+      background-color: var(--accent-blue);
+    }
+
+    input:checked+.toggle-slider:before {
+      transform: translateX(26px);
+    }
+
+    .submit-button {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      transition: all 0.3s ease;
+    }
+
+    .submit-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .image-upload {
+      border: 2px dashed rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+    }
+
+    .image-upload:hover {
+      border-color: var(--accent-blue);
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    .swal2-container {
+      z-index: 10000 !important;
+    }
+    
+    .image-error {
+      color: #ef4444;
+      font-size: 0.875rem;
+      margin-top: 0.25rem;
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+    <%- include('../layouts/head.ejs') %>
+
+    <div class="flex">
+        <%- include('../layouts/side.ejs') %>
+
+        <div class="flex-1 ml-64 p-14">
+            <!-- Header Section -->
+            <div class="flex items-center justify-between mb-8 fade-in-up">
+                <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 text-transparent bg-clip-text">
+                    Add New Category
+                </h1>
+            </div>
+
+            <!-- Error Message Section -->
+            <% if (errorMessage && errorMessage.length > 0) { %>
+            <div id="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6 fade-in-up" role="alert">
+                <strong class="font-bold">Error!</strong>
+                <span class="block sm:inline"><%= errorMessage %></span>
+            </div>
+            <% } %>
+
+            <!-- Success Message Section -->
+            <% if (successMessage && successMessage.length > 0) { %>
+            <div id="successMessage" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6 fade-in-up" role="alert">
+                <strong class="font-bold">Success!</strong>
+                <span class="block sm:inline"><%= successMessage %></span>
+            </div>
+            <% } %>
+
+            <!-- Form Section -->
+            <form action="/admin/add-category" method="POST" enctype="multipart/form-data" class="space-y-8">
+                <div class="form-container p-8 fade-in-up">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- Category Name -->
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium text-gray-400">Category Name</label>
+                            <input 
+                                type="text" 
+                                name="categoryName" 
+                                value="<%= locals.formData && formData.categoryName ? formData.categoryName : '' %>"
+                                class="form-input w-full px-4 py-3 rounded-lg" 
+                                placeholder="Enter category name"
+                                required
+                            >
+                        </div>
+                    
+                        <!-- Category Offer -->
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium text-gray-400">Category Offer</label>
+                            <input 
+                                type="number" 
+                                name="offer" 
+                                value="<%= locals.formData && formData.offer ? formData.offer : '' %>"
+                                class="form-input w-full px-4 py-3 rounded-lg" 
+                                placeholder="Enter category offer"
+                                min="0"
+                                max="90"
+                            >
+                        </div>
+                    
+                        <!-- Description -->
+                        <div class="space-y-2 md:col-span-2">
+                            <label class="text-sm font-medium text-gray-400">Description</label>
+                            <textarea 
+                                name="categoryDescription" 
+                                rows="4" 
+                                class="form-input w-full px-4 py-3 rounded-lg resize-none" 
+                                placeholder="Enter category description"
+                                required
+                            ><%= locals.formData && formData.categoryDescription ? formData.categoryDescription : '' %></textarea>
+                        </div>
+                    
+                        <!-- Category Image -->
+                        <div class="space-y-2 md:col-span-2">
+                            <label class="text-sm font-medium text-gray-400">Category Image</label>
+                            <div class="image-upload-container">
+                                <input type="file" 
+                                       id="imageInput" 
+                                       name="categoryImage"
+                                       accept="image/*" 
+                                       class="hidden" 
+                                       required
+                                       onchange="previewImage(event)">
+                                
+                                <div id="uploadArea" 
+                                     class="border-2 border-dashed border-gray-600 rounded-lg p-4 text-center cursor-pointer hover:border-blue-500 transition-colors">
+                                    <div id="previewContainer" class="hidden">
+                                        <img id="imagePreview" class="max-h-[300px] mx-auto">
+                                    </div>
+                                    <div id="uploadPrompt">
+                                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
+                                        <p class="text-gray-400">Click or drag image here to upload</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Status Toggle -->
+                    <div class="flex items-center space-x-4 pt-6">
+                        <label class="toggle-switch">
+                            <input 
+                                type="checkbox" 
+                                name="isActive" 
+                                <%= locals.formData && formData.isActive ? 'checked' : '' %>
+                            >
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span class="text-sm font-medium text-gray-400">Active Status</span>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="submit-button w-full px-6 py-4 text-white rounded-lg shadow-lg mt-8 font-medium">
+                        Create Category
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add modal for cropping -->
+    <div id="cropModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-gray-800 p-4 rounded-lg max-w-2xl w-full">
+            <div class="mb-4">
+                <h3 class="text-xl font-semibold text-white">Crop Image</h3>
+            </div>
+            <div class="relative h-96">
+                <img id="cropperImage" class="max-h-full mx-auto">
+            </div>
+            <div class="mt-4 flex justify-end space-x-2">
+                <button type="button" 
+                        onclick="cancelCrop()" 
+                        class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
+                    Cancel
+                </button>
+                <button type="button" 
+                        onclick="cropImage()" 
+                        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                    Crop & Save
+                </button>
+            </div>
+        </div>
+    </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Form validation setup
+      const form = document.querySelector('form');
+      const nameInput = document.querySelector('input[name="categoryName"]');
+      const offerInput = document.querySelector('input[name="offer"]');
+      const descriptionInput = document.querySelector('textarea[name="categoryDescription"]');
+      const imageInput = document.getElementById('imageInput');
+      
+      // Create error message elements
+      const createErrorElement = () => {
+        const div = document.createElement('div');
+        div.className = 'text-red-500 text-sm mt-1 hidden';
+        return div;
+      };
+
+      // Add error elements after each input
+      const nameError = createErrorElement();
+      const offerError = createErrorElement();
+      const descriptionError = createErrorElement();
+      const imageError = createErrorElement();
+
+      nameInput.parentNode.appendChild(nameError);
+      offerInput.parentNode.appendChild(offerError);
+      descriptionInput.parentNode.appendChild(descriptionError);
+      document.querySelector('.image-upload-container').appendChild(imageError);
+
+      // Validation functions
+      const validateName = () => {
+        const value = nameInput.value.trim();
+        if (!value) {
+          showError(nameError, 'Category name is required');
+          return false;
+        }
+        if (value.length < 3 || value.length > 50) {
+          showError(nameError, 'Category name must be between 3 and 50 characters');
+          return false;
+        }
+        if (!/^[a-zA-Z0-9\s-]+$/.test(value)) {
+          showError(nameError, 'Only letters, numbers, spaces and hyphens are allowed');
+          return false;
+        }
+        hideError(nameError);
+        return true;
+      };
+
+      const validateOffer = () => {
+        const value = offerInput.value;
+        if (value && (isNaN(value) || value < 0 || value > 90)) {
+          showError(offerError, 'Offer must be between 0 and 90');
+          return false;
+        }
+        hideError(offerError);
+        return true;
+      };
+
+      const validateDescription = () => {
+        const value = descriptionInput.value.trim();
+        if (!value) {
+          showError(descriptionError, 'Description is required');
+          return false;
+        }
+        if (value.length < 10 || value.length > 500) {
+          showError(descriptionError, 'Description must be between 10 and 500 characters');
+          return false;
+        }
+        hideError(descriptionError);
+        return true;
+      };
+
+      const validateImage = () => {
+        if (!imageInput.files || !imageInput.files[0]) {
+          showError(imageError, 'Category image is required');
+          return false;
+        }
+        const file = imageInput.files[0];
+        const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+        if (!validTypes.includes(file.type)) {
+          showError(imageError, 'Please upload a valid image file (JPEG, PNG, or WebP)');
+          return false;
+        }
+        if (file.size > 5 * 1024 * 1024) { // 5MB limit
+          showError(imageError, 'Image size should be less than 5MB');
+          return false;
+        }
+        hideError(imageError);
+        return true;
+      };
+
+      // Helper functions
+      const showError = (element, message) => {
+        element.textContent = message;
+        element.classList.remove('hidden');
+      };
+
+      const hideError = (element) => {
+        element.classList.add('hidden');
+      };
+
+      // Real-time validation
+      nameInput.addEventListener('input', () => {
+        validateName();
+        // Sanitize input
+        nameInput.value = nameInput.value.replace(/[^a-zA-Z0-9\s-]/g, '');
+      });
+
+      offerInput.addEventListener('input', () => {
+        validateOffer();
+        // Sanitize input
+        offerInput.value = offerInput.value.replace(/[^0-9]/g, '');
+        if (offerInput.value > 90) offerInput.value = 90;
+      });
+
+      descriptionInput.addEventListener('input', validateDescription);
+
+      // Character counter for description
+      const addCharacterCounter = (textarea) => {
+        const counter = document.createElement('div');
+        counter.className = 'text-sm text-gray-400 mt-1';
+        textarea.parentNode.appendChild(counter);
+
+        const updateCounter = () => {
+          const remaining = 500 - textarea.value.length;
+          counter.textContent = `${remaining} characters remaining`;
+        };
+
+        textarea.addEventListener('input', updateCounter);
+        updateCounter();
+      };
+
+      addCharacterCounter(descriptionInput);
+
+      // Form submission
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        let hasErrors = false;
+        
+        // Validate all fields
+        const isNameValid = validateName();
+        const isOfferValid = validateOffer();
+        const isDescriptionValid = validateDescription();
+
+        // Image validation
+        const imageInput = document.getElementById('imageInput');
+        const imageContainer = document.querySelector('.image-upload-container');
+        
+        // Remove any existing error message
+        const existingImageError = document.querySelector('.image-error');
+        if (existingImageError) {
+          existingImageError.remove();
+        }
+
+        // Check for empty image
+        if (!imageInput.files || !imageInput.files[0]) {
+          const imageError = document.createElement('div');
+          imageError.className = 'image-error text-red-500 text-sm mt-1';
+          imageError.textContent = 'Category image is required';
+          imageContainer.appendChild(imageError);
+          hasErrors = true;
+        }
+
+        // If there are any errors, don't submit
+        if (!isNameValid || !isOfferValid || !isDescriptionValid || hasErrors) {
+          // Find the first error and scroll to it
+          const firstError = document.querySelector('.text-red-500:not(.hidden), .image-error');
+          if (firstError) {
+            firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+          return false;
+        }
+
+        // If all validations pass, submit the form
+        this.submit();
+      });
+
+      // Animate form elements
+      const animateElements = () => {
+        const elements = document.querySelectorAll('.fade-in-up');
+        elements.forEach((element, index) => {
+          element.style.animationDelay = `${index * 0.1}s`;
+          element.style.opacity = '1';
+        });
+      };
+      animateElements();
+
+      // Enhanced form interactions
+      const formInputs = document.querySelectorAll('.form-input');
+      formInputs.forEach(input => {
+        input.addEventListener('focus', () => {
+          input.parentElement.style.transform = 'translateY(-2px)';
+        });
+
+        input.addEventListener('blur', () => {
+          input.parentElement.style.transform = '';
+        });
+      });
+
+      // Image upload handling
+      const dropArea = document.getElementById('dropArea');
+      const fileInput = document.getElementById('fileInput');
+      const previewImage = document.getElementById('previewImage');
+      const uploadPrompt = document.getElementById('uploadPrompt');
+
+      dropArea.addEventListener('click', () => fileInput.click());
+
+      dropArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropArea.style.borderColor = '#3b82f6';
+        dropArea.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+      });
+
+      dropArea.addEventListener('dragleave', () => {
+        dropArea.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+        dropArea.style.backgroundColor = '';
+      });
+
+      dropArea.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('border-blue-500');
+        const file = e.dataTransfer.files[0];
+        if (file) {
+            try {
+                await validateImageFile(file);
+                if (file.type.startsWith('image/')) {
+                    const input = document.getElementById('imageInput');
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    input.files = dataTransfer.files;
+                    previewImage({ target: { files: [file] } });
+                }
+            } catch (error) {
+                const imageError = document.querySelector('.image-error') || createErrorElement();
+                imageError.classList.add('image-error');
+                showError(imageError, error);
+                document.querySelector('.image-upload-container').appendChild(imageError);
+            }
+        }
+      });
+
+      fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (!validateImageFile(file)) {
+                e.target.value = ''; // Clear the input
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImage.src = e.target.result;
+                previewImage.classList.remove('hidden');
+                uploadPrompt.classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+      });
+
+      function handleFile(file) {
+        if (file && file.type.startsWith('image/')) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            previewImage.src = e.target.result;
+            previewImage.classList.remove('hidden');
+            uploadPrompt.classList.add('hidden');
+          };
+          reader.readAsDataURL(file);
+        }
+      }
+
+      // Submit button animation
+      const submitButton = document.querySelector('.submit-button');
+      submitButton.addEventListener('mouseenter', () => {
+        submitButton.style.animation = 'glowPulse 2s infinite';
+      });
+
+      submitButton.addEventListener('mouseleave', () => {
+        submitButton.style.animation = '';
+      });
+    });
+
+    let cropper;
+    let croppedImageBlob;
+
+    async function previewImage(event) {
+        const file = event.target.files[0];
+        if (file) {
+            try {
+                await validateImageFile(file);
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('cropModal').classList.remove('hidden');
+                    document.getElementById('cropModal').classList.add('flex');
+                    
+                    const image = document.getElementById('cropperImage');
+                    image.src = e.target.result;
+                    
+                    if (cropper) {
+                        cropper.destroy();
+                    }
+                    
+                    cropper = new Cropper(image, {
+                        aspectRatio: 1,
+                        viewMode: 2,
+                        dragMode: 'move',
+                        autoCropArea: 1,
+                        restore: false,
+                        guides: true,
+                        center: true,
+                        highlight: false,
+                        cropBoxMovable: true,
+                        cropBoxResizable: true,
+                        toggleDragModeOnDblclick: false,
+                    });
+                };
+                reader.readAsDataURL(file);
+            } catch (error) {
+                event.target.value = ''; // Clear the input
+                const imageError = document.querySelector('.image-error') || createErrorElement();
+                imageError.classList.add('image-error');
+                showError(imageError, error);
+                document.querySelector('.image-upload-container').appendChild(imageError);
+            }
+        }
+    }
+
+    function cancelCrop() {
+        document.getElementById('cropModal').classList.add('hidden');
+        document.getElementById('imageInput').value = '';
+        if (cropper) {
+            cropper.destroy();
+        }
+        
+        const imageContainer = document.querySelector('.image-upload-container');
+        const imageError = document.createElement('div');
+        imageError.className = 'image-error text-red-500 text-sm mt-1';
+        imageError.textContent = 'Category image is required';
+        imageContainer.appendChild(imageError);
+        
+        document.getElementById('previewContainer').classList.add('hidden');
+        document.getElementById('uploadPrompt').classList.remove('hidden');
+    }
+
+    function cropImage() {
+        if (cropper) {
+            const canvas = cropper.getCroppedCanvas({
+                width: 300,
+                height: 300
+            });
+
+            canvas.toBlob((blob) => {
+                croppedImageBlob = blob;
+                const url = URL.createObjectURL(blob);
+                document.getElementById('imagePreview').src = url;
+                document.getElementById('previewContainer').classList.remove('hidden');
+                document.getElementById('uploadPrompt').classList.add('hidden');
+
+                // Create a new File object from the blob
+                const croppedFile = new File([blob], 'cropped_image.png', { type: 'image/png' });
+                
+                // Create a new DataTransfer object and add the file
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(croppedFile);
+                
+                // Set the files property of the input element
+                document.getElementById('imageInput').files = dataTransfer.files;
+
+                // Clear any error message since we now have a valid image
+                const existingError = document.querySelector('.image-error');
+                if (existingError) {
+                    existingError.remove();
+                }
+            });
+
+            document.getElementById('cropModal').classList.add('hidden');
+            cropper.destroy();
+        }
+    }
+
+    // Drag and drop functionality
+    const uploadArea = document.getElementById('uploadArea');
+    
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('border-blue-500');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('border-blue-500');
+    });
+
+    uploadArea.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('border-blue-500');
+        const file = e.dataTransfer.files[0];
+        if (file) {
+            try {
+                await validateImageFile(file);
+                if (file.type.startsWith('image/')) {
+                    const input = document.getElementById('imageInput');
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    input.files = dataTransfer.files;
+                    previewImage({ target: { files: [file] } });
+                }
+            } catch (error) {
+                const imageError = document.querySelector('.image-error') || createErrorElement();
+                imageError.classList.add('image-error');
+                showError(imageError, error);
+                document.querySelector('.image-upload-container').appendChild(imageError);
+            }
+        }
+    });
+
+    uploadArea.addEventListener('click', () => {
+        document.getElementById('imageInput').click();
+    });
+
+    function validateImageFile(file) {
+        const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+        const maxSize = 5 * 1024 * 1024; // 5MB
+
+        return new Promise((resolve, reject) => {
+            if (!validTypes.includes(file.type)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid File Type',
+                    text: 'Please upload only JPG, PNG or WebP images',
+                    zIndex: 10000
+                });
+                const imageError = createImageError();
+                imageError.textContent = 'Invalid file type. Please upload only JPG, PNG or WebP images';
+                document.querySelector('.image-upload-container').appendChild(imageError);
+                reject(new Error('Invalid file type'));
+                return;
+            }
+
+            if (file.size > maxSize) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'File Too Large',
+                    text: 'Image size should be less than 5MB',
+                    zIndex: 10000
+                });
+                const imageError = createImageError();
+                imageError.textContent = 'File size should be less than 5MB';
+                document.querySelector('.image-upload-container').appendChild(imageError);
+                reject(new Error('File too large'));
+                return;
+            }
+
+            // Clear any existing error messages
+            const existingError = document.querySelector('.image-error');
+            if (existingError) {
+                existingError.remove();
+            }
+            resolve(true);
+        });
+    }
+
+    // Add this function after createErrorElement
+    const createImageError = () => {
+        // Remove any existing error message
+        const existingError = document.querySelector('.image-error');
+        if (existingError) {
+            existingError.remove();
+        }
+        
+        // Create new error message element
+        const div = document.createElement('div');
+        div.className = 'image-error text-red-500 text-sm mt-1';
+        return div;
+    };
+
+    // Add this helper function
+    const showImageError = (message) => {
+        const imageError = createImageError();
+        imageError.textContent = message;
+        document.querySelector('.image-upload-container').appendChild(imageError);
+    };
+  </script>
+</body>
+
+</html>

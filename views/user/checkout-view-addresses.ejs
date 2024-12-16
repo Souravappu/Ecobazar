@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Addresses - Checkout</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-gray-50">
+    <%- include('../layouts/checkoutHeader.ejs', { title: 'Manage Addresses' }) %>
+
+    <main class="container mx-auto py-8 px-4">
+        <div class="max-w-3xl mx-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-2xl font-bold">Your Addresses</h1>
+                <a href="/checkout/add-address" 
+                   class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                    <i class="fas fa-plus mr-2"></i>
+                    Add New Address
+                </a>
+            </div>
+
+            <div class="space-y-4">
+                <% if (addresses && addresses.length > 0) { %>
+                    <% addresses.forEach(address => { %>
+                        <div class="bg-white rounded-lg shadow-sm p-6 border <%= address.isDefault ? 'border-green-500' : 'border-gray-200' %>">
+                            <div class="flex justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <h3 class="font-semibold text-lg"><%= address.name %></h3>
+                                        <span class="text-sm text-gray-500">(<%= address.addressType %>)</span>
+                                        <% if (address.isDefault) { %>
+                                            <span class="px-2 py-1 bg-green-100 text-green-600 text-xs rounded-full">
+                                                Default
+                                            </span>
+                                        <% } %>
+                                    </div>
+                                    <p class="text-gray-600"><%= address.streetAddress %></p>
+                                    <% if (address.apartment) { %>
+                                        <p class="text-gray-600"><%= address.apartment %></p>
+                                    <% } %>
+                                    <p class="text-gray-600"><%= address.city %>, <%= address.postalCode %></p>
+                                    <% if (address.landMark) { %>
+                                        <p class="text-gray-600">Landmark: <%= address.landMark %></p>
+                                    <% } %>
+                                    <p class="text-gray-600">Phone: <%= address.phone %></p>
+                                </div>
+                                <div class="flex flex-col gap-2">
+                                    <button onclick="editAddress('<%= address._id %>')"
+                                            class="p-2 text-blue-600 hover:bg-blue-50 rounded-full"
+                                            title="Edit Address">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <% if (!address.isDefault) { %>
+                                        <button onclick="setAsDefault('<%= address._id %>')"
+                                                class="p-2 text-green-600 hover:bg-green-50 rounded-full"
+                                                title="Set as Default">
+                                            <i class="fas fa-check-circle"></i>
+                                        </button>
+                                    <% } %>
+                                </div>
+                            </div>
+                        </div>
+                    <% }); %>
+                <% } else { %>
+                    <div class="text-center py-12 bg-white rounded-lg shadow-sm">
+                        <i class="fas fa-address-card text-gray-300 text-5xl mb-4"></i>
+                        <p class="text-gray-600 mb-4">No addresses found</p>
+                        <a href="/checkout/add-address" 
+                           class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                            <i class="fas fa-plus mr-2"></i>
+                            Add New Address
+                        </a>
+                    </div>
+                <% } %>
+            </div>
+
+            <div class="mt-8 text-center">
+                <a href="/checkout" 
+                   class="inline-flex items-center px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Back to Checkout
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function editAddress(addressId) {
+            window.location.href = `/checkout/edit-address/${addressId}`;
+        }
+
+        function setAsDefault(addressId) {
+            Swal.fire({
+                title: 'Set as Default?',
+                text: 'Do you want to set this as your default address?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#22C55E',
+                cancelButtonColor: '#6B7280',
+                confirmButtonText: 'Yes, set as default'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`/profile/set-default-address/${addressId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Address Updated',
+                                text: 'Default address has been updated',
+                                showConfirmButton: false,
+                                timer: 1500
+                            }).then(() => {
+                                window.location.reload();
+                            });
+                        } else {
+                            throw new Error(data.message);
+                        }
+                    })
+                    .catch(error => {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: error.message || 'An error occurred'
+                        });
+                    });
+                }
+            });
+        }
+    </script>
+</body>
+</html> 

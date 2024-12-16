@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forgot Password - OTP Verification</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.14.5/dist/sweetalert2.min.css" rel="stylesheet">
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.14.5/dist/sweetalert2.all.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        .otp-input {
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            text-align: center;
+            margin: 0 6px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            background-color: #f3f4f6;
+        }
+        .otp-input:focus {
+            outline: none;
+            border-color: #22c55e;
+            background-color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-sm border border-gray-200">
+            <!-- OTP Verification Header -->
+            <div class="text-center">
+                <h2 class="text-3xl font-bold text-gray-900 mb-2">Reset Password</h2>
+                <div id="timer" class="text-lg font-semibold text-gray-600 mb-4">
+                    Time Remaining: <span id="countdown">01:00</span>
+                </div>
+            </div>
+
+            <!-- Instructions -->
+            <div class="text-center mb-8">
+                <p class="text-gray-600">Enter the verification code we sent to your email</p>
+            </div>
+
+            <!-- Add this right after the Instructions div and before the form -->
+            <div id="error-message" class="hidden text-center mb-4">
+                <p class="text-red-500 text-sm"></p>
+            </div>
+
+            <!-- OTP Input Form -->
+            <form id="otpForm" class="mt-8 space-y-6" onsubmit="return validateOTPForm()">
+                <div class="flex justify-center space-x-4">
+                    <input type="text" maxlength="1" class="otp-input" autofocus id="otp1">
+                    <input type="text" maxlength="1" class="otp-input" id="otp2">
+                    <input type="text" maxlength="1" class="otp-input" id="otp3">
+                    <input type="text" maxlength="1" class="otp-input" id="otp4">
+                </div>
+
+                <!-- Add this for inline error display -->
+                <div id="otp-error" class="text-red-500 text-sm text-center hidden"></div>
+
+                <!-- Verify Button -->
+                <div>
+                    <button type="submit"
+                            class="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-full text-white bg-green-500 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        Verify OTP
+                    </button>
+                </div>
+
+                <!-- Resend Link -->
+                <div class="text-center text-sm">
+                    <span class="text-gray-600">Didn't receive code?</span>
+                    <button type="button" id="resendButton"
+                            class="font-medium text-green-600 hover:text-green-500 ml-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled>
+                        Resend
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Constants from backend
+        const OTP_TIMER_DURATION = 60; // 60 seconds
+        const RESEND_DELAY = 30; // 30 seconds
+
+        // OTP Input Handling
+        const inputs = document.querySelectorAll('.otp-input');
+        let timerInterval;
+
+        // Show error/success message function
+        function showMessage(message, isError = true) {
+            const errorDiv = document.getElementById('otp-error');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+            errorDiv.classList.remove('text-red-500', 'text-green-500');
+            errorDiv.classList.add(isError ? 'text-red-500' : 'text-green-500');
+            
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                errorDiv.classList.add('hidden');
+            }, 5000);
+        }
+
+        // Timer functionality
+        function startTimer(duration, display, resendButton) {
+            clearInterval(timerInterval);
+            let timer = duration;
+            
+            function updateDisplay() {
+                const minutes = Math.floor(timer / 60);
+                const seconds = timer % 60;
+                
+                display.textContent = 
+                    (minutes < 10 ? "0" + minutes : minutes) + ":" + 
+                    (seconds < 10 ? "0" + seconds : seconds);
+                    
+                if (timer <= 0) {
+                    clearInterval(timerInterval);
+                    display.textContent = '00:00';
+                    resendButton.disabled = false;
+                    showMessage('OTP expired. Please request a new one.', true);
+                }
+                timer--;
+            }
+
+            updateDisplay();
+            timerInterval = setInterval(updateDisplay, 1000);
+            resendButton.disabled = true;
+        }
+
+        // Input handling
+        inputs.forEach((input, index) => {
+            // Only allow numbers
+            input.addEventListener('keypress', function(e) {
+                if (!/[0-9]/.test(e.key)) {
+                    e.preventDefault();
+                }
+            });
+
+            // Handle paste event
+            input.addEventListener('paste', function(e) {
+                e.preventDefault();
+                const pastedData = e.clipboardData.getData('text').trim();
+                if (pastedData.length === 4 && /^\d{4}$/.test(pastedData)) {
+                    pastedData.split('').forEach((digit, i) => {
+                        if (inputs[i]) {
+                            inputs[i].value = digit;
+                        }
+                    });
+                    inputs[3].focus();
+                }
+            });
+
+            input.addEventListener('input', function() {
+                if (this.value.length === this.maxLength) {
+                    const nextInput = inputs[index + 1];
+                    if (nextInput) nextInput.focus();
+                }
+            });
+
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Backspace' && !this.value) {
+                    const prevInput = inputs[index - 1];
+                    if (prevInput) prevInput.focus();
+                }
+            });
+        });
+
+        // Form validation and submission
+        function validateOTPForm() {
+            const otp = Array.from(inputs).map(input => input.value).join('');
+            
+            if (otp.length !== 4) {
+                showMessage('Please enter a 4-digit OTP');
+                return false;
+            }
+
+            $.ajax({
+                type: "POST",
+                url: "/forgot-pass-verifyOtp",
+                data: JSON.stringify({ otp: otp }),
+                contentType: "application/json",
+                success: function(response) {
+                    if (response.success) {
+                        window.location.href = response.redirectUrl;
+                    } else {
+                        showMessage(response.message);
+                        if (response.expired) {
+                            startTimer(0, document.querySelector('#countdown'), document.querySelector('#resendButton'));
+                        }
+                    }
+                },
+                error: function(xhr) {
+                    const message = xhr.responseJSON?.message || 'Failed to verify OTP. Please try again.';
+                    showMessage(message);
+                }
+            });
+
+            return false;
+        }
+
+        // Handle resend functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const display = document.querySelector('#countdown');
+            const resendButton = document.querySelector('#resendButton');
+            
+            // Start initial timer
+            startTimer(OTP_TIMER_DURATION, display, resendButton);
+
+            resendButton.addEventListener('click', function() {
+                this.disabled = true;
+                
+                $.ajax({
+                    type: 'POST',
+                    url: '/resend-forgot-otp',
+                    contentType: 'application/json',
+                    success: function(response) {
+                        if (response.success) {
+                            startTimer(OTP_TIMER_DURATION, display, resendButton);
+                            inputs.forEach(input => input.value = '');
+                            inputs[0].focus();
+                            showMessage(response.message, false);
+                        } else {
+                            showMessage(response.message);
+                            if (!response.cooldown) {
+                                resendButton.disabled = false;
+                            }
+                        }
+                    },
+                    error: function(xhr) {
+                        const message = xhr.responseJSON?.message || 'Failed to resend OTP';
+                        showMessage(message);
+                        resendButton.disabled = false;
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+

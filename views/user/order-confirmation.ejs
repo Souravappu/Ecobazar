@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmed - Ecobazar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <%- include('../layouts/headerWithoutUser.ejs') %>
+
+    <main class="container mx-auto px-4 py-8">
+        <div class="max-w-2xl mx-auto text-center">
+            <div class="bg-white rounded-lg shadow-sm p-8">
+                <div class="mb-6">
+                    <i class="fas fa-check-circle text-6xl text-green-500"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-800 mb-4">Order Confirmed!</h1>
+                <p class="text-gray-600 mb-6">
+                    Thank you for your order. Your order ID is <span class="font-semibold">#<%= order.orderId %></span>
+                </p>
+                <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                    <h2 class="font-semibold mb-2">Order Details</h2>
+                    <p class="text-gray-600">Total Amount: ₹<%= order.total %></p>
+                    <p class="text-gray-600">Payment Method: <%= order.paymentMethod %></p>
+                </div>
+                <p class="text-gray-500 mb-6">
+                    Redirecting to your orders in <span id="countdown" class="font-semibold">5</span> seconds...
+                </p>
+                <div class="space-x-4">
+                    <a href="/orders" class="inline-block bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">
+                        View Orders
+                    </a>
+                    <a href="/" class="inline-block bg-gray-100 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-200">
+                        Continue Shopping
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let timeLeft = 5;
+        const countdownElement = document.getElementById('countdown');
+        
+        const countdown = setInterval(() => {
+            timeLeft--;
+            countdownElement.textContent = timeLeft;
+            
+            if (timeLeft <= 0) {
+                clearInterval(countdown);
+                window.location.href = '/orders';
+            }
+        }, 1000);
+    </script>
+</body>
+</html> 

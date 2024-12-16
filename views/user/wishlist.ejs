@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wishlist - Ecobazar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .nav-item {
+            transition: all 0.3s ease;
+        }
+        .nav-item:hover {
+            transform: translateX(10px);
+            background-color: rgba(16, 185, 129, 0.1);
+        }
+        .nav-item.active {
+            background: linear-gradient(to right, #10b981, #059669);
+            color: white;
+            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
+        }
+        .card {
+            transition: all 0.4s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+        }
+        main {
+            flex-grow: 1;
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <%- include('../layouts/headerWithoutUser.ejs') %>
+
+    <main class="container mx-auto grid grid-cols-12 gap-6 animate__animated animate__fadeIn p-6">
+        <!-- Navigation Sidebar -->
+        <div class="col-span-3 bg-white rounded-2xl shadow-2xl p-6 space-y-4">
+            <div class="flex items-center space-x-4 mb-8">
+                <div class="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white text-xl border-4 border-green-200">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg"><%= user.fname %> <%= user.lname %></h3>
+                    <p class="text-sm text-gray-500">User</p>
+                </div>
+            </div>
+            <nav class="space-y-2">
+                <a href="/profile" class="nav-item flex items-center p-3 rounded-lg space-x-3">
+                    <i class="fas fa-home w-6"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/orders" class="nav-item flex items-center p-3 rounded-lg space-x-3">
+                    <i class="fas fa-shopping-basket w-6"></i>
+                    <span>Orders</span>
+                </a>
+                <a href="/wishlist" class="nav-item active flex items-center p-3 rounded-lg space-x-3">
+                    <i class="fas fa-heart w-6"></i>
+                    <span>Wishlist</span>
+                </a>
+                <a href="/address" class="nav-item flex items-center p-3 rounded-lg space-x-3">
+                    <i class="fas fa-map-marker-alt w-6"></i>
+                    <span>Address</span>
+                </a>
+                <a href="#" class="nav-item flex items-center p-3 rounded-lg space-x-3">
+                    <i class="fas fa-cog w-6"></i>
+                    <span>Settings</span>
+                </a>
+                <form action="/logout" method="POST" class="block">
+                    <button type="submit" class="nav-item flex items-center p-3 rounded-lg space-x-3 text-red-500 w-full">
+                        <i class="fas fa-sign-out-alt w-6"></i>
+                        <span>Log Out</span>
+                    </button>
+                </form>
+            </nav>
+            </div>
+
+        <!-- Wishlist Content -->
+        <div class="col-span-9 space-y-6">
+            <div class="card bg-white rounded-2xl shadow-2xl p-8">
+                <h2 class="text-2xl font-bold mb-6 border-b pb-4">My Wishlist</h2>
+
+                    <% if (!wishlist || !wishlist.items || wishlist.items.length === 0) { %>
+                        <div class="text-center py-12">
+                            <i class="fas fa-heart text-6xl text-gray-300 mb-4"></i>
+                            <h2 class="text-xl font-semibold text-gray-600 mb-4">Your wishlist is empty</h2>
+                        <a href="/shop" class="inline-block bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-all duration-300">
+                                Start Shopping
+                            </a>
+                        </div>
+                    <% } else { %>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <% wishlist.items.forEach(item => { %>
+                                <% const product = item.product; %>
+                            <div class="card bg-white rounded-xl overflow-hidden border hover:shadow-xl">
+                                    <div class="relative">
+                                        <a href="/product/<%= product._id %>" class="block">
+                                            <img src="/uploads/products/<%= product.images[0].split('/').pop() %>" 
+                                                 alt="<%= product.name %>"
+                                             class="w-full h-48 object-cover hover:opacity-90 transition-all duration-300">
+                                        </a>
+                                        <button onclick="removeFromWishlist('<%= product._id %>')"
+                                            class="absolute top-2 right-2 text-red-500 hover:text-red-600 bg-white rounded-full p-2 shadow-lg hover:shadow-xl transition-all duration-300">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                    <div class="p-4">
+                                    <a href="/product/<%= product._id %>" class="block hover:text-green-600 transition-colors">
+                                            <h3 class="font-semibold mb-2 line-clamp-2"><%= product.name %></h3>
+                                        </a>
+                                    <div class="flex justify-between items-end mt-4">
+                                            <div class="space-y-1">
+                                            <div class="text-green-600 font-bold text-lg">₹<%= product.salePrice %></div>
+                                                <% if (product.regularPrice > product.salePrice) { %>
+                                                    <div class="text-sm text-gray-500 line-through">₹<%= product.regularPrice %></div>
+                                                <% } %>
+                                            </div>
+                                            <% if (product.quantity > 0) { %>
+                                                <button onclick="addToCart('<%= product._id %>')" 
+                                                    class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-all duration-300 flex items-center space-x-2">
+                                                <i class="fas fa-shopping-cart"></i>
+                                                <span>Add to Cart</span>
+                                                </button>
+                                            <% } else { %>
+                                            <span class="text-red-500 text-sm font-medium">Out of Stock</span>
+                                            <% } %>
+                                        </div>
+                                    </div>
+                                </div>
+                            <% }); %>
+                        </div>
+                    <% } %>
+
+                    <% if (wishlist && wishlist.items && wishlist.items.length > 0) { %>
+                        <div class="mt-8 flex justify-center items-center space-x-4">
+                            <% if (pagination.hasPrev) { %>
+                                <a href="/wishlist?page=<%= pagination.page - 1 %>" 
+                                   class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                    <i class="fas fa-chevron-left mr-2"></i>
+                                    Previous
+                                </a>
+                            <% } %>
+
+                            <div class="flex items-center space-x-2">
+                                <% for(let i = 1; i <= pagination.totalPages; i++) { %>
+                                    <a href="/wishlist?page=<%= i %>"
+                                       class="px-4 py-2 rounded-lg <%= pagination.page === i ? 'bg-green-600 text-white' : 'bg-white border border-gray-300 hover:bg-gray-50' %> transition-colors">
+                                        <%= i %>
+                                    </a>
+                                <% } %>
+                            </div>
+
+                            <% if (pagination.hasNext) { %>
+                                <a href="/wishlist?page=<%= pagination.page + 1 %>"
+                                   class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                    Next
+                                    <i class="fas fa-chevron-right ml-2"></i>
+                                </a>
+                            <% } %>
+                        </div>
+                    <% } %>
+            </div>
+        </div>
+    </main>
+
+    <%- include('../layouts/footer.ejs') %>
+
+    <script>
+        function removeFromWishlist(productId) {
+            Swal.fire({
+                title: 'Remove Item?',
+                text: 'Are you sure you want to remove this item from your wishlist?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#22C55E',
+                cancelButtonColor: '#6B7280',
+                confirmButtonText: 'Yes, remove it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`/wishlist/remove/${productId}`, {
+                        method: 'DELETE'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Removed!',
+                                text: 'Item has been removed from your wishlist',
+                                showConfirmButton: false,
+                                timer: 1500
+                            }).then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            throw new Error(data.message);
+                        }
+                    })
+                    .catch(error => {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: error.message || 'An error occurred'
+                        });
+                    });
+                }
+            });
+        }
+
+        function addToCart(productId) {
+            fetch('/cart/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ productId, quantity: 1 })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Added to Cart!',
+                        text: 'Item has been added to your cart',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                    
+                    // Update cart count in header if needed
+                    const cartCountElement = document.querySelector('.cart-count');
+                    if (cartCountElement) {
+                        cartCountElement.textContent = data.cartCount;
+                        cartCountElement.style.display = 'flex';
+                    }
+                } else {
+                    throw new Error(data.message);
+                }
+            })
+            .catch(error => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.message || 'An error occurred'
+                });
+            });
+        }
+    </script>
+</body>
+</html> 

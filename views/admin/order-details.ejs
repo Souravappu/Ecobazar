@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Details - Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        :root {
+            --primary-dark: #0f172a;
+            --secondary-dark: #1e293b;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-purple: #8b5cf6;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+        }
+
+        body {
+            background-color: var(--primary-dark);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .card {
+            background: linear-gradient(135deg, var(--secondary-dark), #273346);
+            border-radius: 16px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .status-badge {
+            padding: 0.375rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-pending { background: rgba(234, 179, 8, 0.2); color: #eab308; }
+        .status-processing { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+        .status-shipped { background: rgba(139, 92, 246, 0.2); color: #8b5cf6; }
+        .status-delivered { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .status-cancelled { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+    </style>
+</head>
+<body>
+    <%- include('../layouts/side.ejs') %>
+    <%- include('../layouts/head.ejs') %>
+
+    <main class="ml-72 p-8">
+        <!-- Back Button and Order Status -->
+        <div class="flex justify-between items-center mb-8">
+            <a href="/admin/orders" class="flex items-center text-gray-400 hover:text-white transition-colors">
+                <i class="fas fa-arrow-left mr-2"></i>
+                Back to Orders
+            </a>
+            <div class="flex items-center space-x-4">
+                <% if (!['Delivered', 'Cancelled'].includes(order.orderStatus)) { %>
+                    <button onclick="cancelEntireOrder('<%= order._id %>')"
+                            class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
+                        Cancel Order
+                    </button>
+                <% } %>
+                <span class="status-badge status-<%= order.orderStatus.toLowerCase() %>">
+                    <%= order.orderStatus %>
+                </span>
+                <% if (order.orderStatus === 'Cancelled' && order.cancelReason) { %>
+                    <button onclick="showCancelReason(`<%= order.cancelReason %>`)"
+                            class="text-gray-400 hover:text-gray-300">
+                        <i class="fas fa-info-circle text-xl"></i>
+                    </button>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- Order Information -->
+        <div class="grid grid-cols-3 gap-6 mb-8">
+            <!-- Order Details -->
+            <div class="card p-6">
+                <h3 class="text-lg font-semibold mb-4">Order Information</h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Order ID</span>
+                        <span>#<%= order.orderId %></span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Date</span>
+                        <span><%= new Date(order.createdAt).toLocaleDateString() %></span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Payment Method</span>
+                        <span><%= order.paymentMethod %></span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Payment Status</span>
+                        <span class="status-badge status-<%= order.paymentStatus.toLowerCase() %>">
+                            <%= order.paymentStatus %>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer Details -->
+            <div class="card p-6">
+                <h3 class="text-lg font-semibold mb-4">Customer Information</h3>
+                <div class="space-y-3">
+                    <div>
+                        <span class="text-gray-400">Name</span>
+                        <p><%= order.user.fname %> <%= order.user.lname %></p>
+                    </div>
+                    <div>
+                        <span class="text-gray-400">Email</span>
+                        <p><%= order.user.email %></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shipping Address -->
+            <div class="card p-6">
+                <h3 class="text-lg font-semibold mb-4">Shipping Address</h3>
+                <div class="space-y-2">
+                    <p><%= order.shippingAddress.name %></p>
+                    <p><%= order.shippingAddress.streetAddress %></p>
+                    <% if (order.shippingAddress.apartment) { %>
+                        <p><%= order.shippingAddress.apartment %></p>
+                    <% } %>
+                    <p><%= order.shippingAddress.city %>, <%= order.shippingAddress.postalCode %></p>
+                    <p>Phone: <%= order.shippingAddress.phone %></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Items -->
+        <div class="card p-6 mb-8">
+            <h3 class="text-lg font-semibold mb-6">Order Items</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="text-left text-gray-400">
+                            <th class="pb-4">Product</th>
+                            <th class="pb-4">Price</th>
+                            <th class="pb-4">Quantity</th>
+                            <th class="pb-4">Total</th>
+                            <th class="pb-4">Status</th>
+                            <th class="pb-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-700">
+                        <% order.items.forEach(item => { %>
+                            <tr>
+                                <td class="py-4">
+                                    <div class="flex items-center space-x-4">
+                                        <img src="/uploads/products/<%= item.product.images[0].split('/').pop() %>"
+                                             alt="<%= item.product.name %>"
+                                             class="w-16 h-16 object-cover rounded-lg">
+                                        <div>
+                                            <h4 class="font-medium"><%= item.product.name %></h4>
+                                            <p class="text-sm text-gray-400"><%= item.product.category %></p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-4">₹<%= item.price %></td>
+                                <td class="py-4"><%= item.quantity %></td>
+                                <td class="py-4">₹<%= item.price * item.quantity %></td>
+                                <td class="py-4">
+                                    <span class="status-badge status-<%= item.status.toLowerCase() %>">
+                                        <%= item.status %>
+                                    </span>
+                                </td>
+                                <td class="py-4">
+                                    <% if (!['Delivered', 'Cancelled'].includes(item.status)) { %>
+                                        <button onclick="cancelOrderItem('<%= order._id %>', '<%= item._id %>')"
+                                                class="text-red-400 hover:text-red-300 transition-colors">
+                                            <i class="fas fa-times-circle">Cancel Item</i>
+                                        </button>
+                                    <% } %>
+                                    <% if (item.status === 'Cancelled') { %>
+                                        <button onclick="showCancelReason(`<%= item.cancelReason %>`)"
+                                                class="text-gray-400 hover:text-gray-300 transition-colors ml-2">
+                                            <i class="fas fa-info-circle"></i>
+                                        </button>
+                                    <% } %>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Order Summary -->
+        <div class="card p-6 max-w-md ml-auto">
+            <h3 class="text-lg font-semibold mb-4">Order Summary</h3>
+            <div class="space-y-3">
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Subtotal</span>
+                    <span>₹<%= order.subtotal %></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Shipping</span>
+                    <span>₹<%= order.shippingCharge %></span>
+                </div>
+                <div class="flex justify-between pt-3 border-t border-gray-700">
+                    <span class="font-semibold">Total</span>
+                    <span class="font-semibold">₹<%= order.total %></span>
+                </div>
+            </div>
+        </div>
+
+        <% if (order.orderStatus === 'Cancelled') { %>
+            <div class="card p-4 mb-8">
+                <h3 class="text-lg font-semibold text-red-400 mb-2">Cancellation Details</h3>
+                <p class="text-gray-300"><%= order.cancelReason || 'No reason provided' %></p>
+                <p class="text-gray-400 text-sm mt-2">
+                    Cancelled on: <%= new Date(order.cancelledAt).toLocaleString() %>
+                </p>
+            </div>
+        <% } %>
+    </main>
+
+    <script>
+        function showCancelReason(reason) {
+            Swal.fire({
+                title: 'Cancellation Reason',
+                text: reason || 'No reason provided',
+                icon: 'info',
+                confirmButtonColor: '#10b981'
+            });
+        }
+
+        async function cancelEntireOrder(orderId) {
+            const { value: reason } = await Swal.fire({
+                title: 'Cancel Order',
+                input: 'textarea',
+                inputLabel: 'Reason for cancellation',
+                inputPlaceholder: 'Enter reason for cancellation...',
+                showCancelButton: true,
+                confirmButtonColor: '#EF4444',
+                confirmButtonText: 'Cancel Order',
+                cancelButtonText: 'Keep Order',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'You need to provide a reason for cancellation!';
+                    }
+                }
+            });
+
+            if (reason) {
+                try {
+                    const response = await fetch(`/admin/order/${orderId}/cancel`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ reason })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Order Cancelled',
+                            text: data.message,
+                            showConfirmButton: false,
+                            timer: 1500
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        throw new Error(data.message);
+                    }
+                } catch (error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: error.message || 'Error cancelling order'
+                    });
+                }
+            }
+        }
+
+        async function cancelOrderItem(orderId, itemId) {
+            const { value: reason } = await Swal.fire({
+                title: 'Cancel Item',
+                input: 'textarea',
+                inputLabel: 'Reason for cancellation',
+                inputPlaceholder: 'Enter reason for cancellation...',
+                showCancelButton: true,
+                confirmButtonColor: '#EF4444',
+                confirmButtonText: 'Cancel Item',
+                cancelButtonText: 'Keep Item',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'You need to provide a reason for cancellation!';
+                    }
+                }
+            });
+
+            if (reason) {
+                try {
+                    const response = await fetch(`/admin/order/${orderId}/item/${itemId}/cancel`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ reason })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Item Cancelled',
+                            text: data.message,
+                            showConfirmButton: false,
+                            timer: 1500
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        throw new Error(data.message);
+                    }
+                } catch (error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: error.message || 'Error cancelling item'
+                    });
+                }
+            }
+        }
+    </script>
+</body>
+</html> 

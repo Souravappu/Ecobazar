@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fresh & Healthy Organic Store</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+        /* Animations and Transitions */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Custom Styles */
+        .product-card {
+            transition: all 0.3s ease-in-out;
+        }
+        .product-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+        }
+        .category-hover {
+            transition: all 0.3s ease;
+        }
+        .category-hover:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .reveal-animation {
+            opacity: 0;
+            animation: fadeInUp 0.8s forwards;
+        }
+        .pulse-badge {
+            animation: pulse 2s infinite;
+        }
+        
+        /* Countdown Styles */
+        .countdown-item {
+            background-color: rgba(255,255,255,0.2);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .category-card {
+            transition: all 0.3s ease;
+        }
+
+        .category-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .category-card img {
+            transition: all 0.3s ease;
+        }
+
+        .category-card:hover img {
+            transform: scale(1.05);
+        }
+
+        /* Add loading skeleton animation */
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        /* Optional: Add category icons */
+        .category-icon {
+            width: 40px;
+            height: 40px;
+            margin: -20px auto 10px;
+            background: #22C55E;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            position: relative;
+            z-index: 1;
+        }
+
+        .category-card {
+            position: relative;
+            background: #f3f4f6;
+        }
+
+        .category-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .category-card img {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .category-card img.loaded {
+            opacity: 1;
+        }
+
+        .wishlist-active {
+            color: hsl(137, 87%, 56%) !important;
+            transform: scale(1.1);
+        }
+
+        .product-card {
+            transition: all 0.3s ease;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header (Assumed to be included via EJS) -->
+    <%- include('../layouts/headerWithoutUser.ejs') %>
+
+    <!-- Hero Section -->
+    <div class="relative bg-gradient-to-r from-green-500 to-green-700 text-white py-20 overflow-hidden">
+        <div class="container mx-auto px-4 grid md:grid-cols-2 items-center relative z-10">
+            <div class="space-y-6 reveal-animation">
+                <h1 class="text-5xl font-bold mb-4">Fresh & Healthy<br/>Organic Delights</h1>
+                <p class="text-xl mb-6 opacity-80">
+                    Farm-fresh organic produce delivered straight to your doorstep
+                </p>
+                <div class="flex space-x-4">
+                    <button class="bg-white text-green-600 px-8 py-3 rounded-full hover:bg-green-50 transition flex items-center">
+                        <i class="fas fa-shopping-basket mr-2"></i> Shop Now
+                    </button>
+                    <button class="border-2 border-white text-white px-8 py-3 rounded-full hover:bg-white hover:text-green-600 transition flex items-center">
+                        <i class="fas fa-play-circle mr-2"></i> Watch Video
+                    </button>
+                </div>
+            </div>
+            <div class="relative">
+                <img src="/api/placeholder/600/400" alt="Organic Produce" class="rounded-lg shadow-2xl animate-float"/>
+                <div class="absolute top-4 -left-4 bg-yellow-400 text-green-800 px-4 py-2 rounded-full pulse-badge">
+                    🌿 100% Organic
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="container mx-auto px-4 py-16">
+        <div class="grid md:grid-cols-4 gap-6">
+            <div class="bg-white p-6 rounded-lg shadow-md text-center category-hover">
+                <div class="text-green-500 text-4xl mb-4">
+                    <i class="fas fa-truck"></i>
+                </div>
+                <h3 class="font-semibold mb-2">Free Shipping</h3>
+                <p class="text-gray-600">Free shipping on all orders</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md text-center category-hover">
+                <div class="text-green-500 text-4xl mb-4">
+                    <i class="fas fa-headset"></i>
+                </div>
+                <h3 class="font-semibold mb-2">24/7 Support</h3>
+                <p class="text-gray-600">Dedicated support team</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md text-center category-hover">
+                <div class="text-green-500 text-4xl mb-4">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h3 class="font-semibold mb-2">Secure Payment</h3>
+                <p class="text-gray-600">100% secure transactions</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md text-center category-hover">
+                <div class="text-green-500 text-4xl mb-4">
+                    <i class="fas fa-undo"></i>
+                </div>
+                <h3 class="font-semibold mb-2">Easy Returns</h3>
+                <p class="text-gray-600">30-day money-back guarantee</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Categories Section -->
+    <div class="container mx-auto px-4 py-16">
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="text-3xl font-bold">Shop by Category</h2>
+            <a href="/shop" class="text-green-600 hover:text-green-800 flex items-center">
+                View All <i class="fas fa-chevron-right ml-2"></i>
+            </a>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
+            <% categories.forEach(category => { %>
+                <a href="/category/<%= category._id %>" class="category-card bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
+                    <div class="relative h-40">
+                        <img src="<%= category.image %>" 
+                             alt="<%= category.name %>" 
+                             loading="eager"
+                             class="w-full h-full object-cover transition-transform duration-300 hover:scale-105"/>
+                        <div class="absolute inset-0 bg-black bg-opacity-20 transition-opacity hover:bg-opacity-10"></div>
+                    </div>
+                    <div class="p-4 text-center">
+                        <h3 class="font-semibold text-gray-800 hover:text-green-600 transition-colors">
+                            <%= category.name %>
+                        </h3>
+                        <p class="text-sm text-gray-500 mt-1">Shop Now</p>
+                    </div>
+                </a>
+            <% }); %>
+        </div>
+    </div>
+
+   <!-- Popular Products Section  -->
+   <div class="container mx-auto px-4 py-16">
+    <h2 class="text-3xl font-bold mb-8">Popular Products</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+        <% products.forEach((product) => { %>
+        <div class="product-card bg-white p-4 rounded-lg shadow-md relative" data-product-id="<%= product._id %>">
+            <!-- Offer Badge -->
+            <% if (product.regularPrice > product.salePrice) { %>
+                <div class="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs">
+                    <%= Math.round((product.regularPrice - product.salePrice) / product.regularPrice * 100) %>% OFF
+                </div>
+            <% } %>
+            
+            <!-- New Badge -->
+            <div class="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs">
+                New
+            </div>
+
+            <!-- Product Image -->
+            <a href="/product/<%= product._id %>" class="block">
+                <img src="http://localhost:3000/uploads<%= product.images[0] %>" 
+                     alt="<%= product.name %>" 
+                     class="w-full h-48 object-cover rounded-lg mb-4 hover:opacity-90 transition-opacity"/>
+            </a>
+
+            <!-- Product Info -->
+            <div class="space-y-2">
+                <!-- Title -->
+                <a href="/product/<%= product._id %>" class="block hover:text-green-600">
+                    <h3 class="font-semibold text-gray-800 truncate"><%= product.name %></h3>
+                </a>
+
+                <!-- Unit Information -->
+                <div class="text-sm text-gray-600">
+                    <span class="flex items-center gap-1">
+                        <i class="fas <%= product.unit === 'kg' ? 'fa-weight' : 'fa-layer-group' %> text-green-600"></i>
+                        <%= product.unitQuantity %> <%= product.unit === 'kg' ? 'kg' : 'pcs' %>/unit
+                    </span>
+                </div>
+
+                <!-- Price Section -->
+                <div class="flex items-center justify-between">
+                    <div class="flex flex-col">
+                        <span class="text-green-600 font-bold text-lg">₹<%= product.salePrice %></span>
+                        <% if (product.regularPrice > product.salePrice) { %>
+                            <span class="text-sm text-gray-500 line-through">₹<%= product.regularPrice %></span>
+                        <% } %>
+                    </div>
+                    
+                    <!-- Stock Status -->
+                    <span class="text-sm <%= product.quantity > 0 ? 'text-green-600' : 'text-red-500' %>">
+                        <%= product.quantity %> <%= product.unit === 'kg' ? 'units' : 'packs' %>
+                    </span>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex justify-end gap-2 mt-2">
+                    <% if (product.quantity > 0) { %>
+                        <button onclick="addToCart('<%= product._id %>')" 
+                                class="bg-green-500 text-white p-2 rounded-full hover:bg-green-600 transition-colors">
+                            <i class="fas fa-shopping-cart"></i>
+                        </button>
+                        <button onclick="toggleWishlist('<%= product._id %>')" 
+                                class="wishlist-btn bg-green-500 text-white p-2 rounded-full hover:bg-green-600 transition-colors">
+                            <i class="fas fa-heart"></i>
+                        </button>
+                    <% } else { %>
+                        <span class="text-red-500 text-sm font-medium">Out of Stock</span>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+        <% }) %>
+    </div>
+</div>
+
+    <!-- Hot Deals Section -->
+    <div class="container mx-auto px-4 py-16 bg-gray-100">
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="text-3xl font-bold">Hot Deals</h2>
+            <a href="/shop" class="text-green-600 hover:text-green-800 flex items-center">
+                View All Deals <i class="fas fa-chevron-right ml-2"></i>
+            </a>
+        </div>
+        <div class="grid md:grid-cols-4 gap-6">
+            <% hotDeals.forEach(product => { %>
+                <div class="bg-white p-4 rounded-lg shadow-md relative product-card" data-product-id="<%= product._id %>">
+                    <!-- Discount Badge -->
+                    <div class="absolute top-2 left-2 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold z-10">
+                        <%= product.discountPercentage %>% OFF
+                    </div>
+
+                    <!-- Wishlist Button -->
+                    <button onclick="toggleWishlist('<%= product._id %>')"
+                            class="wishlist-btn absolute top-2 right-2 bg-white p-2 rounded-full shadow-md z-10 hover:bg-gray-100 transition-colors">
+                        <i class="fas fa-heart text-gray-400"></i>
+                    </button>
+
+                    <!-- Product Image -->
+                    <a href="/product/<%= product._id %>" class="block relative">
+                        <img src="/uploads<%= product.images[0] %>"
+                             alt="<%= product.name %>"
+                             class="w-full h-48 object-cover rounded-lg mb-4"/>
+                        
+                       
+                    </a>
+
+                    <!-- Product Details -->
+                    <div class="space-y-2">
+                        <h3 class="font-semibold text-lg truncate"><%= product.name %></h3>
+                        
+                        <div class="flex items-center text-sm text-gray-600">
+                            <i class="fas <%= product.unit === 'kg' ? 'fa-weight' : 'fa-layer-group' %> text-green-600 mr-2"></i>
+                            <%= product.unitQuantity %> <%= product.unit %>
+                        </div>
+
+                        <div class="flex justify-between items-center">
+                            <div class="flex flex-col">
+                                <span class="text-green-600 font-bold text-xl">₹<%= product.salePrice %></span>
+                                <span class="text-gray-400 line-through">₹<%= product.regularPrice %></span>
+                            </div>
+                            
+                            <button onclick="addToCart('<%= product._id %>')"
+                                    class="bg-green-500 text-white px-4 py-2 rounded-full hover:bg-green-600 transition-colors flex items-center gap-2">
+                                <i class="fas fa-shopping-cart"></i>
+                                Add
+                            </button>
+                        </div>
+
+                        <!-- Stock Status -->
+                        <div class="text-sm">
+                            <% if (product.quantity > 0) { %>
+                                <span class="text-green-600">
+                                    <i class="fas fa-check-circle mr-1"></i>
+                                    In Stock ( <%= product.quantity %> <%= product.unit === 'kg' ? 'units' : 'packs' %>)
+                                </span>
+                            <% } else { %>
+                                <span class="text-red-500">
+                                    <i class="fas fa-times-circle mr-1"></i>
+                                    Out of Stock
+                                </span>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
+        </div>
+    </div>
+
+    <!-- Customer Reviews -->
+    <div class="container mx-auto px-4 py-16">
+        <h2 class="text-3xl font-bold mb-8 text-center">What Our Customers Say</h2>
+        <div class="grid md:grid-cols-3 gap-6">
+            <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                <div class="flex justify-center mb-4">
+                    <img src="/api/placeholder/100/100" alt="Customer" class="w-20 h-20 rounded-full"/>
+                </div>
+                <div class="text-yellow-500 mb-2">
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star-half-alt"></i>
+                </div>
+                <p class="text-gray-600 mb-4">"Amazing quality of organic produce. Delivery is always on time!"</p>
+                <h4 class="font-semibold">- John Doe</h4>
+            </div>
+            <!-- Repeat for other reviews -->
+        </div>
+    </div>
+
+    <!-- Footer (Assumed to be included via EJS) -->
+    <%- include('../layouts/footer.ejs') %>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Reveal Animation
+            const revealElements = document.querySelectorAll('.reveal-animation');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.animationPlayState = 'running';
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            revealElements.forEach(el => observer.observe(el));
+
+            // Product Interactions
+            const productCards = document.querySelectorAll('.product-card');
+            productCards.forEach(card => {
+                const addToCartBtn = card.querySelector('button');
+                addToCartBtn.addEventListener('click', () => {
+                    // Basic cart interaction
+                    addToCartBtn.innerHTML = '<i class="fas fa-check"></i>';
+                    setTimeout(() => {
+                        addToCartBtn.innerHTML = '<i class="fas fa-shopping-cart"></i>';
+                    }, 1500);
+                });
+            });
+        });
+
+        // Initialize wishlist buttons based on server data
+        async function initializeWishlistButtons() {
+            try {
+                // Fetch user's wishlist items
+                const response = await fetch('/wishlist/items');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const wishlistItems = data.items;
+                    
+                    // Update all wishlist buttons
+                    const productCards = document.querySelectorAll('.product-card');
+                    productCards.forEach(card => {
+                        const productId = card.dataset.productId;
+                        const wishlistBtn = card.querySelector('.wishlist-btn');
+                        
+                        // Check if product is in user's wishlist
+                        const isInWishlist = wishlistItems.some(item => 
+                            item.product.toString() === productId
+                        );
+                        
+                        if (isInWishlist) {
+                            wishlistBtn.classList.add('wishlist-active');
+                        } else {
+                            wishlistBtn.classList.remove('wishlist-active');
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error initializing wishlist:', error);
+            }
+        }
+
+        // Call initialization on page load
+        document.addEventListener('DOMContentLoaded', initializeWishlistButtons);
+
+        // Update toggleWishlist function
+        function toggleWishlist(productId) {
+            // Check if user is logged in first
+            fetch('/check-auth')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.authenticated) {
+                        Swal.fire({
+                            title: 'Please Login',
+                            text: 'You need to login to add items to wishlist',
+                            icon: 'info',
+                            showCancelButton: true,
+                            confirmButtonText: 'Login',
+                            cancelButtonText: 'Cancel'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location.href = '/login';
+                            }
+                        });
+                        return;
+                    }
+
+                    const productCard = document.querySelector(`.product-card[data-product-id="${productId}"]`);
+                    const wishlistBtn = productCard.querySelector('.wishlist-btn');
+                    const isInWishlist = wishlistBtn.classList.contains('wishlist-active');
+
+                    const endpoint = isInWishlist ? `/wishlist/remove/${productId}` : '/wishlist/add';
+                    const method = isInWishlist ? 'DELETE' : 'POST';
+
+                    fetch(endpoint, {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: method === 'POST' ? JSON.stringify({ productId }) : undefined
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            wishlistBtn.classList.toggle('wishlist-active');
+                            
+                            // Update wishlist count in header
+                            const wishlistCount = document.querySelector('.wishlist-count');
+                            if (wishlistCount) {
+                                const currentCount = parseInt(wishlistCount.textContent || '0');
+                                wishlistCount.textContent = isInWishlist ? currentCount - 1 : currentCount + 1;
+                                wishlistCount.style.display = currentCount > 0 ? 'flex' : 'none';
+                            }
+                            
+                            Swal.fire({
+                                icon: 'success',
+                                title: isInWishlist ? 'Removed from Wishlist!' : 'Added to Wishlist!',
+                                text: isInWishlist ? 
+                                    'Product has been removed from your wishlist' : 
+                                    'Product has been added to your wishlist',
+                                showConfirmButton: false,
+                                timer: 1500
+                            });
+                        } else {
+                            throw new Error(data.message || 'Error updating wishlist');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: error.message || 'An error occurred. Please try again.'
+                        });
+                    });
+                })
+                .catch(error => {
+                    console.error('Auth check error:', error);
+                });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const images = document.querySelectorAll('.category-card img');
+            
+            images.forEach(img => {
+                if (img.complete) {
+                    img.classList.add('loaded');
+                    img.parentElement.classList.add('loaded');
+                } else {
+                    img.onload = function() {
+                        img.classList.add('loaded');
+                        img.parentElement.classList.add('loaded');
+                    }
+                }
+            });
+        });
+
+        function addToCart(productId) {
+            // Check if user is logged in first
+            fetch('/check-auth')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.authenticated) {
+                        Swal.fire({
+                            title: 'Please Login',
+                            text: 'You need to login to add items to cart',
+                            icon: 'info',
+                            showCancelButton: true,
+                            confirmButtonText: 'Login',
+                            cancelButtonText: 'Cancel',
+                            confirmButtonColor: '#22C55E',
+                            cancelButtonColor: '#6B7280'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location.href = '/login';
+                            }
+                        });
+                        return;
+                    }
+
+                    // Proceed with adding to cart
+                    fetch('/cart/add', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            productId,
+                            quantity: 1
+                        })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(err => Promise.reject(err));
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            // Update cart count and total in header
+                            const cartCountElement = document.querySelector('.cart-count');
+                            const cartTotalElement = document.querySelector('.cart-total');
+                            
+                            if (cartCountElement) {
+                                cartCountElement.textContent = data.cart.count;
+                                cartCountElement.style.display = data.cart.count > 0 ? 'flex' : 'none';
+                            }
+                            if (cartTotalElement) {
+                                cartTotalElement.textContent = `₹${data.cart.total}`;
+                            }
+
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Added to Cart!',
+                                text: 'Product has been added to your cart',
+                                showConfirmButton: false,
+                                timer: 1500
+                            });
+                        } else {
+                            throw new Error(data.message || 'Error adding to cart');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Oops...',
+                            text: error.message || 'An error occurred. Please try again.',
+                            confirmButtonColor: '#22C55E'
+                        });
+                    });
+                })
+                .catch(error => {
+                    console.error('Auth check error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'An error occurred while checking authentication',
+                        confirmButtonColor: '#22C55E'
+                    });
+                });
+        }
+
+        // Function to update countdown timers
+        function updateCountdowns() {
+            const countdownItems = document.querySelectorAll('.countdown-item');
+            countdownItems.forEach(item => {
+                // Get current time
+                const now = new Date();
+                // Set end time to end of day
+                const end = new Date();
+                end.setHours(23, 59, 59, 999);
+                
+                const diff = end - now;
+                
+                // Calculate hours, minutes, seconds
+                const hours = Math.floor(diff / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                
+                // Update the display
+                const hoursEl = item.querySelector('.hours');
+                const minutesEl = item.querySelector('.minutes');
+                const secondsEl = item.querySelector('.seconds');
+                
+                if (hoursEl) hoursEl.textContent = hours.toString().padStart(2, '0');
+                if (minutesEl) minutesEl.textContent = minutes.toString().padStart(2, '0');
+                if (secondsEl) secondsEl.textContent = seconds.toString().padStart(2, '0');
+            });
+        }
+
+        // Update countdown every second
+        setInterval(updateCountdowns, 1000);
+        
+        // Initial update
+        updateCountdowns();
+    </script>
+</body>
+</html>

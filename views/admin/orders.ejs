@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orders Management - Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+</head>
+<body class="dark">
+    <style>
+        :root {
+            --primary-dark: #0f172a;
+            --secondary-dark: #1e293b;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-purple: #8b5cf6;
+            --text-primary: #010b18;
+            --text-secondary: #94a3b8;
+        }
+
+        body {
+            background-color: var(--primary-dark);
+            color: var(--text-primary);
+        }
+
+        .card {
+            background: linear-gradient(135deg, var(--secondary-dark), #273346);
+            border-radius: 16px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+    </style>
+    <%- include('../layouts/side.ejs') %>
+    <%- include('../layouts/head.ejs') %>
+
+    <main class="ml-72 p-12">
+        <h1 class="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-pink-600 animate-gradient-flow">
+            Order Management
+        </h1>
+
+        <!-- Filters Section -->
+        <div class="card p-6 mb-8">
+            <div class="flex flex-wrap text-black gap-4 items-center justify-between">
+                <!-- Search -->
+                 <div class="flex-1 text-black min-w-[200px] relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </div>
+                    <input type="text" 
+                           id="searchInput"
+                           placeholder="Search orders..." 
+                           class="w-full pl-10 pr-10 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 bg-white text-gray-800 placeholder-gray-500"
+                           value="<%= filters.search || '' %>">
+                    <button id="clearSearch" 
+                            class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer <%= filters.search ? 'visible' : 'invisible' %>"
+                            onclick="clearSearchInput()">
+                        <i class="fas fa-times text-gray-400 hover:text-gray-600"></i>
+                    </button>
+                </div> 
+
+                <!-- Status Filter -->
+                <select id="statusFilter" 
+                        class="px-4 py-2 text-gray-800 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white">
+                    <option value="all">All Status</option>
+                    <option value="Pending" <%= filters.status === 'Pending' ? 'selected' : '' %>>Pending</option>
+                    <option value="Processing" <%= filters.status === 'Processing' ? 'selected' : '' %>>Processing</option>
+                    <option value="Shipped" <%= filters.status === 'Shipped' ? 'selected' : '' %>>Shipped</option>
+                    <option value="Delivered" <%= filters.status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
+                </select> 
+
+                <!-- Date Range Picker -->
+                <input type="text" 
+                       id="dateRange"
+                       class="px-4 py-2 border rounded-lg text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-gray-500 min-w-[220px]"
+                       placeholder="Select date range"
+                       value="<%= filters.dateRange || '' %>">
+
+                <!-- Sort Options -->
+                 <select id="sortBy" 
+                        class="px-4 py-2 border text-gray-800 bg-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                    <option value="createdAt" <%= filters.sortBy === 'createdAt' ? 'selected' : '' %>>Date</option>
+                    <option value="total" <%= filters.sortBy === 'total' ? 'selected' : '' %>>Amount</option>
+                    <option value="orderId" <%= filters.sortBy === 'orderId' ? 'selected' : '' %>>Order ID</option>
+                </select>
+
+                <select id="sortOrder" 
+                        class="px-4 py-2 border text-gray-800 bg-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                    <option value="desc" <%= filters.sortOrder === 'desc' ? 'selected' : '' %>>Descending</option>
+                    <option value="asc" <%= filters.sortOrder === 'asc' ? 'selected' : '' %>>Ascending</option>
+                </select>
+            </div>
+        </div>  
+
+        <!-- Orders Table -->
+        <div class="card overflow-hidden">
+            <table class="w-full">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-4 text-black text-left text-sm font-medium text-gray-500">S.No</th>
+                        <th class="px-6 py-4 text-black text-left text-sm font-medium text-gray-500">Order ID</th>
+                        <th class="px-6 py-4 text-black text-left text-sm font-medium text-gray-500">Customer</th>
+                        <th class="px-6 py-4 text-black text-left text-sm font-medium text-gray-500">Date</th>
+                        <th class="px-6 py-4 text-black text-right text-sm font-medium text-gray-500">Amount</th>
+                        <th class="px-6 py-4 text-black text-center text-sm font-medium text-gray-500">Status</th>
+                        <th class="px-6 py-4 text-black text-center text-sm font-medium text-gray-500">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    <% orders.forEach((order, index) => { %>
+                        <tr class="hover:bg-gray-50/10">
+                            <td class="px-6 py-4 text-sm text-black-800">
+                                <%= (pagination.page - 1) * 10 + index + 1 %>
+                            </td>
+                            <td class="px-6 py-4">
+                                <a href="/admin/order/<%= order._id %>" 
+                                   class="text-blue-600 hover:text-blue-800">
+                                    <span class="font-medium">#<%= order.orderId %></span>
+                                </a>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div>
+                                    <% if (order.user && order.user.fname) { %>
+                                        <div class="font-medium"><%= order.user.fname %> <%= order.user.lname %></div>
+                                        <div class="text-sm text-gray-500"><%= order.user.email %></div>
+                                    <% } else { %>
+                                        <div class="font-medium text-gray-500">Deleted User</div>
+                                        <div class="text-sm text-gray-500">User no longer exists</div>
+                                    <% } %>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <%= new Date(order.createdAt).toLocaleDateString('en-US', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric'
+                                }) %>
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                ₹<%= order.total %>
+                            </td>
+                            <td class="px-6 py-4">
+                                <% if (order.orderStatus === 'Cancelled') { %>
+                                    <span class="px-3 py-1.5 rounded-full text-sm font-medium bg-red-100 text-red-700">
+                                        Cancelled
+                                    </span>
+                                <% } else { %>
+                                    <select 
+                                        onchange="updateOrderStatus('<%= order._id %>', this.value)"
+                                        class="w-full px-3 py-1.5 rounded-full text-sm font-medium
+                                            <%= order.orderStatus === 'Delivered' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700' %>"
+                                        <%= order.orderStatus === 'Delivered' ? 'disabled' : '' %>
+                                    >
+                                        <option value="Pending" <%= order.orderStatus === 'Pending' ? 'selected' : '' %>>Pending</option>
+                                        <option value="Processing" <%= order.orderStatus === 'Processing' ? 'selected' : '' %>>Processing</option>
+                                        <option value="Shipped" <%= order.orderStatus === 'Shipped' ? 'selected' : '' %>>Shipped</option>
+                                        <option value="Delivered" <%= order.orderStatus === 'Delivered' ? 'selected' : '' %>>Delivered</option>
+                                    </select>
+                                <% } %>
+                                <% if (order.orderStatus === 'Cancelled') { %>
+                                    <button onclick="showCancelReason(`<%= order.cancelReason %>`)"
+                                            class="ml-2 text-gray-400 hover:text-gray-300">
+                                        <i class="fas fa-info-circle"></i>
+                                    </button>
+                                <% } %>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex justify-center space-x-3">
+                                    <a href="/admin/order/<%= order._id %>" 
+                                       class="text-blue-600 hover:text-blue-800">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <% if (!['Delivered', 'Cancelled'].includes(order.orderStatus)) { %>
+                                        <button onclick="cancelOrder('<%= order._id %>')"
+                                                class="text-red-600 hover:text-red-800">
+                                            <i class="fas fa-times-circle">Cancel Order</i>
+                                        </button>
+                                    <% } %>
+                                </div>
+                            </td>
+                        </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+
+            <!-- Pagination -->
+            <% if (pagination.totalPages > 1) { %>
+                <div class="px-6 py-4 border-t">
+                    <div class="flex justify-center items-center space-x-4">
+                        <% if (pagination.hasPrev) { %>
+                            <a href="?page=<%= pagination.page - 1 %>" 
+                               class="px-4 py-2 bg-white border rounded-lg hover:bg-gray-50">
+                                Previous
+                            </a>
+                        <% } %>
+
+                        <% for(let i = 1; i <= pagination.totalPages; i++) { %>
+                            <a href="?page=<%= i %>"
+                               class="px-4 py-2 rounded-lg <%= pagination.page === i ? 'bg-green-600 text-white' : 'bg-white border hover:bg-gray-50' %>">
+                                <%= i %>
+                            </a>
+                        <% } %>
+
+                        <% if (pagination.hasNext) { %>
+                            <a href="?page=<%= pagination.page + 1 %>"
+                               class="px-4 py-2 bg-white border rounded-lg hover:bg-gray-50">
+                                Next
+                            </a>
+                        <% } %>
+                    </div>
+                </div>
+            <% } %>
+        </div>
+    </main>
+
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+
+    <script>
+        // Function to clear search input
+        function clearSearchInput() {
+            document.getElementById('searchInput').value = '';
+            applyFilters();
+        }
+
+        // Show/hide clear button based on input
+        document.getElementById('searchInput').addEventListener('input', function() {
+            const clearButton = document.getElementById('clearSearch');
+            clearButton.classList.toggle('invisible', !this.value);
+        });
+
+        // Initialize daterangepicker with better styling
+        $(document).ready(function() {
+            $('#dateRange').daterangepicker({
+                autoUpdateInput: false,
+                locale: {
+                    cancelLabel: 'Clear',
+                    format: 'YYYY-MM-DD'
+                },
+                opens: 'left',
+                drops: 'down',
+                maxDate: new Date()
+            });
+
+            $('#dateRange').on('apply.daterangepicker', function(ev, picker) {
+                $(this).val(picker.startDate.format('YYYY-MM-DD') + ' - ' + picker.endDate.format('YYYY-MM-DD'));
+                applyFilters();
+            });
+
+            $('#dateRange').on('cancel.daterangepicker', function(ev, picker) {
+                $(this).val('');
+                applyFilters();
+            });
+        });
+
+        // Filter functionality
+        let filterTimeout;
+        const applyFilters = () => {
+            clearTimeout(filterTimeout);
+            filterTimeout = setTimeout(() => {
+                const search = document.getElementById('searchInput').value;
+                const status = document.getElementById('statusFilter').value;
+                const dateRange = document.getElementById('dateRange').value;
+                const sortBy = document.getElementById('sortBy').value;
+                const sortOrder = document.getElementById('sortOrder').value;
+
+                const params = new URLSearchParams(window.location.search);
+                params.set('search', search);
+                params.set('status', status);
+                params.set('dateRange', dateRange);
+                params.set('sortBy', sortBy);
+                params.set('sortOrder', sortOrder);
+                params.set('page', '1'); // Reset to first page when filtering
+
+                window.location.href = `${window.location.pathname}?${params.toString()}`;
+            }, 500);
+        };
+
+        // Add event listeners to all filter inputs
+        document.getElementById('searchInput').addEventListener('change', applyFilters);
+        document.getElementById('statusFilter').addEventListener('change', applyFilters);
+        document.getElementById('sortBy').addEventListener('change', applyFilters);
+        document.getElementById('sortOrder').addEventListener('change', applyFilters);
+
+        // Order status update function
+        async function updateOrderStatus(orderId, status) {
+            try {
+                const response = await fetch(`/admin/order/${orderId}/status`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Status Updated',
+                        text: data.message,
+                        showConfirmButton: false,
+                        timer: 1500
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.message || 'Error updating status'
+                });
+            }
+        }
+
+        // Cancel order function
+        async function cancelOrder(orderId) {
+            const { value: reason } = await Swal.fire({
+                title: 'Cancel Order',
+                input: 'textarea',
+                inputLabel: 'Reason for cancellation',
+                inputPlaceholder: 'Enter reason for cancellation...',
+                showCancelButton: true,
+                confirmButtonColor: '#EF4444',
+                confirmButtonText: 'Cancel Order'
+            });
+
+            if (reason) {
+                try {
+                    const response = await fetch(`/admin/order/${orderId}/cancel`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ reason })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Order Cancelled',
+                            text: data.message,
+                            showConfirmButton: false,
+                            timer: 1500
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        throw new Error(data.message);
+                    }
+                } catch (error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: error.message || 'Error cancelling order'
+                    });
+                }
+            }
+        }
+
+        function showCancelReason(reason) {
+            Swal.fire({
+                title: 'Cancellation Reason',
+                text: reason || 'No reason provided',
+                icon: 'info'
+            });
+        }
+    </script>
+</body>
+</html> 

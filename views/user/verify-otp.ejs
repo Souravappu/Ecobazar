@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTP Verification</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.14.5/dist/sweetalert2.min.css" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        .otp-input {
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            text-align: center;
+            margin: 0 6px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            background-color: #f3f4f6;
+        }
+        .otp-input:focus {
+            outline: none;
+            border-color: #22c55e;
+            background-color: white;
+        }
+        .message {
+            transition: all 0.3s ease;
+        }
+        .timer-text {
+            color: #6B7280;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-sm border border-gray-200">
+            <!-- OTP Verification Header -->
+            <div class="text-center">
+                <h2 class="text-3xl font-bold text-gray-900 mb-2">OTP Verification</h2>
+                <p class="text-gray-600 text-sm">Enter the verification code we sent to your email</p>
+            </div>
+
+            <!-- OTP Input Form -->
+            <form id="otpForm" class="mt-8 space-y-6">
+                <div class="flex justify-center space-x-4">
+                    <input type="text" maxlength="1" class="otp-input" autofocus id="otp1">
+                    <input type="text" maxlength="1" class="otp-input" id="otp2">
+                    <input type="text" maxlength="1" class="otp-input" id="otp3">
+                    <input type="text" maxlength="1" class="otp-input" id="otp4">
+                </div>
+
+                <!-- Message Display -->
+                <div id="messageDiv" class="text-center hidden"></div>
+
+                <!-- Verify Button -->
+                <div>
+                    <button type="submit"
+                            class="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-full text-white bg-green-500 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        Verify OTP
+                    </button>
+                </div>
+
+                <!-- Resend Section -->
+                <div class="text-center space-y-2">
+                    <div id="timerDisplay" class="timer-text"></div>
+                    <button type="button" 
+                            id="resendOtpBtn"
+                            disabled
+                            class="text-green-600 hover:text-green-700 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+                        Resend OTP
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // OTP Input Handling
+        const inputs = document.querySelectorAll('.otp-input');
+        let resendTimer;
+        const RESEND_COOLDOWN = 30; // 30 seconds cooldown
+
+        // Handle OTP input fields
+        inputs.forEach((input, index) => {
+            input.addEventListener('input', function() {
+                if (this.value.length === 1) {
+                    if (index < inputs.length - 1) inputs[index + 1].focus();
+                }
+            });
+
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Backspace' && !this.value && index > 0) {
+                    inputs[index - 1].focus();
+                }
+            });
+        });
+
+        function showMessage(type, message) {
+            const messageDiv = document.getElementById('messageDiv');
+            messageDiv.textContent = message;
+            messageDiv.className = `text-sm rounded-md p-2 ${
+                type === 'success' 
+                    ? 'bg-green-100 text-green-700' 
+                    : 'bg-red-100 text-red-700'
+            }`;
+            messageDiv.classList.remove('hidden');
+
+            setTimeout(() => {
+                messageDiv.classList.add('hidden');
+            }, 5000);
+        }
+
+        function startResendCooldown() {
+            const resendButton = document.getElementById('resendOtpBtn');
+            const timerDisplay = document.getElementById('timerDisplay');
+            let timeLeft = RESEND_COOLDOWN;
+
+            resendButton.disabled = true;
+
+            if (resendTimer) clearInterval(resendTimer);
+
+            resendTimer = setInterval(() => {
+                if (timeLeft <= 0) {
+                    clearInterval(resendTimer);
+                    timerDisplay.textContent = '';
+                    resendButton.disabled = false;
+                    return;
+                }
+
+                timerDisplay.textContent = `Resend available in ${timeLeft} seconds`;
+                timeLeft--;
+            }, 1000);
+        }
+
+        document.getElementById('resendOtpBtn').addEventListener('click', function() {
+            this.disabled = true;
+            this.textContent = 'Sending...';
+
+            fetch('/resend-otp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage('success', data.message);
+                    startResendCooldown();
+                } else {
+                    showMessage('error', data.message);
+                    this.disabled = false;
+                }
+                this.textContent = 'Resend OTP';
+            })
+            .catch(error => {
+                console.error('Resend OTP error:', error);
+                showMessage('error', 'Failed to resend OTP. Please try again.');
+                this.disabled = false;
+                this.textContent = 'Resend OTP';
+            });
+        });
+
+        document.getElementById('otpForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const otp = Array.from(inputs)
+                .map(input => input.value)
+                .join('');
+
+            if (otp.length !== 4) {
+                showMessage('error', 'Please enter a valid 4-digit OTP');
+                return;
+            }
+
+            fetch('/verify-otp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ otp })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage('success', 'OTP verified successfully');
+                    setTimeout(() => {
+                        window.location.href = data.redirectUrl;
+                    }, 1000);
+                } else {
+                    showMessage('error', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('OTP verification error:', error);
+                showMessage('error', 'Failed to verify OTP. Please try again.');
+            });
+        });
+
+        // Start initial cooldown on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            startResendCooldown();
+        });
+    </script>
+</body>
+</html>

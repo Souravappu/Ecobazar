@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827;
+        }
+        .stat-card {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .chart-container {
+            background: rgba(17, 24, 39, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .table-row-hover:hover {
+            background-color: rgba(55, 65, 81, 0.5);
+        }
+    </style>
+</head>
+<body class="text-gray-200">
+    <!-- Sidebar -->
+    <aside class="w-64 h-screen bg-[#1A1C1E] flex flex-col fixed left-0 top-0 z-30">
+        <%- include('../layouts/side.ejs') %>
+    </aside>
+
+    <!-- Main Content Wrapper -->
+    <div class="flex flex-col min-h-screen">
+        <!-- Header -->
+        <header class="fixed top-0 right-0 left-64 z-20 bg-[#1A1C1E] shadow-lg">
+            <%- include('../layouts/head.ejs') %>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="ml-64 pt-16 min-h-screen">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <!-- Potential Growth -->
+                    <div class="stat-card rounded-xl p-6 transition-all duration-300 hover:transform hover:scale-105">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="text-gray-400 text-sm font-medium">Potential Growth</h3>
+                                <div class="mt-2 flex items-baseline">
+                                    <span class="text-2xl font-semibold">$12.34</span>
+                                    <span class="ml-2 text-green-500 text-sm">+3.5%</span>
+                                </div>
+                            </div>
+                            <div class="p-3 bg-green-500/10 rounded-lg">
+                                <i class="fas fa-arrow-trend-up text-green-500"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Revenue Current -->
+                    <div class="stat-card rounded-xl p-6 transition-all duration-300 hover:transform hover:scale-105">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="text-gray-400 text-sm font-medium">Revenue Current</h3>
+                                <div class="mt-2 flex items-baseline">
+                                    <span class="text-2xl font-semibold">$17.34</span>
+                                    <span class="ml-2 text-green-500 text-sm">+11%</span>
+                                </div>
+                            </div>
+                            <div class="p-3 bg-blue-500/10 rounded-lg">
+                                <i class="fas fa-arrow-trend-up text-blue-500"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Daily Income -->
+                    <div class="stat-card rounded-xl p-6 transition-all duration-300 hover:transform hover:scale-105">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="text-gray-400 text-sm font-medium">Daily Income</h3>
+                                <div class="mt-2 flex items-baseline">
+                                    <span class="text-2xl font-semibold">$12.34</span>
+                                    <span class="ml-2 text-red-500 text-sm">-2.4%</span>
+                                </div>
+                            </div>
+                            <div class="p-3 bg-red-500/10 rounded-lg">
+                                <i class="fas fa-arrow-trend-down text-red-500"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Expense Current -->
+                    <div class="stat-card rounded-xl p-6 transition-all duration-300 hover:transform hover:scale-105">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="text-gray-400 text-sm font-medium">Expense Current</h3>
+                                <div class="mt-2 flex items-baseline">
+                                    <span class="text-2xl font-semibold">$31.53</span>
+                                    <span class="ml-2 text-green-500 text-sm">+3.5%</span>
+                                </div>
+                            </div>
+                            <div class="p-3 bg-purple-500/10 rounded-lg">
+                                <i class="fas fa-arrow-trend-up text-purple-500"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <!-- Transaction History -->
+                    <div class="chart-container rounded-xl p-6">
+                        <h2 class="text-lg font-semibold mb-6">Transaction History</h2>
+                        <div class="flex justify-center mb-8">
+                            <canvas id="doughnutChart" width="250" height="250"></canvas>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center p-3 rounded-lg bg-gray-800/50">
+                                <div class="flex items-center gap-3">
+                                    <i class="fas fa-wallet text-blue-500"></i>
+                                    <span>Online Payment</span>
+                                </div>
+                                <span>$4,000</span>
+                            </div>
+                            <div class="flex justify-between items-center p-3 rounded-lg bg-gray-800/50">
+                                <div class="flex items-center gap-3">
+                                    <i class="fas fa-truck text-green-500"></i>
+                                    <span>Cash on Delivery</span>
+                                </div>
+                                <span>$4,000</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bar Chart -->
+                    <div class="chart-container rounded-xl p-6">
+                        <h2 class="text-lg font-semibold mb-6">Revenue Analytics</h2>
+                        <canvas id="barChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Revenue Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="chart-container rounded-xl p-6">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="text-gray-400 text-sm font-medium">Revenue</h3>
+                                <div class="mt-2">
+                                    <span class="text-2xl font-semibold">$32,123</span>
+                                    <span class="ml-2 text-green-500 text-sm">+3.5%</span>
+                                </div>
+                                <p class="text-sm text-gray-400 mt-2">11.38% Since last month</p>
+                            </div>
+                            <div class="p-3 bg-blue-500/10 rounded-lg">
+                                <i class="fas fa-cube text-blue-500 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chart-container rounded-xl p-6">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="text-gray-400 text-sm font-medium">Sales</h3>
+                                <div class="mt-2">
+                                    <span class="text-2xl font-semibold">$45,850</span>
+                                    <span class="ml-2 text-green-500 text-sm">+8.3%</span>
+                                </div>
+                                <p class="text-sm text-gray-400 mt-2">9.61% Since last month</p>
+                            </div>
+                            <div class="p-3 bg-red-500/10 rounded-lg">
+                                <i class="fas fa-shopping-cart text-red-500 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chart-container rounded-xl p-6">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="text-gray-400 text-sm font-medium">Purchase</h3>
+                                <div class="mt-2">
+                                    <span class="text-2xl font-semibold">$2,039</span>
+                                    <span class="ml-2 text-red-500 text-sm">-2.1%</span>
+                                </div>
+                                <p class="text-sm text-gray-400 mt-2">2.27% Since last month</p>
+                            </div>
+                            <div class="p-3 bg-green-500/10 rounded-lg">
+                                <i class="fas fa-desktop text-green-500 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Status Table -->
+                <div class="chart-container rounded-xl overflow-hidden">
+                    <div class="p-6 flex justify-between items-center">
+                        <h2 class="text-lg font-semibold">Order Status</h2>
+                        <select class="bg-gray-800 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option>Last 7 days</option>
+                            <option>Last 30 days</option>
+                            <option>Last 90 days</option>
+                        </select>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="bg-gray-800/50">
+                                    <th class="p-4 text-left">
+                                        <input type="checkbox" class="rounded bg-gray-700 border-gray-600">
+                                    </th>
+                                    <th class="p-4 text-left text-sm font-medium text-gray-400">Client Name</th>
+                                    <th class="p-4 text-left text-sm font-medium text-gray-400">Order No</th>
+                                    <th class="p-4 text-left text-sm font-medium text-gray-400">Product Cost</th>
+                                    <th class="p-4 text-left text-sm font-medium text-gray-400">Project</th>
+                                    <th class="p-4 text-left text-sm font-medium text-gray-400">Payment Mode</th>
+                                    <th class="p-4 text-left text-sm font-medium text-gray-400">Start Date</th>
+                                    <th class="p-4 text-left text-sm font-medium text-gray-400">Payment Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-800">
+                                <tr class="table-row-hover transition-colors">
+                                    <td class="p-4">
+                                        <input type="checkbox" class="rounded bg-gray-700 border-gray-600">
+                                    </td>
+                                    <td class="p-4">
+                                        <div class="flex items-center gap-3">
+                                            <img src="/api/placeholder/32/32" class="w-8 h-8 rounded-full bg-gray-700" alt="User">
+                                            <span class="font-medium">Henry Klein</span>
+                                        </div>
+                                    </td>
+                                    <td class="p-4">#02312</td>
+                                    <td class="p-4">$14,500</td>
+                                    <td class="p-4">Dashboard</td>
+                                    <td class="p-4">Credit card</td>
+                                    <td class="p-4">04 Dec 2023</td>
+                                    <td class="p-4">
+                                        <span class="px-3 py-1 rounded-full text-sm bg-green-500/20 text-green-500">
+                                            Approved
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script>
+        // Theme configuration for charts
+        Chart.defaults.color = '#9CA3AF';
+        Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)';
+
+        // Doughnut Chart
+        const doughnutCtx = document.getElementById('doughnutChart').getContext('2d');
+        new Chart(doughnutCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Online Payment', 'Cash on Delivery'],
+                datasets: [{
+                    data: [4000, 4000],
+                    backgroundColor: ['#3B82F6', '#22C55E'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                cutout: '75%',
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+
+        // Bar Chart
+        const barCtx = document.getElementById('barChart').getContext('2d');
+        new Chart(barCtx, {
+            type: 'bar',
+            data: {
+                labels: ['2018', '2019', '2020', '2021', '2022', '2023'],
+                datasets: [{
+                    label: 'Revenue',
+                    data: [10, 17, 3, 5, 2, 3],
+                    backgroundColor: ['#EF4444', '#3B82F6', '#F59E0B', '#22C55E', '#8B5CF6', '#EC4899'],
+                    borderWidth: 0,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+
+        

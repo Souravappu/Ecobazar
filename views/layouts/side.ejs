@@ -1,0 +1,179 @@
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #2a2f35;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4a5058;
+            border-radius: 4px;
+        }
+        /* Gradient Background Effect */
+        .gradient-bg {
+            background: linear-gradient(135deg, #1A1C1E 0%, #2C3036 100%);
+        }
+        /* Navigation Item Animations */
+        .nav-item {
+            position: relative;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(34, 197, 94, 0.2), transparent);
+            transition: all 0.5s ease;
+        }
+        .nav-item:hover::before {
+            left: 100%;
+        }
+        .nav-item:hover {
+            transform: translateX(10px);
+            color: white;
+        }
+        .nav-item.active {
+            background: rgba(34, 197, 94, 0.1);
+            border-left: 4px solid #22C55E;
+        }
+        /* Tooltip Styles */
+        .tooltip {
+            position: relative;
+        }
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            position: absolute;
+            z-index: 1;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            padding: 5px 10px;
+            border-radius: 6px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+
+    <aside class="w-72 h-screen gradient-bg text-gray-200  flex flex-col fixed left-0 top-0 shadow-2xl">
+        <!-- Logo Section with Subtle Animation -->
+        <div class="px-5 py-6 border-b border-gray-800 flex items-center justify-between">
+            <div class="flex items-center gap-3 transform transition hover:scale-105">
+                <i class="fas fa-leaf text-green-500 text-2xl animate-pulse"></i>
+                <span class="text-white text-xl font-bold tracking-wider">Ecobazar</span>
+            </div>
+            <button class="text-gray-400 hover:text-white tooltip">
+                <i class="fas fa-expand-arrows-alt"></i>
+                <span class="tooltip-text">Expand/Collapse</span>
+            </button>
+        </div>
+
+        <!-- Admin Profile Section with Hover Effect -->
+        <div class="px-5 py-4 border-b border-gray-800">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center 
+                                hover:ring-4 hover:ring-green-500 transition-all">
+                        <i class="fas fa-user-astronaut text-gray-300 text-lg"></i>
+                    </div>
+                    <div>
+                        <span class="text-white text-sm font-semibold block">Admin Panel</span>
+                        <span class="text-gray-400 text-xs">Welcome Back!</span>
+                    </div>
+                </div>
+                <button class="text-gray-500 hover:text-green-500 tooltip">
+                    <i class="fas fa-cog"></i>
+                    <span class="tooltip-text">Settings</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Navigation Menu with Enhanced Icons and Hover States -->
+        <nav class="flex-1 py-4 px-3 overflow-y-auto">
+            <ul class="space-y-2">
+                <li>
+                    <a href="/admin/" class="nav-item flex items-center text-gray-300 px-4 py-3 rounded-lg group">
+                        <i class="fas fa-chart-pie w-6 text-center mr-4 group-hover:text-green-400 transition"></i>
+                        <span class="flex-grow">Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/products" class="nav-item flex items-center text-gray-300 px-4 py-3 rounded-lg group">
+                        <i class="fas fa-box-open w-6 text-center mr-4 group-hover:text-green-400 transition"></i>
+                        <span class="flex-grow">Products</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/customers" class="nav-item flex items-center text-gray-300 px-4 py-3 rounded-lg group">
+                        <i class="fas fa-users-cog w-6 text-center mr-4 group-hover:text-green-400 transition"></i>
+                        <span class="flex-grow">Customers</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/category" class="nav-item flex items-center text-gray-300 px-4 py-3 rounded-lg group">
+                        <i class="fas fa-layer-group w-6 text-center mr-4 group-hover:text-green-400 transition"></i>
+                        <span class="flex-grow">Category</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/orders" class="nav-item flex items-center text-gray-300 px-4 py-3 rounded-lg group">
+                        <i class="fas fa-shopping-basket w-6 text-center mr-4 group-hover:text-green-400 transition"></i>
+                        <span class="flex-grow">Orders</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/coupons" class="nav-item flex items-center text-gray-300 px-4 py-3 rounded-lg group">
+                        <i class="fas fa-ticket-alt w-6 text-center mr-4 group-hover:text-green-400 transition"></i>
+                        <span class="flex-grow">Coupon</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Footer Section -->
+        <div class="px-5 py-4 border-t border-gray-800 text-center">
+            <p class="text-xs text-gray-500">© 2024 Ecobazar Admin</p>
+        </div>
+    </aside>
+
+    <script>
+        // Enhanced Active State Management
+        const navItems = document.querySelectorAll('.nav-item');
+        navItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                navItems.forEach(navItem => {
+                    navItem.classList.remove('active');
+                    navItem.style.transform = 'translateX(0)';
+                });
+                
+                item.classList.add('active');
+                item.style.transform = 'translateX(15px)';
+            });
+
+            // Subtle hover animation
+            item.addEventListener('mouseover', () => {
+                if (!item.classList.contains('active')) {
+                    item.style.transform = 'translateX(5px)';
+                }
+            });
+
+            item.addEventListener('mouseout', () => {
+                item.style.transform = 'translateX(0)';
+            });
+        });
+    </script>

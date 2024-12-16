@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Ecobazar</title>
+    
+    <!-- Include existing stylesheets -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        .product-card {
+            transition: all 0.3s ease;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .filter-option {
+            transition: all 0.3s ease;
+        }
+
+        .filter-option:hover {
+            background-color: #f3f4f6;
+            transform: translateX(5px);
+        }
+
+        .filter-option.active {
+            background-color: #e5e7eb;
+            font-weight: 500;
+            border-left: 3px solid #22c55e;
+        }
+
+        .filter-option img {
+            transition: transform 0.3s ease;
+        }
+
+        .filter-option:hover img {
+            transform: scale(1.1);
+        }
+
+        /* Custom Range Slider */
+        .price-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #e5e7eb;
+            outline: none;
+            border-radius: 2px;
+        }
+
+        .price-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #22c55e;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .wishlist-active {
+            color: hsl(137, 87%, 56%) !important;
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <%- include('../layouts/headerWithoutUser.ejs') %>
+
+    <main class="container mx-auto px-4 py-8">
+        <!-- Breadcrumb -->
+        <nav class="text-sm mb-6">
+            <ol class="list-none p-0 inline-flex">
+                <li class="flex items-center">
+                    <a href="/" class="text-gray-500 hover:text-green-600">Home</a>
+                    <svg class="w-3 h-3 mx-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                    </svg>
+                </li>
+                <% if (currentCategory) { %>
+                    <li class="flex items-center">
+                        <a href="/shop" class="text-gray-500 hover:text-green-600">Shop</a>
+                        <svg class="w-3 h-3 mx-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="text-gray-700"><%= currentCategory.name %></span>
+                    </li>
+                <% } else { %>
+                    <li class="text-gray-700">Shop</li>
+                <% } %>
+            </ol>
+        </nav>
+
+        <div class="flex flex-col md:flex-row gap-8">
+            <!-- Filters Sidebar -->
+            <div class="w-full md:w-64 space-y-6">
+                <!-- Categories Filter -->
+                <div class="bg-white p-4 rounded-lg shadow-sm">
+                    <h3 class="font-semibold text-lg mb-4">Categories</h3>
+                    <div class="space-y-2">
+                        <% categories.forEach(category => { %>
+                            <a href="/category/<%= category._id %>" 
+                               class="filter-option flex items-center space-x-3 px-3 py-2 rounded-md <%= currentCategory && currentCategory._id.toString() === category._id.toString() ? 'active' : '' %>">
+                                <div class="w-10 h-10 rounded-full overflow-hidden">
+                                    <img src="/uploads/categories/<%= category.image.split('/').pop() %>" 
+                                         alt="<%= category.name %>" 
+                                         class="w-full h-full object-cover"/>
+                                </div>
+                                <span class="flex-1">
+                                    <%= category.name %>
+                                </span>
+                            </a>
+                        <% }); %>
+                    </div>
+                </div>
+
+                <!-- Price Range Filter -->
+                <div class="bg-white p-4 rounded-lg shadow-sm">
+                    <h3 class="font-semibold text-lg mb-4">Price Range</h3>
+                    <div class="space-y-4">
+                        <input type="range" 
+                               class="price-slider" 
+                               min="0" 
+                               max="10000" 
+                               step="100"
+                               id="priceRange"
+                               value="10000">
+                        <div class="flex justify-between text-sm text-gray-600">
+                            <span>₹0</span>
+                            <span id="priceValue">₹Any</span>
+                            <span>₹10000</span>
+                        </div>
+                        <% if (priceRange && priceRange !== 'any') { %>
+                            <button onclick="clearPriceFilter()" 
+                                    class="text-sm text-red-600 hover:text-red-700 mt-2">
+                                Clear Price Filter
+                            </button>
+                        <% } %>
+                    </div>
+                </div>
+
+                <!-- Sort Options -->
+                <div class="bg-white p-4 rounded-lg shadow-sm">
+                    <h3 class="font-semibold text-lg mb-4">Sort By</h3>
+                    <div class="space-y-2">
+                        <button class="filter-option w-full text-left px-3 py-2 rounded-md" 
+                                onclick="sortProducts('price-asc')">
+                            Price: Low to High
+                        </button>
+                        <button class="filter-option w-full text-left px-3 py-2 rounded-md"
+                                onclick="sortProducts('price-desc')">
+                            Price: High to Low
+                        </button>
+                        <button class="filter-option w-full text-left px-3 py-2 rounded-md"
+                                onclick="sortProducts('newest')">
+                            Newest First
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Products Grid -->
+            <div class="flex-1">
+                <!-- Products Count and Sort -->
+                <div class="flex justify-between items-center mb-6">
+                    <p class="text-gray-600"><%= products.length %> Products</p>
+                    <select class="border rounded-md px-3 py-2" onchange="sortProducts(this.value)">
+                        <option value="default">Default Sorting</option>
+                        <option value="price-asc">Price: Low to High</option>
+                        <option value="price-desc">Price: High to Low</option>
+                        <option value="newest">Newest First</option>
+                    </select>
+                </div>
+
+                <!-- Products Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <% products.forEach(product => { %>
+                        <div class="product-card bg-white p-4 rounded-lg shadow-md relative" data-product-id="<%= product._id %>">
+                            <!-- Offer Badge -->
+                            <% if (product.regularPrice > product.salePrice) { %>
+                                <div class="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs">
+                                    <%= Math.round((product.regularPrice - product.salePrice) / product.regularPrice * 100) %>% OFF
+                                </div>
+                            <% } %>
+
+                            <!-- Product Image -->
+                            <a href="/product/<%= product._id %>" class="block">
+                                <img src="<%= product.images && product.images[0] ? `/uploads/products/${product.images[0].split('/').pop()}` : '/images/placeholder.jpg' %>"
+                                     alt="<%= product.name %>"
+                                     class="w-full h-48 object-cover rounded-lg mb-4 hover:opacity-90 transition-opacity">
+                            </a>
+
+                            <!-- Product Info -->
+                            <div class="space-y-3">
+                                <!-- Title -->
+                                <a href="/product/<%= product._id %>" class="block hover:text-green-600">
+                                    <h3 class="font-semibold text-gray-800 truncate"><%= product.name %></h3>
+                                </a>
+
+                                <!-- Unit and Stock Info -->
+                                <div class="flex justify-between text-sm">
+                                    <span class="flex items-center gap-1 text-gray-600">
+                                        <i class="fas <%= product.unit === 'kg' ? 'fa-weight' : 'fa-layer-group' %> text-green-600"></i>
+                                        <%= product.unitQuantity %> <%= product.unit === 'kg' ? 'kg' : 'pcs' %>/unit
+                                    </span>
+                                    <span class="<%= product.quantity > 0 ? 'text-green-600' : 'text-red-500' %>">
+                                        <%= product.quantity %> <%= product.unit === 'kg' ? 'units' : 'packs' %>
+                                    </span>
+                                </div>
+
+                                <!-- Price Section -->
+                                <div class="flex items-center justify-between">
+                                    <div class="flex flex-col">
+                                        <span class="text-green-600 font-bold text-lg">₹<%= product.salePrice %></span>
+                                        <% if (product.regularPrice > product.salePrice) { %>
+                                            <span class="text-sm text-gray-500 line-through">₹<%= product.regularPrice %></span>
+                                        <% } %>
+                                    </div>
+
+                                    <!-- Action Buttons -->
+                                    <div class="flex gap-2">
+                                        <% if (product.quantity > 0) { %>
+                                            <button onclick="addToCart('<%= product._id %>')" 
+                                                    class="bg-green-500 text-white p-2 rounded-full hover:bg-green-600 transition-colors">
+                                                <i class="fas fa-shopping-cart"></i>
+                                            </button>
+                                            <button onclick="toggleWishlist('<%= product._id %>')" 
+                                                    class="wishlist-btn bg-green-500 text-white p-2 rounded-full hover:bg-green-600 transition-colors">
+                                                <i class="fas fa-heart"></i>
+                                            </button>
+                                        <% } else { %>
+                                            <span class="text-red-500 text-sm font-medium">Out of Stock</span>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+
+                <!-- Pagination -->
+                <div class="mt-8 flex justify-center">
+                    <div class="flex space-x-2">
+                        <% for(let i = 1; i <= totalPages; i++) { %>
+                            <a href="?page=<%= i %>" 
+                               class="px-4 py-2 rounded-md <%= currentPage === i ? 'bg-green-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50' %>">
+                                <%= i %>
+                            </a>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <%- include('../layouts/footer.ejs') %>
+
+    <script>
+        // Price Range Slider
+        const priceRange = document.getElementById('priceRange');
+        const priceValue = document.getElementById('priceValue');
+        let isFirstChange = true;
+
+        priceRange.addEventListener('input', function() {
+            const value = this.value;
+            priceValue.textContent = value === '10000' ? '₹Any' : `₹${value}`;
+        });
+
+        priceRange.addEventListener('change', function() {
+            const value = this.value;
+            // Only update URL if user has actually changed the value
+            if (!isFirstChange) {
+                if (value === '10000') {
+                    // Remove price parameter from URL
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('price');
+                    window.location.href = url.toString();
+                } else {
+                    // Add or update price parameter
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('price', value);
+                    window.location.href = url.toString();
+                }
+            }
+            isFirstChange = false;
+        });
+
+        // Function to clear price filter
+        function clearPriceFilter() {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('price');
+            window.location.href = url.toString();
+        }
+
+        // Initialize price display
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPrice = new URLSearchParams(window.location.search).get('price');
+            if (!currentPrice) {
+                priceValue.textContent = '₹Any';
+                priceRange.value = 10000;
+            }
+            isFirstChange = false;
+        });
+
+        // Sort Products
+        function sortProducts(sortBy) {
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set('sort', sortBy);
+            window.location.href = currentUrl.toString();
+        }
+
+        // Add to Cart
+        function addToCart(productId) {
+            fetch('/cart/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    productId,
+                    quantity: 1
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => Promise.reject(err));
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Update cart count and total in header
+                    const cartCountElement = document.querySelector('.cart-count');
+                    const cartTotalElement = document.querySelector('.cart-total');
+                    
+                    if (cartCountElement) {
+                        cartCountElement.textContent = data.cart.count;
+                        // Only show count badge if there are items
+                        cartCountElement.style.display = data.cart.count > 0 ? 'flex' : 'none';
+                    }
+                    if (cartTotalElement) {
+                        cartTotalElement.textContent = `₹${data.cart.total}`;
+                    }
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Added to Cart!',
+                        text: 'Product has been added to your cart',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                } else {
+                    throw new Error(data.message || 'Error adding to cart');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: error.message || 'An error occurred. Please try again.'
+                });
+            });
+        }
+
+        // Initialize wishlist buttons based on server data
+        async function initializeWishlistButtons() {
+            try {
+                // Fetch user's wishlist items
+                const response = await fetch('/wishlist/items');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const wishlistItems = data.items;
+                    
+                    // Update all wishlist buttons
+                    const productCards = document.querySelectorAll('.product-card');
+                    productCards.forEach(card => {
+                        const productId = card.dataset.productId;
+                        const wishlistBtn = card.querySelector('.wishlist-btn');
+                        
+                        if (wishlistBtn) {
+                            // Check if product is in user's wishlist
+                            const isInWishlist = wishlistItems.some(item => 
+                                item.product.toString() === productId
+                            );
+                            
+                            if (isInWishlist) {
+                                wishlistBtn.classList.add('wishlist-active');
+                            } else {
+                                wishlistBtn.classList.remove('wishlist-active');
+                            }
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error initializing wishlist:', error);
+            }
+        }
+
+        // Call initialization on page load
+        document.addEventListener('DOMContentLoaded', initializeWishlistButtons);
+
+        // Update toggleWishlist function
+        function toggleWishlist(productId) {
+            // Check if user is logged in first
+            fetch('/check-auth')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.authenticated) {
+                        Swal.fire({
+                            title: 'Please Login',
+                            text: 'You need to login to add items to wishlist',
+                            icon: 'info',
+                            showCancelButton: true,
+                            confirmButtonText: 'Login',
+                            cancelButtonText: 'Cancel'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location.href = '/login';
+                            }
+                        });
+                        return;
+                    }
+
+                    const productCard = document.querySelector(`.product-card[data-product-id="${productId}"]`);
+                    const wishlistBtn = productCard.querySelector('.wishlist-btn');
+                    const isInWishlist = wishlistBtn.classList.contains('wishlist-active');
+
+                    const endpoint = isInWishlist ? `/wishlist/remove/${productId}` : '/wishlist/add';
+                    const method = isInWishlist ? 'DELETE' : 'POST';
+
+                    fetch(endpoint, {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: method === 'POST' ? JSON.stringify({ productId }) : undefined
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            wishlistBtn.classList.toggle('wishlist-active');
+                            
+                            // Update wishlist count in header
+                            const wishlistCount = document.querySelector('.wishlist-count');
+                            if (wishlistCount) {
+                                const currentCount = parseInt(wishlistCount.textContent || '0');
+                                wishlistCount.textContent = isInWishlist ? currentCount - 1 : currentCount + 1;
+                                wishlistCount.style.display = currentCount > 0 ? 'flex' : 'none';
+                            }
+                            
+                            Swal.fire({
+                                icon: 'success',
+                                title: isInWishlist ? 'Removed from Wishlist!' : 'Added to Wishlist!',
+                                text: isInWishlist ? 
+                                    'Product has been removed from your wishlist' : 
+                                    'Product has been added to your wishlist',
+                                showConfirmButton: false,
+                                timer: 1500
+                            });
+                        } else {
+                            throw new Error(data.message || 'Error updating wishlist');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: error.message || 'An error occurred. Please try again.'
+                        });
+                    });
+                })
+                .catch(error => {
+                    console.error('Auth check error:', error);
+                });
+        }
+    </script>
+</body>
+</html> 

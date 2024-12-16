@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Product</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+  <style>
+    :root {
+      --primary-dark: #1f2937;
+      --secondary-dark: #111827;
+      --accent-blue: #3b82f6;
+      --text-primary: #e5e7eb;
+      --text-secondary: #9ca3af;
+    }
+
+    .image-container {
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .image-container:hover .image-overlay {
+      opacity: 1;
+    }
+
+    .image-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      border-radius: 8px;
+    }
+
+    .remove-image-btn {
+      background: #ef4444;
+      color: white;
+      padding: 0.5rem;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .remove-image-btn:hover {
+      background: #dc2626;
+      transform: scale(1.1);
+    }
+
+    .image-preview-container {
+      position: relative;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .removed-image {
+      animation: fadeOut 0.3s ease-out forwards;
+    }
+
+    @keyframes fadeOut {
+      from {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      to {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+    }
+
+    body {
+      background-color: var(--secondary-dark);
+      color: var(--text-primary);
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes glowPulse {
+      0% {
+        box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
+      }
+
+      50% {
+        box-shadow: 0 0 15px rgba(59, 130, 246, 0.8);
+      }
+
+      100% {
+        box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
+      }
+    }
+
+    .fade-in-up {
+      animation: fadeInUp 0.6s ease-out forwards;
+    }
+
+    /* Form Sections */
+    .form-section {
+      background: var(--primary-dark);
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .form-section:hover {
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+      border-color: rgba(59, 130, 246, 0.4);
+    }
+
+    /* Enhanced Input Styling */
+    .input-box input,
+    .input-box textarea,
+    .input-box select {
+      background: rgba(17, 24, 39, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-primary);
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      width: 100%;
+    }
+
+    .input-box input:focus,
+    .input-box textarea:focus,
+    .input-box select:focus {
+      background: rgba(17, 24, 39, 0.95);
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+      outline: none;
+    }
+
+    /* Section Headers */
+    .section-header {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid rgba(59, 130, 246, 0.3);
+      margin-bottom: 1.5rem;
+    }
+
+    /* Image Upload Area */
+    .image-upload {
+      border: 2px dashed rgba(255, 255, 255, 0.2);
+      background: rgba(17, 24, 39, 0.6);
+      transition: all 0.3s ease;
+    }
+
+    .image-upload:hover {
+      border-color: var(--accent-blue);
+      background: rgba(17, 24, 39, 0.8);
+    }
+
+    /* Current Images Display */
+    .current-image {
+      position: relative;
+      transition: transform 0.3s ease;
+    }
+
+    .current-image:hover {
+      transform: scale(1.05);
+    }
+
+    .current-image img {
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Save Button */
+    .save-button {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: white;
+      padding: 0.75rem 2rem;
+      border-radius: 8px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+
+    .save-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    }
+
+    /* Loading Animation */
+    .loading-overlay {
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+    }
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(59, 130, 246, 0.3);
+      border-radius: 50%;
+      border-top-color: #3b82f6;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .color-picker-wrapper {
+      position: relative;
+      width: 100%;
+    }
+
+    .color-preview {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      margin-right: 12px;
+      transition: transform 0.3s ease;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      cursor: pointer;
+    }
+
+    .color-preview:hover {
+      transform: scale(1.05);
+      animation: glowPulse 1.5s infinite;
+    }
+
+    .color-input-group {
+      display: flex;
+      align-items: center;
+      background: rgba(17, 24, 39, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 0.5rem;
+      transition: all 0.3s ease;
+    }
+
+    .color-input-group:focus-within {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+
+    .color-text-input {
+      background: transparent !important;
+      border: none !important;
+      padding: 0.5rem !important;
+      color: var(--text-primary) !important;
+      width: calc(100% - 52px) !important;
+    }
+
+    .color-text-input:focus {
+      box-shadow: none !important;
+    }
+
+    .color-picker-popup {
+      position: absolute;
+      top: calc(100% + 10px);
+      left: 0;
+      background: var(--primary-dark);
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      z-index: 1000;
+      width: 300px;
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: none;
+    }
+
+    .color-picker-popup.active {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .preset-colors {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 8px;
+      margin-bottom: 1rem;
+    }
+
+    .preset-color {
+      width: 100%;
+      padding-bottom: 100%;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .preset-color:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .custom-picker {
+      width: 100%;
+      height: 40px;
+      margin-top: 0.5rem;
+      border-radius: 6px;
+      cursor: pointer;
+      background: linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%);
+    }
+
+    .custom-picker::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+
+    .custom-picker::-webkit-color-swatch {
+      border: none;
+      border-radius: 6px;
+    }
+
+    .input-box input.border-red-500,
+    .input-box textarea.border-red-500,
+    .input-box select.border-red-500 {
+        border-color: #ef4444;
+        box-shadow: 0 0 0 1px #ef4444;
+    }
+
+    #salePriceDisplay {
+        transition: all 0.3s ease;
+    }
+
+    #salePriceDisplay.text-green-500 {
+        color: #10b981;
+        font-size: 1.1em;
+    }
+
+    .existing-images-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .existing-image-wrapper {
+        position: relative;
+        aspect-ratio: 1;
+    }
+
+    .existing-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 0.5rem;
+    }
+
+    .remove-existing-btn {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        background: #ef4444;
+        color: white;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .remove-existing-btn:hover {
+        background: #dc2626;
+        transform: scale(1.1);
+    }
+
+    .image-upload.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .image-upload.disabled input {
+        pointer-events: none;
+    }
+
+    /* Modal styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.9);
+        overflow: auto;
+    }
+
+    .modal-content {
+        position: relative;
+        margin: 2% auto;
+        padding: 20px;
+        width: 90%;
+        max-width: 800px;
+        background: var(--primary-dark);
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .cropper-container {
+        width: 100%;
+        height: 500px;
+        margin: 20px 0;
+        background: #000;
+        overflow: hidden;
+        border-radius: 8px;
+    }
+
+    .crop-btn {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+        padding: 0.75rem 2rem;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        margin-top: 20px;
+    }
+
+    .crop-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    }
+
+    .close-modal {
+        position: absolute;
+        right: 20px;
+        top: 20px;
+        font-size: 28px;
+        color: #fff;
+        cursor: pointer;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(239, 68, 68, 0.2);
+        border-radius: 50%;
+        transition: all 0.3s ease;
+    }
+
+    .close-modal:hover {
+        background: rgba(239, 68, 68, 0.4);
+        transform: rotate(90deg);
+    }
+
+    /* Cropper.js custom styles */
+    .cropper-view-box,
+    .cropper-face {
+        border-radius: 8px;
+    }
+
+    .cropper-line,
+    .cropper-point {
+        background-color: #3b82f6;
+    }
+
+    .cropper-bg {
+        background-image: linear-gradient(45deg, #1f2937 25%, transparent 25%),
+            linear-gradient(-45deg, #1f2937 25%, transparent 25%),
+            linear-gradient(45deg, transparent 75%, #1f2937 75%),
+            linear-gradient(-45deg, transparent 75%, #1f2937 75%);
+        background-size: 20px 20px;
+        background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    }
+
+    /* Make sure modal is centered on all screen sizes */
+    @media (max-height: 800px) {
+        .modal-content {
+            margin: 1% auto;
+            height: 98%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .cropper-container {
+            flex: 1;
+            min-height: 300px;
+        }
+    }
+  </style>
+</head>
+
+<body class="min-h-screen">
+ 
+    <%- include('../layouts/side.ejs') %>
+    <%- include('../layouts/head.ejs') %>
+
+    <div class="flex-1 ml-64 p-12">
+       
+      <!-- Header Section -->
+      <div class="flex items-center justify-between mb-8 fade-in-up">
+        <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 text-transparent bg-clip-text">
+          Edit Product
+        </h1>
+      </div>
+
+      <form action="/admin/edit-product/<%= product._id %>" method="post" enctype="multipart/form-data">
+        <!-- General Information Section -->
+        <div class="form-section p-6 mb-6 fade-in-up">
+          <h2 class="section-header">General Information</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="input-box">
+              <label class="block text-sm font-medium text-gray-400 mb-2">Product Name</label>
+              <input type="text" value="<%= product.name %>" name="name" placeholder="Enter product name" />
+            </div>
+            <div class="input-box">
+              <label class="block text-sm font-medium text-gray-400 mb-2">Stock Quantity</label>
+              <input type="number" value="<%= product.quantity %>" name="stock" placeholder="Enter stock quantity" />
+            </div>
+            <div class="col-span-2 input-box">
+              <label class="block text-sm font-medium text-gray-400 mb-2">Description</label>
+              <textarea name="description" rows="4" placeholder="Enter product description"><%= product.description %></textarea>
+            </div>
+            <div class="input-box">
+              <label class="block text-sm font-medium text-gray-400 mb-2">Unit Type</label>
+              <select name="unit" class="w-full" onchange="toggleUnitFields(this.value)">
+                <option value="">Select unit type</option>
+                <option value="kg" <%= product.unit === 'kg' ? 'selected' : '' %>>Kilogram (KG)</option>
+                <option value="nos" <%= product.unit === 'nos' ? 'selected' : '' %>>Numbers (NOS)</option>
+              </select>
+            </div>
+
+            <div class="input-box">
+              <label class="block text-sm font-medium text-gray-400 mb-2" id="unitQuantityLabel">
+                <%= product.unit === 'kg' ? 'Weight per Unit' : 'Pieces per Unit' %>
+              </label>
+              <div class="flex items-center gap-2">
+                <input type="number" 
+                       name="unitQuantity" 
+                       id="unitQuantity"
+                       step="<%= product.unit === 'kg' ? '0.01' : '1' %>" 
+                       min="<%= product.unit === 'kg' ? '0.01' : '1' %>" 
+                       value="<%= product.unitQuantity %>"
+                       placeholder="Enter unit quantity"
+                       class="flex-1" />
+                <span id="unitText" class="text-gray-400 w-16">
+                  <%= product.unit === 'kg' ? 'KG' : 'PCS' %>
+                </span>
+              </div>
+              <p class="text-sm text-gray-500 mt-1" id="unitHelperText">
+                <%= product.unit === 'kg' ? 
+                  'For kg: Enter in kilograms (e.g., 0.25 for 250g)' : 
+                  'For numbers: Enter pieces per unit (e.g., 12 for a dozen)' %>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pricing Section -->
+        <div class="form-section p-6 mb-6 fade-in-up">
+          <h2 class="section-header">Pricing Information</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="input-box">
+              <label class="block text-sm font-medium text-gray-400 mb-2">Base Price</label>
+              <input type="number" value="<%= product.regularPrice %>" name="price" placeholder="Enter base price" />
+            </div>
+            <div class="input-box">
+              <label class="block text-sm font-medium text-gray-400 mb-2">Discount Percentage</label>
+              <input type="number" value="<%= product.productOffer %>" name="discount" placeholder="Enter discount percentage" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Category Section -->
+        <div class="form-section p-6 mb-6 fade-in-up">
+          <h2 class="section-header">Category</h2>
+          <div class="input-box">
+            <label class="block text-sm font-medium text-gray-400 mb-2">Product Category</label>
+            <select name="category" class="w-full">
+              <option value="<%= category.name %>"><%= category.name %> (Current)</option>
+              <% categories.forEach(category => { %>
+              <option value="<%= category.name %>"><%= category.name %></option>
+              <% }) %>
+            </select>
+          </div>
+        </div>
+
+        <!-- Images Section -->
+        <div class="form-section p-6 mb-6 fade-in-up">
+          <h2 class="section-header">Product Images</h2>
+          
+          <!-- Existing Images -->
+          <div class="mb-6">
+            <h3 class="text-lg font-medium text-gray-300 mb-4">Current Images</h3>
+            <div class="existing-images-container">
+              <% product.images.forEach((image, index) => { %>
+                <div class="existing-image-wrapper" data-image="<%= image %>">
+                    <img src="http://localhost:3000/uploads<%= image %>" alt="Product image <%= index + 1 %>" class="existing-image">
+                    <button type="button" class="remove-existing-btn" onclick="removeExistingImage(this)">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <input type="hidden" name="existingImages" value="<%= image %>">
+                </div>
+              <% }) %>
+            </div>
+          </div>
+
+          <!-- Upload New Images -->
+          <div class="image-upload rounded-lg p-6 text-center">
+            <input type="file" name="productImage" accept="image/png, image/jpeg, image/jpg" multiple class="hidden" id="imageInput" />
+            <label for="imageInput" class="cursor-pointer block">
+              <i class="fas fa-cloud-upload-alt text-3xl mb-2 text-blue-500"></i>
+              <p class="text-gray-400">Drop your images here or click to browse</p>
+              <p class="text-sm text-gray-500 mt-2">Maximum 5 images allowed in total</p>
+            </label>
+            <p id="imageError" class="text-red-500 mt-2 text-sm hidden"></p>
+          </div>
+          <div id="imagePreview" class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4"></div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="flex justify-center mb-6 fade-in-up">
+          <button type="submit" class="save-button">
+            <i class="fas fa-save mr-2"></i>
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="loading-overlay fixed inset-0 hidden items-center justify-center z-50">
+    <div class="bg-gray-900 p-8 rounded-lg shadow-xl">
+      <div class="loading-spinner mb-4"></div>
+      <p class="text-center text-gray-300">Saving changes...</p>
+    </div>
+  </div>
+
+  <!-- Cropper Modal -->
+  <div id="cropperModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <div class="cropper-container">
+            <img id="cropperImage" src="" alt="Image to crop">
+        </div>
+        <div class="flex justify-end gap-4">
+            <button type="button" class="crop-btn" id="cropButton">
+                <i class="fas fa-crop-alt mr-2"></i>Crop Image
+            </button>
+        </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        const nameInput = form.elements.name;
+        const quantityInput = form.elements.stock;
+        const priceInput = form.elements.price;
+        const discountInput = form.elements.discount;
+        const descriptionInput = form.elements.description;
+        const categorySelect = form.elements.category;
+        const imageInput = document.getElementById('imageInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const imageError = document.getElementById('imageError');
+        const modal = document.getElementById('cropperModal');
+        const cropperImage = document.getElementById('cropperImage');
+        const cropButton = document.getElementById('cropButton');
+        const closeModal = document.querySelector('.close-modal');
+        let cropper = null;
+        let currentImageIndex = 0;
+        let croppedImages = [];
+        let selectedFiles = [];
+        let existingImagesCount = document.querySelectorAll('.existing-image-wrapper').length;
+
+        // Function to show error messages
+        function showError(message) {
+            const errorDiv = document.getElementById('imageError');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+        }
+
+        // Function to hide error messages
+        function hideError() {
+            const errorDiv = document.getElementById('imageError');
+            errorDiv.textContent = '';
+            errorDiv.classList.add('hidden');
+        }
+
+        // Function to remove existing images
+        window.removeExistingImage = function(button) {
+            const wrapper = button.closest('.existing-image-wrapper');
+            wrapper.remove();
+            existingImagesCount--;
+            updateFileInputState();
+        };
+
+        // Function to remove preview images
+        window.removePreviewImage = function(button) {
+            const container = button.closest('.image-preview-container');
+            const index = Array.from(imagePreview.children).indexOf(container);
+            
+            croppedImages.splice(index, 1);
+                    
+                    // Update the input files
+                    const dataTransfer = new DataTransfer();
+                    croppedImages.forEach(file => {
+                        dataTransfer.items.add(file);
+                    });
+                    imageInput.files = dataTransfer.files;
+            
+            container.remove();
+            updateFileInputState();
+        };
+
+        // Function to update file input state
+        function updateFileInputState() {
+            const totalImages = existingImagesCount + (imageInput.files ? imageInput.files.length : 0);
+            const uploadLabel = imageInput.nextElementSibling;
+
+            if (totalImages >= 5) {
+                imageInput.disabled = true;
+                uploadLabel.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                imageInput.disabled = false;
+                uploadLabel.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        // Form validation function
+        function validateForm() {
+            let isValid = true;
+            clearAllErrors();
+
+            // Validate name
+            if (!nameInput.value.trim()) {
+                showInputError(nameInput, 'Product name is required');
+                isValid = false;
+            } else if (nameInput.value.trim().length < 3) {
+                showInputError(nameInput, 'Product name must be at least 3 characters');
+                isValid = false;
+            }
+
+            // Validate quantity
+            const quantity = parseInt(quantityInput.value);
+            if (isNaN(quantity) || quantity < 0) {
+                showInputError(quantityInput, 'Quantity must be 0 or greater');
+                isValid = false;
+            }
+
+            // Validate price
+            const price = parseFloat(priceInput.value);
+            if (isNaN(price) || price < 1) {
+                showInputError(priceInput, 'Price must be at least ₹1');
+                isValid = false;
+            }
+
+            // Validate discount
+            const discount = parseFloat(discountInput.value);
+            if (!isNaN(discount) && (discount < 0 || discount > 91)) {
+                showInputError(discountInput, 'Discount must be between 0 and 90%');
+                isValid = false;
+            }
+
+            // Validate description
+            if (!descriptionInput.value.trim()) {
+                showInputError(descriptionInput, 'Description is required');
+                isValid = false;
+            }
+
+            // Validate total images
+            const totalImages = existingImagesCount + (imageInput.files ? imageInput.files.length : 0);
+            if (totalImages === 0) {
+                showError('At least one product image is required');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        // Function to show input errors
+        function showInputError(input, message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'text-red-500 text-sm mt-1';
+            errorDiv.textContent = message;
+            input.classList.add('border-red-500');
+            input.parentElement.appendChild(errorDiv);
+        }
+
+        // Function to clear all errors
+        function clearAllErrors() {
+            document.querySelectorAll('.text-red-500').forEach(error => error.remove());
+            document.querySelectorAll('.border-red-500').forEach(input => 
+                input.classList.remove('border-red-500')
+            );
+        }
+
+        // Function to update sale price
+        function updateSalePrice() {
+            const price = parseFloat(priceInput.value) || 0;
+            const discount = parseFloat(discountInput.value) || 0;
+            const salePrice = price - (price * (discount / 100));
+            
+            const salePriceDisplay = document.getElementById('salePriceDisplay') || createSalePriceDisplay();
+            salePriceDisplay.textContent = `Sale Price: ₹${salePrice.toFixed(2)}`;
+            
+            if (salePrice < price) {
+                salePriceDisplay.classList.add('text-green-500');
+            } else {
+                salePriceDisplay.classList.remove('text-green-500');
+            }
+        }
+
+        function createSalePriceDisplay() {
+            const div = document.createElement('div');
+            div.id = 'salePriceDisplay';
+            div.className = 'text-lg font-semibold mt-2';
+            priceInput.parentElement.appendChild(div);
+            return div;
+        }
+
+        // Add event listeners for real-time validation
+        nameInput.addEventListener('input', function() {
+            clearAllErrors();
+            if (this.value.trim().length < 3) {
+                showInputError(this, 'Product name must be at least 3 characters');
+            }
+        });
+
+        quantityInput.addEventListener('input', function() {
+            clearAllErrors();
+            const value = parseInt(this.value);
+            if (isNaN(value) || value < 0) {
+                this.value = 0;
+            }
+        });
+
+        priceInput.addEventListener('input', function() {
+            clearAllErrors();
+            const value = parseFloat(this.value);
+            if (value < 1) {
+                showInputError(this, 'Price must be at least ₹1');
+            }
+            updateSalePrice();
+        });
+
+        discountInput.addEventListener('input', function() {
+            clearAllErrors();
+            const value = parseFloat(this.value);
+            if (value < 0) this.value = 0;
+            if (value > 91) this.value = 90;
+        updateSalePrice();
+        });
+
+        // Initialize sale price display
+        updateSalePrice();
+
+        // Image input change handler
+        imageInput.addEventListener('change', function(e) {
+            const files = Array.from(e.target.files);
+            const totalImages = existingImagesCount + files.length;
+            
+            if (totalImages > 5) {
+                showError('Total number of images cannot exceed 5');
+                imageInput.value = '';
+                return;
+            }
+
+            // Validate files
+            const invalidFiles = files.filter(file => {
+                const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+                const maxSize = 5 * 1024 * 1024; // 5MB
+                
+                if (!validTypes.includes(file.type)) {
+                    showError(`${file.name} is not a valid image type. Only JPG, JPEG, and PNG are allowed.`);
+                    return true;
+                }
+                
+                if (file.size > maxSize) {
+                    showError(`${file.name} is too large. Maximum file size is 5MB.`);
+                    return true;
+                }
+                
+                return false;
+            });
+
+            if (invalidFiles.length > 0) {
+                imageInput.value = '';
+                return;
+            }
+
+            selectedFiles = files;
+            currentImageIndex = 0;
+            croppedImages = [];
+            imagePreview.innerHTML = '';
+            hideError();
+
+            // Start cropping the first image
+            showCropper(files[0]);
+        });
+
+        function showCropper(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                cropperImage.src = e.target.result;
+                modal.style.display = 'block';
+                
+                if (cropper) {
+                    cropper.destroy();
+                }
+                
+                cropper = new Cropper(cropperImage, {
+                    aspectRatio: 1,
+                    viewMode: 2,
+                    dragMode: 'move',
+                    autoCropArea: 1,
+                    restore: false,
+                    guides: true,
+                    center: true,
+                    highlight: false,
+                    cropBoxMovable: true,
+                    cropBoxResizable: true,
+                    toggleDragModeOnDblclick: false,
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+
+        cropButton.addEventListener('click', function() {
+            const croppedCanvas = cropper.getCroppedCanvas({
+                width: 600,
+                height: 600
+            });
+
+            croppedCanvas.toBlob(function(blob) {
+                const croppedFile = new File([blob], selectedFiles[currentImageIndex].name, {
+                    type: 'image/jpeg',
+                    lastModified: new Date().getTime()
+                });
+                
+                croppedImages.push(croppedFile);
+                
+                // Add preview
+                const previewContainer = document.createElement('div');
+                previewContainer.className = 'image-preview-container';
+                previewContainer.innerHTML = `
+                    <div class="image-container relative group">
+                        <img src="${croppedCanvas.toDataURL()}" class="w-full h-32 object-cover rounded-lg shadow-md" />
+                        <div class="image-overlay">
+                            <button type="button" class="remove-image-btn" onclick="removePreviewImage(this)">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                imagePreview.appendChild(previewContainer);
+
+                currentImageIndex++;
+                if (currentImageIndex < selectedFiles.length) {
+                    showCropper(selectedFiles[currentImageIndex]);
+                } else {
+                    modal.style.display = 'none';
+                    cropper.destroy();
+                    cropper = null;
+                    
+                    // Update the input files
+                    const dataTransfer = new DataTransfer();
+                    croppedImages.forEach(file => {
+                        dataTransfer.items.add(file);
+                    });
+                    imageInput.files = dataTransfer.files;
+                }
+            }, 'image/jpeg', 0.9);
+        });
+
+        // Modal close handlers
+        closeModal.addEventListener('click', function() {
+            modal.style.display = 'none';
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+            imageInput.value = '';
+            imagePreview.innerHTML = '';
+            currentImageIndex = 0;
+            croppedImages = [];
+            selectedFiles = [];
+        });
+
+        window.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeModal.click();
+            }
+        });
+
+        // Form submission handler
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (validateForm()) {
+                const loadingOverlay = document.getElementById('loadingOverlay');
+                if (loadingOverlay) {
+                    loadingOverlay.classList.remove('hidden');
+                    loadingOverlay.classList.add('flex');
+                }
+                
+                // Submit the form
+                this.submit();
+            }
+        });
+
+        // Initialize file input state
+        updateFileInputState();
+    });
+
+    function validateEditForm() {
+        clearAllErrors();
+        let isValid = true;
+
+        // Get all form fields
+        const name = document.querySelector('input[name="name"]');
+        const description = document.querySelector('textarea[name="description"]');
+        const price = document.querySelector('input[name="price"]');
+        const stock = document.querySelector('input[name="stock"]');
+        const category = document.querySelector('select[name="category"]');
+        const unit = document.querySelector('select[name="unit"]');
+        const unitQuantity = document.querySelector('input[name="unitQuantity"]');
+
+        // Validate unit type
+        if (!unit.value) {
+            showInputError(unit, 'Please select a unit type');
+            isValid = false;
+        }
+
+        // Validate unit quantity based on unit type
+        if (!unitQuantity.value) {
+            showInputError(unitQuantity, 'Please enter unit quantity');
+            isValid = false;
+        } else {
+            const qty = parseFloat(unitQuantity.value);
+            if (unit.value === 'kg') {
+                if (qty < 0.01 || qty > 25) {
+                    showInputError(unitQuantity, 'Weight must be between 0.01 and 25 kg');
+                    isValid = false;
+                }
+            } else if (unit.value === 'nos') {
+                if (!Number.isInteger(qty) || qty < 1 || qty > 100) {
+                    showInputError(unitQuantity, 'Pieces must be between 1 and 100');
+                    isValid = false;
+                }
+            }
+        }
+
+        // Validate stock quantity
+        if (!stock.value) {
+            showInputError(stock, 'Please enter stock quantity');
+            isValid = false;
+        } else {
+            const qty = parseInt(stock.value);
+            if (qty < 0) {
+                showInputError(stock, 'Stock quantity cannot be negative');
+                isValid = false;
+            }
+            if (!Number.isInteger(qty)) {
+                showInputError(stock, 'Stock quantity must be a whole number');
+                isValid = false;
+            }
+        }
+
+        // Add to existing validation
+        if (!name.value.trim()) {
+            showInputError(name, 'Product name is required');
+            isValid = false;
+        }
+
+        if (!description.value.trim()) {
+            showInputError(description, 'Description is required');
+            isValid = false;
+        }
+
+        if (!price.value || parseFloat(price.value) <= 0) {
+            showInputError(price, 'Please enter a valid price');
+            isValid = false;
+        }
+
+        if (!category.value) {
+            showInputError(category, 'Please select a category');
+            isValid = false;
+        }
+
+        return isValid;
+    }
+
+    // Add event listeners for real-time validation
+    document.querySelector('select[name="unit"]').addEventListener('change', function() {
+        const unitQuantityInput = document.querySelector('input[name="unitQuantity"]');
+        clearInputError(unitQuantityInput);
+        
+        if (this.value === 'kg') {
+            unitQuantityInput.setAttribute('step', '0.01');
+            unitQuantityInput.setAttribute('min', '0.01');
+            unitQuantityInput.setAttribute('max', '25');
+        } else if (this.value === 'nos') {
+            unitQuantityInput.setAttribute('step', '1');
+            unitQuantityInput.setAttribute('min', '1');
+            unitQuantityInput.setAttribute('max', '100');
+        }
+    });
+
+    document.querySelector('input[name="unitQuantity"]').addEventListener('input', function() {
+        clearInputError(this);
+        const unit = document.querySelector('select[name="unit"]').value;
+        const value = parseFloat(this.value);
+
+        if (unit === 'kg') {
+            if (value < 0.01 || value > 25) {
+                showInputError(this, 'Weight must be between 0.01 and 25 kg');
+            }
+        } else if (unit === 'nos') {
+            if (!Number.isInteger(value) || value < 1 || value > 100) {
+                showInputError(this, 'Pieces must be between 1 and 100');
+            }
+        }
+    });
+
+    // Add form submit handler
+    document.querySelector('form').addEventListener('submit', function(e) {
+        if (!validateEditForm()) {
+            e.preventDefault();
+        }
+    });
+  </script>
+</body>
+
+</html>

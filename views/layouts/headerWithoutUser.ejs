@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= typeof title !== 'undefined' ? title : 'Ecobazar' %></title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: white;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 10;
+            border-radius: 0.5rem;
+        }
+
+        .dropdown-content {
+            transition: all 0.3s ease;
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .dropdown-content.show {
+            display: block;
+            opacity: 1;
+            visibility: visible;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: white;
+                z-index: 100;
+                overflow-y: auto;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            
+            .mobile-menu.active {
+                display: block;
+                transform: translateX(0);
+            }
+
+            .mobile-menu-close {
+                position: absolute;
+                top: 15px;
+                right: 15px;
+                font-size: 24px;
+                cursor: pointer;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="bg-white py-2 border-b">
+        <div class="container mx-auto px-4 flex flex-col sm:flex-row justify-between items-center">
+            <div class="flex items-center gap-2 mb-2 sm:mb-0">
+                <i class="fas fa-location-dot text-gray-600"></i>
+                <span class="text-sm text-gray-600"><%= locals.storeLocation || 'Lincoln- 344, Illinois, Chicago, USA' %></span>
+            </div>
+            <div class="flex items-center gap-4">
+                <select class="text-sm border-none bg-transparent" id="languageSelect">
+                    <option value="en">English</option>
+                    <option value="es">Español</option>
+                    <option value="fr">Français</option>
+                </select>
+                <select class="text-sm border-none bg-transparent" id="currencySelect">
+                    <option value="USD">USD ($)</option>
+                    <option value="EUR">EUR (€)</option>
+                    <option value="GBP">GBP (£)</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Header -->
+    <header class="bg-white py-4 shadow-sm " >
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                <!-- Logo -->
+                <a href="/" class="flex items-center gap-2">
+                    <i class="fas fa-leaf text-green-500 text-2xl"></i>
+                    <span class="text-2xl font-bold">Ecobazar</span>
+                </a>
+
+                <!-- Search Bar -->
+                <div class="flex-1 max-w-2xl w-full">
+                    <form action="/search" method="GET" class="relative">
+                        <input 
+                            type="text" 
+                            name="q" 
+                            placeholder="Search products..." 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500"
+                        >
+                        <button type="submit" class="absolute right-0 top-0 h-full px-6 bg-green-500 text-white rounded-r-lg hover:bg-green-600 transition-colors">
+                            Search
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Right Icons & Auth Buttons -->
+                <div class="flex items-center gap-6">
+                    <a href="/wishlist" class="relative group">
+                        <i class="far fa-heart text-xl group-hover:text-green-500 transition-colors"></i>
+                        <% if (locals.wishlistCount > 0) { %>
+                            <span class="absolute -top-2 -right-2 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                <%= wishlistCount %>
+                            </span>
+                        <% } %>
+                    </a>
+                    <a href="/cart" class="flex items-center group">
+                        <div class="relative">
+                            <i class="fas fa-shopping-cart text-xl group-hover:text-green-500 transition-colors"></i>
+                            <% if (locals.cartCount > 0) { %>
+                                <span class="cart-count absolute -top-2 -right-2 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                    <%= cartCount %>
+                                </span>
+                            <% } %>
+                        </div>
+                        <div class="ml-2">
+                            <span class="block text-sm">Shopping Cart:</span>
+                            <span class="font-semibold">₹<%= locals.cartTotal %></span>
+                        </div>
+                    </a>
+                   
+                <div class="flex items-center gap-3">
+                    <% if (typeof user !== 'undefined' && user !== null) { %>
+                        <div class="dropdown relative group">
+                            <button class="dropdown-toggle flex items-center gap-2 bg-green-50 px-3 py-2 rounded-lg hover:bg-green-100 transition-colors">
+                                <div class="relative">
+                                    <% if (user.profileImage) { %>
+                                        <img src="<%= user.profileImage %>" alt="Profile" class="w-8 h-8 rounded-full object-cover">
+                                    <% } else if (user.googleProfileImage) { %>
+                                        <img src="<%= user.googleProfileImage %>" alt="Profile" class="w-8 h-8 rounded-full object-cover">
+                                    <% } else { %>
+                                        <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center">
+                                            <i class="fas fa-user text-lg"></i>
+                                        </div>
+                                    <% } %>
+                                    <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+                                </div>
+                                <span class="text-gray-700 font-medium">
+                                    <%= user.fname || user.displayName %>
+                                </span>
+                                <i class="fas fa-chevron-down text-xs text-gray-500"></i>
+                            </button>
+                            
+                            <div class="dropdown-content z-50 absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden">
+                                <div class="px-4 py-3 border-b border-gray-100 bg-gray-50">
+                                    <p class="text-sm text-gray-600">Signed in as</p>
+                                    <p class="text-sm font-medium text-gray-900">
+                                        <%= user.fname || user.displayName %> 
+                                        <%= user.lname || '' %>
+                                    </p>
+                                </div>
+
+                               
+                                    <a href="/profile" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                        <i class="fas fa-user mr-3 text-gray-500"></i>
+                                        Profile
+                                    </a>
+                                    <!-- <a href="/dashboard" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                        <i class="fas fa-chart-line mr-3 text-gray-500"></i>
+                                        Dashboard
+                                    </a> -->
+                                
+                               
+                                    <a href="#" onclick="handleLogout(event)" class="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                                        <i class="fas fa-sign-out-alt mr-3 text-red-400"></i>
+                                        Logout
+                                    </a>
+                                
+                        </div>
+                    <% } else { %>
+                        <div class="flex items-center gap-3">
+                            <a href="/login" class="px-4 py-2 text-green-500 border border-green-500 rounded-lg hover:bg-green-50 transition-colors flex items-center gap-2">
+                                <i class="fas fa-sign-in-alt"></i>
+                                Login
+                            </a>
+                            <a href="/signup" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2">
+                                <i class="fas fa-user-plus"></i>
+                                Sign Up
+                            </a>
+                        </div>
+                    <% } %>
+                </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="bg-black text-white mb-20" >
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between py-4">
+                <!-- Mobile Menu Button -->
+                <button class="md:hidden" id="mobileMenuBtn" aria-label="Toggle Mobile Menu">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+
+                <!-- Desktop Menu -->
+                <ul class="hidden md:flex items-center gap-8">
+                    <li class="dropdown relative">
+                        <a href="#" class="dropdown-toggle flex items-center gap-1 hover:text-green-500 transition-colors">
+                            Home <i class="fas fa-chevron-down text-xs"></i>
+                        </a>
+                        <div class="dropdown-content mt-2">
+                            <a href="/" class="block px-4 py-2 text-black hover:bg-gray-100">Home v1</a>
+                            <a href="/home-2" class="block px-4 py-2 text-black hover:bg-gray-100">Home v2</a>
+                        </div>
+                    </li>
+                    <li>
+                        <a href="/shop" class="hover:text-green-500 transition-colors">Shop</a>
+                    </li>
+                    <li class="dropdown relative">
+                        <a href="#" class="dropdown-toggle flex items-center gap-1 hover:text-green-500 transition-colors">
+                            Categories <i class="fas fa-chevron-down text-xs"></i>
+                        </a>
+                        <div class="dropdown-content mt-2">
+                            <% if(categories) { %>
+                                <% categories.forEach((category) => { %>
+                                    <a href="/category/<%= category._id %>" class="block px-4 py-2 text-black hover:bg-gray-100"><%= category.name %></a>
+                                <% }) %>
+                            <%}%> 
+                        </div>
+                    </li>
+                    <li>
+                        <a href="/about" class="hover:text-green-500 transition-colors">About Us</a>
+                    </li>
+                    <li>
+                        <a href="/contact" class="hover:text-green-500 transition-colors">Contact Us</a>
+                    </li>
+                </ul>
+
+                <!-- Mobile Menu -->
+                <div class="mobile-menu md:hidden" id="mobileMenu">
+                    <div class="mobile-menu-close" id="mobileMenuClose">&times;</div>
+                    <ul class="py-4 px-4">
+                        <li class="py-2">
+                            <a href="/" class="block hover:text-green-500">Home</a>
+                        </li>
+                        <li class="py-2">
+                            <a href="/shop" class="block hover:text-green-500">Shop</a>
+                        </li>
+                        <li class="py-2 dropdown relative">
+                            <a href="#" class="dropdown-toggle flex items-center gap-1 hover:text-green-500">
+                                Categories <i class="fas fa-chevron-down text-xs"></i>
+                            </a>
+                            <div class="dropdown-content ml-4">
+                                <% if(categories) { %>
+                                    <% categories.forEach((category) => { %>
+                                        <a href="/category/<%= category._id %>" class="block py-2 hover:text-green-500"><%= category.name %></a>
+                                    <% }) %>
+                                <%}%> 
+                            </div>
+                        </li>
+                        <li class="py-2"><a href="/about" class="block hover:text-green-500">About Us</a></li>
+                        <li class="py-2"><a href="/contact" class="block hover:text-green-500">Contact Us</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+        
+            <script>
+                // Mobile menu toggle
+                const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+                const mobileMenu = document.getElementById('mobileMenu');
+                const mobileMenuClose = document.getElementById('mobileMenuClose');
+        
+                mobileMenuBtn.addEventListener('click', () => {
+                    mobileMenu.classList.add('active');
+                    document.body.style.overflow = 'hidden'; // Prevent scrolling behind mobile menu
+                });
+        
+                mobileMenuClose.addEventListener('click', () => {
+                    mobileMenu.classList.remove('active');
+                    document.body.style.overflow = 'auto'; // Restore scrolling
+                });
+        
+                // Dropdown toggle functionality (for both desktop and mobile)
+                const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
+                
+                dropdownToggles.forEach(toggle => {
+                    toggle.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        
+                        // Close other open dropdowns
+                        document.querySelectorAll('.dropdown-content').forEach(content => {
+                            if (content !== toggle.nextElementSibling) {
+                                content.classList.remove('show');
+                            }
+                        });
+                        
+                        // Toggle current dropdown
+                        const dropdownContent = toggle.nextElementSibling;
+                        dropdownContent.classList.toggle('show');
+                    });
+                });
+        
+                // Close dropdowns when clicking outside
+                document.addEventListener('click', (e) => {
+                    const dropdowns = document.querySelectorAll('.dropdown');
+                    
+                    dropdowns.forEach(dropdown => {
+                        if (!dropdown.contains(e.target)) {
+                            dropdown.querySelector('.dropdown-content')?.classList.remove('show');
+                        }
+                    });
+                });
+        
+                // Language selector with persistent selection
+                const languageSelect = document.getElementById('languageSelect');
+                
+                // Load saved language preference
+                const savedLanguage = localStorage.getItem('selectedLanguage') || 'en';
+                languageSelect.value = savedLanguage;
+        
+                languageSelect.addEventListener('change', (e) => {
+                    const selectedLanguage = e.target.value;
+                    
+                    // Save language preference
+                    localStorage.setItem('selectedLanguage', selectedLanguage);
+        
+                    // Implement language change logic
+                    fetch('/change-language', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ language: selectedLanguage })
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            // Reload page or update content
+                            location.reload();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Language change error:', error);
+                    });
+                });
+        
+                // Currency selector with persistent selection
+                const currencySelect = document.getElementById('currencySelect');
+                
+                // Load saved currency preference
+                const savedCurrency = localStorage.getItem('selectedCurrency') || 'USD';
+                currencySelect.value = savedCurrency;
+        
+                currencySelect.addEventListener('change', (e) => {
+                    const selectedCurrency = e.target.value;
+                    
+                    // Save currency preference
+                    localStorage.setItem('selectedCurrency', selectedCurrency);
+        
+                    // Implement currency change logic
+                    fetch('/change-currency', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ currency: selectedCurrency })
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            // Update prices or reload page
+                            location.reload();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Currency change error:', error);
+                    });
+                });
+
+                // Add this to your existing script section
+document.querySelector('a[href="/logout"]')?.addEventListener('click', (e) => {
+    e.preventDefault(); // Prevent default link behavior
+    
+    fetch('/logout', {
+        method: 'POST', // Consider using POST for logout for better security
+        credentials: 'same-origin' // Important for sending cookies
+    })
+    .then(response => {
+        if (response.ok) {
+            // Redirect to login page or home page after successful logout
+            window.location.href = '/login';
+        } else {
+            console.error('Logout failed');
+            alert('Logout failed. Please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('Logout error:', error);
+        alert('An error occurred during logout.');
+    });
+});
+            </script>
+            <script>
+                function handleLogout(event) {
+                    event.preventDefault();
+                    
+                    fetch('/logout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        credentials: 'same-origin'
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            window.location.href = '/login';
+                        } else {
+                            console.error('Logout failed');
+                            alert('Logout failed. Please try again.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Logout error:', error);
+                        alert('An error occurred during logout.');
+                    });
+                }
+            </script>
+        </body>
+        </html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - Ecobazar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-gray-50">
+    <%- include('../layouts/headerWithoutUser.ejs') %>
+
+    <main class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-8">Checkout</h1>
+
+        <form id="checkoutForm" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Shipping Address Section -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold">Shipping Address</h2>
+                        <a href="/checkout/view-addresses" 
+                           class="inline-flex items-center text-green-600 hover:text-green-700">
+                            <i class="fas fa-address-book mr-2"></i>
+                            Manage Addresses
+                        </a>
+                    </div>
+                    
+                    <% 
+                    let defaultAddress = null;
+                    if (addresses && addresses.length > 0) {
+                        defaultAddress = addresses.find(addr => addr.isDefault);
+                    }
+                    %>
+                    
+                    <% if (defaultAddress) { %>
+                        <div class="border rounded-lg p-4 border-green-500 bg-green-50">
+                            <input type="hidden" name="addressId" value="<%= defaultAddress._id %>">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-2 mb-2">
+                                    <h3 class="font-medium"><%= defaultAddress.name %></h3>
+                                    <span class="text-sm text-gray-500">(<%= defaultAddress.addressType %>)</span>
+                                    <span class="text-xs bg-green-500 text-white px-2 py-1 rounded">Default</span>
+                                </div>
+                                <p class="text-gray-600"><%= defaultAddress.streetAddress %></p>
+                                <% if (defaultAddress.apartment) { %>
+                                    <p class="text-gray-600"><%= defaultAddress.apartment %></p>
+                                <% } %>
+                                <p class="text-gray-600"><%= defaultAddress.city %>, <%= defaultAddress.postalCode %></p>
+                                <% if (defaultAddress.landMark) { %>
+                                    <p class="text-gray-600">Landmark: <%= defaultAddress.landMark %></p>
+                                <% } %>
+                                <p class="text-gray-600">Phone: <%= defaultAddress.phone %></p>
+                            </div>
+                        </div>
+                    <% } else { %>
+                        <div class="text-center py-8">
+                            <p class="text-gray-600 mb-4">No default shipping address set</p>
+                            <a href="/checkout/view-addresses" 
+                               class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                                <i class="fas fa-plus mr-2"></i>
+                                Add Shipping Address
+                            </a>
+                        </div>
+                    <% } %>
+                </div>
+
+                <!-- Payment Method Section -->
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h2 class="text-xl font-semibold mb-4">Payment Method</h2>
+                    <div class="space-y-4">
+                        <div class="border rounded-lg p-4">
+                            <div class="flex items-center space-x-4">
+                                <input type="radio" 
+                                       name="paymentMethod" 
+                                       value="COD"
+                                       checked
+                                       class="form-radio text-green-500">
+                                <div>
+                                    <h3 class="font-medium">Cash on Delivery</h3>
+                                    <p class="text-sm text-gray-500">Pay when you receive your order</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Add more payment methods here in future -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow-sm p-6 sticky top-4">
+                    <h2 class="text-xl font-semibold mb-4">Order Summary</h2>
+                    
+                    <div class="space-y-4">
+                        <% cart.items.forEach(item => { %>
+                            <div class="flex items-center space-x-4">
+                                <img src="/uploads/products/<%= item.product.images[0].split('/').pop() %>" 
+                                     alt="<%= item.product.name %>"
+                                     class="w-16 h-16 object-cover rounded">
+                                <div class="flex-1">
+                                    <h3 class="font-medium"><%= item.product.name %></h3>
+                                    <p class="text-sm text-gray-500">Qty: <%= item.quantity %></p>
+                                    <p class="text-green-600">₹<%= item.product.salePrice * item.quantity %></p>
+                                </div>
+                            </div>
+                        <% }); %>
+                    </div>
+
+                    <div class="border-t mt-6 pt-4 space-y-2">
+                        <div class="flex justify-between">
+                            <span>Subtotal</span>
+                            <span>₹<%= cart.total %></span>
+                        </div>
+                        <div class="flex justify-between text-green-600">
+                            <span>Shipping</span>
+                            <span>₹35</span>
+                        </div>
+                        <div class="flex justify-between font-bold text-lg border-t pt-2">
+                            <span>Total</span>
+                            <span>₹<%= cart.total + 35 %></span>
+                        </div>
+                    </div>
+
+                    <button type="submit"
+                            class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors">
+                        Place Order
+                    </button>
+                </div>
+            </div>
+        </form>
+    </main>
+
+    <%- include('../layouts/footer.ejs') %>
+
+    <script>
+        document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const defaultAddressId = document.querySelector('input[name="addressId"]')?.value;
+            
+            if (!defaultAddressId) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'No Shipping Address',
+                    text: 'Please add a default shipping address to continue',
+                    confirmButtonColor: '#22C55E'
+                });
+                return;
+            }
+
+            try {
+                const response = await fetch('/order/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        paymentMethod: 'COD'  // Currently hardcoded as COD
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    window.location.href = `/order/confirmation/${data.orderId}`;
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.message || 'An error occurred while placing your order'
+                });
+            }
+        });
+    </script>
+</body>
+</html> 

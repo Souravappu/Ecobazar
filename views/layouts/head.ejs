@@ -1,0 +1,176 @@
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Gradient Background Effect */
+        .gradient-bg {
+            background: linear-gradient(135deg, #1A1C1E 0%, #2C3036 100%);
+        }
+        
+        /* Dropdown Styling */
+        .dropdown-content {
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease-in-out;
+        }
+        .dropdown:hover .dropdown-content {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        /* Search Input Animations */
+        .search-input {
+            transition: all 0.3s ease;
+        }
+        .search-input:focus {
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.5);
+        }
+
+        /* Notification Badge Pulse Animation */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .notification-badge {
+            animation: pulse 1.5s infinite;
+        }
+
+        /* Hover Effects */
+        .icon-hover {
+            transition: all 0.3s ease;
+        }
+        .icon-hover:hover {
+            transform: scale(1.1) rotate(5deg);
+            color: #22C55E;
+        }
+
+        /* Create Button Glow Effect */
+        .create-btn {
+            position: relative;
+            overflow: hidden;
+        }
+        .create-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(34, 197, 94, 0.3), transparent);
+            transition: all 0.5s ease;
+        }
+        .create-btn:hover::before {
+            left: 100%;
+        }
+    </style>
+
+    <header class="gradient-bg ml-64 shadow-2xl">
+        <div class="max-w-[1920px] mx-auto">
+            <div class="flex items-center justify-between h-20 px-8 ml-12">
+                <!-- Left Section with Mobile Toggle -->
+                <div class="flex items-center gap-8">
+                    <div class="flex items-center gap-3">
+                        <button class="text-gray-400 lg:hidden icon-hover">
+                            <i class="fas fa-bars text-2xl"></i>
+                        </button>
+                        <!-- Optional: Quick Navigation Buttons -->
+                        <div class="hidden lg:flex items-center gap-4">
+                            <button class="text-gray-300 hover:text-green-400 transition">
+                                <i class="fas fa-home text-lg"></i>
+                            </button>
+                            <button class="text-gray-300 hover:text-green-400 transition">
+                                <i class="fas fa-chart-line text-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Middle Section with Enhanced Search -->
+                <div class="flex-1 max-w-2xl px-8">
+                    <div class="relative">
+                        <input 
+                            type="text" 
+                            placeholder="Search anything in dashboard..." 
+                            class="search-input w-full bg-[#282B2E] text-gray-300 pl-4 pr-10 py-3 rounded-xl focus:outline-none"
+                        >
+                        <button class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-green-500 transition">
+                            <i class="fas fa-search text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Section with Enhanced Interactions -->
+                <div class="flex items-center gap-6">
+                    <!-- Create New Product Button with Glow Effect -->
+                    <button class="create-btn bg-green-500 hover:bg-green-600 text-white px-5 py-2.5 rounded-lg flex items-center gap-3 group">
+                        <i class="fas fa-plus group-hover:rotate-180 transition-transform"></i>
+                        <span class="text-sm font-medium">New Product</span>
+                    </button>
+
+                    <!-- Notification Section with Hover Effects -->
+                    <div class="flex items-center gap-5">
+                        <button class="relative icon-hover text-gray-400 hover:text-white">
+                            <i class="fas fa-envelope text-xl"></i>
+                            <span class="notification-badge absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">3</span>
+                        </button>
+                        <button class="relative icon-hover text-gray-400 hover:text-white">
+                            <i class="fas fa-bell text-xl"></i>
+                            <span class="notification-badge absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">5</span>
+                        </button>
+                    </div>
+
+                    <!-- Admin Dropdown with Improved Styling -->
+                    <div class="dropdown relative">
+                        <button class="flex items-center gap-3 text-gray-300 hover:text-white transition group">
+                            <div class="w-9 h-9 bg-gray-700 rounded-full flex items-center justify-center">
+                                <i class="fas fa-user-astronaut text-gray-400 group-hover:text-green-400 transition"></i>
+                            </div>
+                            <div class="text-left">
+                                <span class="block text-sm font-semibold">Admin</span>
+                                <span class="block text-xs text-gray-500">Manager</span>
+                            </div>
+                            <i class="fas fa-chevron-down text-xs ml-2 group-hover:text-green-400 transition"></i>
+                        </button>
+                        <div class="dropdown-content absolute right-0 top-full mt-3 w-48 bg-[#1F2937] rounded-lg shadow-2xl overflow-hidden">
+                            <a href="#" class="block px-4 py-3 hover:bg-gray-800 hover:text-green-400 transition">
+                                <i class="fas fa-user mr-3"></i>Profile
+                            </a>
+                            <a href="#" class="block px-4 py-3 hover:bg-gray-800 hover:text-green-400 transition">
+                                <i class="fas fa-cog mr-3"></i>Settings
+                            </a>
+                            <a href="/admin/logout" class="block px-4 py-3 hover:bg-gray-800 hover:text-red-400 transition">
+                                <i class="fas fa-sign-out-alt mr-3"></i>Logout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <script>
+        // Search Functionality with Debounce
+        const searchInput = document.querySelector('input[type="text"]');
+        let searchTimeout;
+        
+        searchInput.addEventListener('input', function(e) {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                const searchTerm = e.target.value.trim();
+                if (searchTerm) {
+                    console.log('Searching for:', searchTerm);
+                    // Implement actual search logic here
+                }
+            }, 300);
+        });
+
+        // Mobile Menu Toggle (Placeholder)
+        document.querySelector('.fa-bars').addEventListener('click', function() {
+            // Add mobile sidebar toggle logic
+            console.log('Mobile menu toggle');
+        });
+    </script>

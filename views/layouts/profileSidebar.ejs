@@ -1,0 +1,21 @@
+<div class="bg-white rounded-lg shadow-sm p-6">
+    <h2 class="text-xl font-semibold mb-4">My Account</h2>
+    <nav class="space-y-2">
+        <a href="/profile" 
+           class="block px-4 py-2 rounded-lg hover:bg-gray-100 <%= currentPage === 'profile' ? 'bg-green-50 text-green-600' : '' %>">
+            <i class="fas fa-user mr-2"></i>Profile
+        </a>
+        <a href="/orders" 
+           class="block px-4 py-2 rounded-lg hover:bg-gray-100 <%= currentPage === 'orders' ? 'bg-green-50 text-green-600' : '' %>">
+            <i class="fas fa-box mr-2"></i>Orders
+        </a>
+        <a href="/wishlist" 
+           class="block px-4 py-2 rounded-lg hover:bg-gray-100 <%= currentPage === 'wishlist' ? 'bg-green-50 text-green-600' : '' %>">
+            <i class="fas fa-heart mr-2"></i>Wishlist
+        </a>
+        <a href="/address" 
+           class="block px-4 py-2 rounded-lg hover:bg-gray-100 <%= currentPage === 'address' ? 'bg-green-50 text-green-600' : '' %>">
+            <i class="fas fa-map-marker-alt mr-2"></i>Addresses
+        </a>
+    </nav>
+</div> 
