@@ -20,6 +20,15 @@
         .gradient-bg {
             background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%);
         }
+        .error-message {
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+        .input-error {
+            border-color: #ef4444 !important;
+        }
     </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center p-4">
@@ -35,8 +44,15 @@
                 <p class="text-blue-200">Welcome back! Please enter your credentials</p>
             </div>
 
+            <!-- Server-side Error Message -->
+            <% if (message) { %>
+                <div class="bg-red-500/20 text-red-100 px-4 py-2 rounded-lg mb-4">
+                    <%= message %>
+                </div>
+            <% } %>
+
             <!-- Login Form -->
-            <form id="loginForm" class="space-y-6" method="post" action="/admin/login">
+            <form id="loginForm" class="space-y-6" method="post" action="/admin/login" novalidate>
                 <!-- Email Input -->
                 <div class="input-focus-effect transition-all duration-300">
                     <div class="relative">
@@ -45,10 +61,12 @@
                         </div>
                         <input type="email" 
                                name="email"
+                               id="email"
                                class="w-full pl-10 pr-4 py-3 bg-white/5 border border-gray-600 rounded-lg focus:border-blue-400 focus:ring-2 focus:ring-blue-400 focus:ring-opacity-20 text-white placeholder-gray-400 outline-none transition-all duration-300"
                                placeholder="Email"
                                required>
                     </div>
+                    <div id="emailError" class="error-message"></div>
                 </div>
 
                 <!-- Password Input -->
@@ -59,6 +77,7 @@
                         </div>
                         <input type="password" 
                                name="password"
+                               id="password"
                                class="w-full pl-10 pr-4 py-3 bg-white/5 border border-gray-600 rounded-lg focus:border-blue-400 focus:ring-2 focus:ring-blue-400 focus:ring-opacity-20 text-white placeholder-gray-400 outline-none transition-all duration-300"
                                placeholder="Password"
                                required>
@@ -68,15 +87,7 @@
                             <i class="fas fa-eye"></i>
                         </button>
                     </div>
-                </div>
-
-                <!-- Remember Me & Forgot Password -->
-                <div class="flex items-center justify-between text-sm">
-                    <label class="flex items-center text-gray-300 hover:text-white cursor-pointer">
-                        <!-- <input type="checkbox" class="form-checkbox h-4 w-4 text-blue-500 rounded border-gray-600 bg-white/5"> -->
-                        <!-- <span class="ml-2">Remember me</span> -->
-                    </label>
-                    <!-- <a href="#" class="text-blue-400 hover:text-blue-300 transition-colors duration-300">Forgot Password?</a> -->
+                    <div id="passwordError" class="error-message"></div>
                 </div>
 
                 <!-- Login Button -->
@@ -96,6 +107,68 @@
     </div>
 
     <script>
+        // Email validation regex
+        const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+
+        // Form validation function
+        function validateForm(e) {
+            let isValid = true;
+            const email = document.getElementById('email');
+            const password = document.getElementById('password');
+            const emailError = document.getElementById('emailError');
+            const passwordError = document.getElementById('passwordError');
+
+            // Reset previous error states
+            email.classList.remove('input-error');
+            password.classList.remove('input-error');
+            emailError.style.display = 'none';
+            passwordError.style.display = 'none';
+
+            // Email validation
+            const trimmedEmail = email.value.trim();
+            if (!trimmedEmail) {
+                showError(email, emailError, 'Email is required');
+                isValid = false;
+            } else if (!emailRegex.test(trimmedEmail)) {
+                showError(email, emailError, 'Please enter a valid email address');
+                isValid = false;
+            }
+
+            // Password validation
+            const trimmedPassword = password.value.trim();
+            if (!trimmedPassword) {
+                showError(password, passwordError, 'Password is required');
+                isValid = false;
+            } else if (trimmedPassword.length < 6) {
+                showError(password, passwordError, 'Password must be at least 6 characters long');
+                isValid = false;
+            }
+
+            if (!isValid) {
+                e.preventDefault();
+                return false;
+            }
+
+            // Show loading state
+            const button = document.querySelector('button[type="submit"]');
+            button.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
+            button.disabled = true;
+
+            return true;
+        }
+
+        // Helper function to show error messages
+        function showError(input, errorElement, message) {
+            input.classList.add('input-error');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+            gsap.from(errorElement, {
+                y: -10,
+                opacity: 0,
+                duration: 0.3
+            });
+        }
+
         // Toggle password visibility
         function togglePassword(button) {
             const input = button.parentElement.querySelector('input');
@@ -112,34 +185,20 @@
             }
         }
 
-        // Form submission with animation
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const button = e.target.querySelector('button[type="submit"]');
-            const originalContent = button.innerHTML;
-            const form = e.target;
-            
-            // Show loading state
-            button.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
-            button.disabled = true;
+        // Add form validation event listener
+        document.getElementById('loginForm').addEventListener('submit', validateForm);
 
-            try {
-                // Submit form after animation
-                setTimeout(() => {
-                    form.submit();
-                }, 1500);
-            } catch (error) {
-                // Handle error state
-                button.innerHTML = '<i class="fas fa-times"></i> Error';
-                button.classList.add('bg-red-500');
-                
-                setTimeout(() => {
-                    button.innerHTML = originalContent;
-                    button.classList.remove('bg-red-500');
-                    button.disabled = false;
-                }, 2000);
-            }
+        // Add input event listeners for real-time validation
+        document.getElementById('email').addEventListener('input', function() {
+            const emailError = document.getElementById('emailError');
+            this.classList.remove('input-error');
+            emailError.style.display = 'none';
+        });
+
+        document.getElementById('password').addEventListener('input', function() {
+            const passwordError = document.getElementById('passwordError');
+            this.classList.remove('input-error');
+            passwordError.style.display = 'none';
         });
     </script>
 </body>

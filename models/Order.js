@@ -23,7 +23,7 @@ const orderSchema = new mongoose.Schema({
         },
         status: {
             type: String,
-            enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'],
+            enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Returned'],
             default: 'Pending'
         },
         cancelReason: {
@@ -31,6 +31,21 @@ const orderSchema = new mongoose.Schema({
         },
         cancelledAt: {
             type: Date
+        },
+        returnRequested: {
+            type: Boolean,
+            default: false
+        },
+        returnReason: {
+            type: String
+        },
+        returnRequestedAt: {
+            type: Date
+        },
+        returnStatus: {
+            type: String,
+            enum: ['Pending', 'Approved', 'Rejected', 'None'],
+            default: 'None'
         }
     }],
     shippingAddress: {
@@ -49,17 +64,23 @@ const orderSchema = new mongoose.Schema({
     },
     paymentMethod: {
         type: String,
-        enum: ['COD', 'Online'],
+        enum: ['COD', 'ONLINE', 'WALLET', 'WALLET_PLUS_COD', 'WALLET_PLUS_ONLINE'],
         default: 'COD'
+    },
+    razorpayOrderId: {
+        type: String
+    },
+    razorpayPaymentId: {
+        type: String
     },
     paymentStatus: {
         type: String,
-        enum: ['Pending', 'Paid', 'Failed'],
+        enum: ['Pending', 'Paid', 'Failed', 'Aborted'],
         default: 'Pending'
     },
     orderStatus: {
         type: String,
-        enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'],
+        enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Failed', 'Returned', 'Payment Failed'],
         default: 'Pending'
     },
     cancelReason: {
@@ -83,12 +104,42 @@ const orderSchema = new mongoose.Schema({
     orderId: {
         type: String,
         unique: true
+    },
+    returnRequested: {
+        type: Boolean,
+        default: false
+    },
+    returnReason: {
+        type: String
+    },
+    returnRequestedAt: {
+        type: Date
+    },
+    returnStatus: {
+        type: String,
+        enum: ['Pending', 'Approved', 'Rejected', 'None'],
+        default: 'None'
+    },
+    partiallyReturned: {
+        type: Boolean,
+        default: false
+    },
+    walletAmount: {
+        type: Number,
+        default: 0
+    },
+    coupon: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Coupon'
+    },
+    couponDiscount: {
+        type: Number,
+        default: 0
     }
 }, {
     timestamps: true
 });
 
-// Generate unique order ID before saving
 orderSchema.pre('save', async function(next) {
     if (!this.orderId) {
         const count = await this.constructor.countDocuments();

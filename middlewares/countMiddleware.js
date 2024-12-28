@@ -5,7 +5,6 @@ const getCounts = async (req, res, next) => {
     try {
         const userId = req.session?.user;
 
-        // Initialize default values
         res.locals.cartCount = 0;
         res.locals.cartTotal = 0;
         res.locals.wishlistCount = 0;

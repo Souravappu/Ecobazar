@@ -23,7 +23,6 @@ const getUserProfile = async (req, res) => {
           
 
         const categories = await Category.find({ isListed: true ,isBlocked:false,isDeleted:false});
-console.log("address",address);
 
         res.render('user/profile', {
             user: userData,
@@ -42,7 +41,7 @@ console.log("address",address);
 const editProfile = async (req, res) => {
     try {
         const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-        const userId = req.session.user; // Use session user ID instead of params
+        const userId = req.session.user; 
         const { fname, lname, email, phone } = req.body;
 
         const user = await User.findById(userId);
@@ -52,7 +51,6 @@ const editProfile = async (req, res) => {
             return res.redirect('/profile');
         }
 
-        // Check if no changes were made
         if (fname === user.fname && 
             lname === user.lname && 
             email === user.email && 
@@ -61,7 +59,6 @@ const editProfile = async (req, res) => {
             return res.redirect('/profile');
         }
 
-        // Validation checks
         if (!fname) {
             req.flash('error_msg', 'First Name is required');
             return res.redirect('/profile');
@@ -77,7 +74,6 @@ const editProfile = async (req, res) => {
             return res.redirect('/profile');
         }
 
-        // Update user data
         const updatedUser = await User.findByIdAndUpdate(
             userId, 
             { fname, lname, email, phone }, 
@@ -99,7 +95,6 @@ const changePassword = async (req, res) => {
         const userId = req.session.user;
         const { currentPassword, newPassword, confirmPassword } = req.body;
 
-        // Validate user session
         if (!userId) {
             return res.status(401).json({
                 success: false,
@@ -115,7 +110,6 @@ const changePassword = async (req, res) => {
             });
         }
 
-        // Password validation
         const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
         
         if (!passwordPattern.test(newPassword)) {
@@ -125,7 +119,6 @@ const changePassword = async (req, res) => {
             });
         }
 
-        // Check if passwords match
         if (newPassword !== confirmPassword) {
             return res.status(400).json({
                 success: false,
@@ -133,7 +126,6 @@ const changePassword = async (req, res) => {
             });
         }
 
-        // Verify current password
         const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
         if (!isPasswordValid) {
             return res.status(400).json({
@@ -142,10 +134,8 @@ const changePassword = async (req, res) => {
             });
         }
 
-        // Hash new password
         const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-        // Update password
         await User.findByIdAndUpdate(userId, {
             password: hashedPassword
         });

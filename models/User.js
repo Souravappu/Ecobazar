@@ -91,6 +91,26 @@ const userSchema = mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "Coupon"
     }],
+    appliedCoupons: [{
+        coupon: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Coupon"
+        },
+        appliedAt: {
+            type: Date,
+            default: Date.now
+        },
+        orderId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Order"
+        },
+        discountAmount: Number,
+        status: {
+            type: String,
+            enum: ['applied', 'used', 'cancelled'],
+            default: 'applied'
+        }
+    }],
     addresses: [{
         type: {
             type: String,
@@ -112,21 +132,17 @@ const userSchema = mongoose.Schema({
     toObject: { virtuals: true }
 });
 
-// Virtual for full name
 userSchema.virtual('fullName').get(function() {
     return `${this.fname} ${this.lname}`;
 });
 
-// Index for Google ID
 userSchema.index(
     { googleId: 1 },
     { partialFilterExpression: { googleId: { $exists: true } } }
 );
 
-// Index for email
 userSchema.index({ email: 1 }, { unique: true });
 
-// Pre-save middleware
 userSchema.pre('save', function(next) {
     if (this.isModified('isBlocked') && this.isBlocked) {
         this.status = 'blocked';

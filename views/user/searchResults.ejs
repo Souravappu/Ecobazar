@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results - <%= query ? `"${query}"` : 'All Products' %></title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-gray-50">
+    <!-- Include Header -->
+    <%- include('../layouts/headerWithoutUser.ejs') %>
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- Search Results Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold mb-2">
+                <%= query ? `Search Results for "${query}"` : 'All Products' %>
+            </h1>
+            <p class="text-gray-600">
+                <%= products.length %> products found
+            </p>
+        </div>
+
+        <!-- Add this section after the search results header -->
+        <% if (categoryResults && categoryResults.length > 0) { %>
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold mb-4">Matching Categories</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                    <% categoryResults.forEach(category => { %>
+                        <a href="/search?category=<%= category._id %>" 
+                           class="block p-4 bg-white rounded-lg shadow hover:shadow-md transition-shadow">
+                            <div class="aspect-square mb-2">
+                                <img src="<%= category.image %>" 
+                                     alt="<%= category.name %>" 
+                                     class="w-full h-full object-cover rounded"/>
+                            </div>
+                            <h3 class="text-center font-medium text-gray-800"><%= category.name %></h3>
+                        </a>
+                    <% }) %>
+                </div>
+            </div>
+        <% } %>
+
+        <!-- Update the no results message -->
+        <% if (!products.length && !categoryResults.length) { %>
+            <div class="text-center py-8">
+                <div class="text-gray-500 mb-4">
+                    <i class="fas fa-search fa-3x"></i>
+                </div>
+                <h2 class="text-xl font-semibold mb-2">No Results Found</h2>
+                <p class="text-gray-600">
+                    We couldn't find any matches for "<%= query %>"
+                </p>
+                <a href="/shop" class="inline-block mt-4 px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                    Browse All Products
+                </a>
+            </div>
+        <% } %>
+
+        <!-- Filters and Products Grid -->
+        <div class="flex flex-col md:flex-row gap-8">
+            <!-- Filters Sidebar -->
+            <div class="w-full md:w-64 space-y-6">
+                <!-- Categories Filter -->
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <h3 class="font-semibold mb-4">Categories</h3>
+                    <div class="space-y-2">
+                        <a href="/search?q=<%= query %>" 
+                           class="block px-2 py-1 rounded <%= !selectedCategory ? 'bg-green-50 text-green-600' : 'hover:bg-gray-50' %>">
+                            All Categories
+                        </a>
+                        <% categories.forEach(category => { %>
+                            <a href="/search?q=<%= query %>&category=<%= category._id %>" 
+                               class="block px-2 py-1 rounded <%= selectedCategory === category._id.toString() ? 'bg-green-50 text-green-600' : 'hover:bg-gray-50' %>">
+                                <%= category.name %>
+                            </a>
+                        <% }) %>
+                    </div>
+                </div>
+
+                <!-- Sort Options -->
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <h3 class="font-semibold mb-4">Sort By</h3>
+                    <select id="sortSelect" class="w-full border rounded p-2" 
+                            onchange="window.location.href=updateQueryString('sort', this.value)">
+                        <option value="name" <%= sortBy === 'name' ? 'selected' : '' %>>Name (A-Z)</option>
+                        <option value="price_asc" <%= sortBy === 'price_asc' ? 'selected' : '' %>>Price (Low to High)</option>
+                        <option value="price_desc" <%= sortBy === 'price_desc' ? 'selected' : '' %>>Price (High to Low)</option>
+                        <option value="newest" <%= sortBy === 'newest' ? 'selected' : '' %>>Newest First</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Products Grid -->
+            <div class="flex-1">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <% products.forEach(product => { %>
+                        <div class="product-card bg-white p-4 rounded-lg shadow-md relative" data-product-id="<%= product._id %>">
+                            <!-- Offer Badge -->
+                            <% if (product.regularPrice > product.salePrice) { %>
+                                <div class="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs">
+                                    <%= Math.round((product.regularPrice - product.salePrice) / product.regularPrice * 100) %>% OFF
+                                </div>
+                            <% } %>
+
+                            <!-- Product Image -->
+                            <a href="/product/<%= product._id %>">
+                                <img src="/uploads<%= product.images[0] %>" 
+                                     alt="<%= product.name %>" 
+                                     class="w-full h-48 object-cover rounded-lg mb-4"/>
+                            </a>
+
+                            <!-- Product Info -->
+                            <div class="space-y-2">
+                                <h3 class="font-semibold text-gray-800 truncate"><%= product.name %></h3>
+                                <p class="text-sm text-gray-600"><%= product.category.name %></p>
+                                
+                                <div class="flex justify-between items-center">
+                                    <div class="flex flex-col">
+                                        <span class="text-green-600 font-bold">₹<%= product.salePrice %></span>
+                                        <% if (product.regularPrice > product.salePrice) { %>
+                                            <span class="text-sm text-gray-500 line-through">₹<%= product.regularPrice %></span>
+                                        <% } %>
+                                    </div>
+                                    
+                                    <div class="flex gap-2">
+                                        <button onclick="addToCart('<%= product._id %>')" 
+                                                class="bg-green-500 text-white p-2 rounded-full hover:bg-green-600">
+                                            <i class="fas fa-shopping-cart"></i>
+                                        </button>
+                                        <button onclick="toggleWishlist('<%= product._id %>')" 
+                                                class="wishlist-btn bg-green-500 text-white p-2 rounded-full hover:bg-green-600">
+                                            <i class="fas fa-heart"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+
+                <!-- Pagination -->
+                <% if (pagination.total > 1) { %>
+                    <div class="flex justify-center mt-8 gap-2">
+                        <% if (pagination.hasPrev) { %>
+                            <a href="<%= updateQueryString('page', pagination.current - 1) %>" 
+                               class="px-4 py-2 bg-white rounded border hover:bg-gray-50">
+                                Previous
+                            </a>
+                        <% } %>
+                        
+                        <% for(let i = 1; i <= pagination.total; i++) { %>
+                            <a href="<%= updateQueryString('page', i) %>" 
+                               class="px-4 py-2 rounded <%= pagination.current === i ? 'bg-green-500 text-white' : 'bg-white border hover:bg-gray-50' %>">
+                                <%= i %>
+                            </a>
+                        <% } %>
+                        
+                        <% if (pagination.hasNext) { %>
+                            <a href="<%= updateQueryString('page', pagination.current + 1) %>" 
+                               class="px-4 py-2 bg-white rounded border hover:bg-gray-50">
+                                Next
+                            </a>
+                        <% } %>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include Footer -->
+    <%- include('../layouts/footer.ejs') %>
+
+    <script>
+        // Function to update query string parameters
+        function updateQueryString(key, value) {
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.set(key, value);
+            return `${window.location.pathname}?${urlParams.toString()}`;
+        }
+
+        // Initialize wishlist buttons
+        async function initializeWishlistButtons() {
+            try {
+                const response = await fetch('/wishlist/items');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const wishlistItems = data.items;
+                    const productCards = document.querySelectorAll('.product-card');
+                    
+                    productCards.forEach(card => {
+                        const productId = card.dataset.productId;
+                        const wishlistBtn = card.querySelector('.wishlist-btn');
+                        
+                        const isInWishlist = wishlistItems.some(item => 
+                            item.product.toString() === productId
+                        );
+                        
+                        if (isInWishlist) {
+                            wishlistBtn.classList.add('wishlist-active');
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error initializing wishlist:', error);
+            }
+        }
+
+        // Add to Cart function
+        function addToCart(productId) {
+            fetch('/check-auth')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.authenticated) {
+                        Swal.fire({
+                            title: 'Please Login',
+                            text: 'You need to login to add items to cart',
+                            icon: 'info',
+                            showCancelButton: true,
+                            confirmButtonText: 'Login',
+                            cancelButtonText: 'Cancel',
+                            confirmButtonColor: '#22C55E',
+                            cancelButtonColor: '#6B7280'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location.href = '/login';
+                            }
+                        });
+                        return;
+                    }
+
+                    fetch('/cart/add', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            productId,
+                            quantity: 1
+                        })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(err => Promise.reject(err));
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            const cartCountElement = document.querySelector('.cart-count');
+                            const cartTotalElement = document.querySelector('.cart-total');
+                            
+                            if (cartCountElement) {
+                                cartCountElement.textContent = data.cart.count;
+                                cartCountElement.style.display = data.cart.count > 0 ? 'flex' : 'none';
+                            }
+                            if (cartTotalElement) {
+                                cartTotalElement.textContent = `₹${data.cart.total}`;
+                            }
+
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Added to Cart!',
+                                text: 'Product has been added to your cart',
+                                showConfirmButton: false,
+                                timer: 1500
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Oops...',
+                            text: error.message || 'An error occurred. Please try again.',
+                            confirmButtonColor: '#22C55E'
+                        });
+                    });
+                })
+                .catch(error => {
+                    console.error('Auth check error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'An error occurred while checking authentication',
+                        confirmButtonColor: '#22C55E'
+                    });
+                });
+        }
+
+        // Toggle Wishlist function
+        function toggleWishlist(productId) {
+            fetch('/check-auth')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.authenticated) {
+                        Swal.fire({
+                            title: 'Please Login',
+                            text: 'You need to login to add items to wishlist',
+                            icon: 'info',
+                            showCancelButton: true,
+                            confirmButtonText: 'Login',
+                            cancelButtonText: 'Cancel'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location.href = '/login';
+                            }
+                        });
+                        return;
+                    }
+
+                    const productCard = document.querySelector(`.product-card[data-product-id="${productId}"]`);
+                    const wishlistBtn = productCard.querySelector('.wishlist-btn');
+                    const isInWishlist = wishlistBtn.classList.contains('wishlist-active');
+
+                    const endpoint = isInWishlist ? `/wishlist/remove/${productId}` : '/wishlist/add';
+                    const method = isInWishlist ? 'DELETE' : 'POST';
+
+                    fetch(endpoint, {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: method === 'POST' ? JSON.stringify({ productId }) : undefined
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            wishlistBtn.classList.toggle('wishlist-active');
+                            
+                            const wishlistCount = document.querySelector('.wishlist-count');
+                            if (wishlistCount) {
+                                const currentCount = parseInt(wishlistCount.textContent || '0');
+                                wishlistCount.textContent = isInWishlist ? currentCount - 1 : currentCount + 1;
+                                wishlistCount.style.display = currentCount > 0 ? 'flex' : 'none';
+                            }
+                            
+                            Swal.fire({
+                                icon: 'success',
+                                title: isInWishlist ? 'Removed from Wishlist!' : 'Added to Wishlist!',
+                                text: isInWishlist ? 
+                                    'Product has been removed from your wishlist' : 
+                                    'Product has been added to your wishlist',
+                                showConfirmButton: false,
+                                timer: 1500
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: error.message || 'An error occurred. Please try again.'
+                        });
+                    });
+                })
+                .catch(error => {
+                    console.error('Auth check error:', error);
+                });
+        }
+
+        // Add styles for wishlist active state
+        const style = document.createElement('style');
+        style.textContent = `
+            .wishlist-active {
+                color: #22C55E !important;
+                transform: scale(1.1);
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Initialize wishlist buttons when page loads
+        document.addEventListener('DOMContentLoaded', initializeWishlistButtons);
+    </script>
+</body>
+</html> 

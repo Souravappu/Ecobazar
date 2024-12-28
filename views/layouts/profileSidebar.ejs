@@ -1,21 +1,45 @@
-<div class="bg-white rounded-lg shadow-sm p-6">
-    <h2 class="text-xl font-semibold mb-4">My Account</h2>
+<div class="col-span-3 bg-white rounded-2xl shadow-2xl p-6 space-y-4">
+    <div class="flex items-center space-x-4 mb-8">
+        <div class="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white text-xl border-4 border-green-200">
+            <i class="fas fa-user"></i>
+        </div>
+        <div>
+            <h3 class="font-bold text-lg"><%= user.fname %> <%= user.lname %></h3>
+            <p class="text-sm text-gray-500">User</p>
+        </div>
+    </div>
     <nav class="space-y-2">
         <a href="/profile" 
-           class="block px-4 py-2 rounded-lg hover:bg-gray-100 <%= currentPage === 'profile' ? 'bg-green-50 text-green-600' : '' %>">
-            <i class="fas fa-user mr-2"></i>Profile
+           class="nav-item flex items-center p-3 rounded-lg space-x-3 <%= currentPage === 'profile' ? 'active' : '' %>">
+            <i class="fas fa-home w-6"></i>
+            <span>Dashboard</span>
         </a>
         <a href="/orders" 
-           class="block px-4 py-2 rounded-lg hover:bg-gray-100 <%= currentPage === 'orders' ? 'bg-green-50 text-green-600' : '' %>">
-            <i class="fas fa-box mr-2"></i>Orders
+           class="nav-item flex items-center p-3 rounded-lg space-x-3 <%= currentPage === 'orders' ? 'active' : '' %>">
+            <i class="fas fa-shopping-basket w-6"></i>
+            <span>Orders</span>
         </a>
         <a href="/wishlist" 
-           class="block px-4 py-2 rounded-lg hover:bg-gray-100 <%= currentPage === 'wishlist' ? 'bg-green-50 text-green-600' : '' %>">
-            <i class="fas fa-heart mr-2"></i>Wishlist
+           class="nav-item flex items-center p-3 rounded-lg space-x-3 <%= currentPage === 'wishlist' ? 'active' : '' %>">
+            <i class="fas fa-heart w-6"></i>
+            <span>Wishlist</span>
+        </a>
+        <a href="/wallet" 
+           class="nav-item flex items-center p-3 rounded-lg space-x-3 <%= currentPage === 'wallet' ? 'active' : '' %>">
+            <i class="fas fa-wallet w-6"></i>
+            <span>Wallet</span>
         </a>
         <a href="/address" 
-           class="block px-4 py-2 rounded-lg hover:bg-gray-100 <%= currentPage === 'address' ? 'bg-green-50 text-green-600' : '' %>">
-            <i class="fas fa-map-marker-alt mr-2"></i>Addresses
+           class="nav-item flex items-center p-3 rounded-lg space-x-3 <%= currentPage === 'address' ? 'active' : '' %>">
+            <i class="fas fa-map-marker-alt w-6"></i>
+            <span>Address</span>
         </a>
+        <form action="/logout" method="POST" class="block">
+            <button type="submit" 
+                    class="nav-item flex items-center p-3 rounded-lg space-x-3 text-red-500 w-full">
+                <i class="fas fa-sign-out-alt w-6"></i>
+                <span>Log Out</span>
+            </button>
+        </form>
     </nav>
 </div> 

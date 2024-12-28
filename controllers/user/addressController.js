@@ -7,13 +7,11 @@ const getAddress = async (req, res) => {
     try {
         const userId = req.session?.user;
 
-        // Validate user session
         if (!userId) {
             req.flash('error_msg', 'Please log in to view addresses');
             return res.redirect('/login');
         }
 
-        // Pagination setup
         const page = parseInt(req.query.page) || 1;
         const limit = 4; 
         const skip = (page - 1) * limit;
@@ -25,15 +23,12 @@ const getAddress = async (req, res) => {
             Users.findById(userId)
         ]);
 
-        // Prepare addresses with pagination
         const addresses = addressRecord?.address || [];
         const totalAddresses = addresses.length;
         const totalPages = Math.ceil(totalAddresses / limit);
 
-        // Slice addresses for current page
         const paginatedAddresses = addresses.slice(skip, skip + limit);
 
-        // Determine default address
         let defaultAddress = addresses.find(addr => addr.isDefault);
         
         if (!defaultAddress && addresses.length > 0) {
@@ -48,7 +43,6 @@ const getAddress = async (req, res) => {
         const oldValue = req.session.oldValue || {};
         delete req.session.oldValue;
 
-        // Render address page with pagination
         res.render('user/address', {
             user: UserData,
             categories,
@@ -130,7 +124,6 @@ const addAddress = async (req, res, next) => {
             landMark 
         };
 
-        // Validation checks
         const validationErrors = [];
 
         if (!name || name.trim() === '') {
@@ -153,14 +146,12 @@ const addAddress = async (req, res, next) => {
             validationErrors.push('Please enter a valid 10-digit Phone Number');
         }
 
-        // validation errors
         if (validationErrors.length > 0) {
             req.session.oldValue = oldValues;
             req.flash('error_msg', validationErrors.join(' | '));
             return res.redirect('/profile/add-address');
         }
 
-        // New address 
         const newAddress = {
             name: name.trim(),
             streetAddress: street.trim(),
@@ -172,7 +163,6 @@ const addAddress = async (req, res, next) => {
             phone: phone.trim()
         };
 
-        // create address document
         let addressRecord = await Address.findOne({ userId })
 
          if (!addressRecord) {
@@ -252,7 +242,6 @@ const editAddress = async (req, res, next) => {
         const addressId = req.params.id;
         const { addressType, city, street, apartment, postalCode, phone, landMark, name } = req.body;
 
-        // Validate required fields
         const requiredFields = { name, street, apartment, city, postalCode, phone };
         const missingFields = Object.entries(requiredFields)
             .filter(([, value]) => !value)
@@ -264,7 +253,6 @@ const editAddress = async (req, res, next) => {
             return res.redirect('/profile/add-address');
         }
 
-        // Validate postal code and phone number
         if (postalCode.length !== 6) {
             req.session.oldValue = { ...requiredFields, landMark };
             req.flash('error_msg', 'Invalid Postal Code. Must be 6 digits.');
@@ -287,7 +275,6 @@ const editAddress = async (req, res, next) => {
             return res.status(404).json({ message: 'Specific address not found' });
         }
 
-        // Update address details
         address.set({
             streetAddress: street,
             addressType,
@@ -334,10 +321,8 @@ const deleteAddress = async (req, res) => {
 
         const wasDefaultAddress = addressToDelete.isDefault;
 
-        // Remove the address
         addressRecord.address.pull({ _id: addressId });
 
-        // If deleted address was default and other addresses exist, set the first address as default
         if (wasDefaultAddress && addressRecord.address.length > 0) {
             addressRecord.address[0].isDefault = true;
         }
@@ -406,7 +391,6 @@ const setDefaultAddress = async (req, res) => {
     }
 };
 
-// Get checkout addAddress page
 const getCheckoutAddAddress = async (req, res) => {
     try {
         const userId = req.session.user;
@@ -430,50 +414,68 @@ const getCheckoutAddAddress = async (req, res) => {
     }
 };
 
-// Add address during checkout
 const addCheckoutAddress = async (req, res) => {
     try {
         const userId = req.session.user;
         const { name, phone, street, city, postalCode, apartment, landMark, addressType } = req.body;
 
-        // Validation
         const errors = {};
-        if (!name || name.length < 3) errors.name = "Name should be at least 3 characters";
-        if (!phone || !/^[0-9]{10}$/.test(phone)) errors.phone = "Invalid phone number";
-        if (!street || street.length < 5) errors.street = "Street address is required";
-        if (!city || city.length < 3) errors.city = "City is required";
-        if (!postalCode || !/^[0-9]{6}$/.test(postalCode)) errors.postalCode = "Invalid postal code";
+        
+        if (!name || name.trim().length === 0) {
+            errors.name = "Name is required";
+        } else if (!/^[A-Za-z\s]{3,50}$/.test(name.trim())) {
+            errors.name = "Name should be 3-50 characters and contain only letters";
+        }
+
+        if (!phone || phone.trim().length === 0) {
+            errors.phone = "Phone number is required";
+        } else if (!/^[0-9]{10}$/.test(phone.trim())) {
+            errors.phone = "Please enter a valid 10-digit phone number";
+        }
+
+        if (!street || street.trim().length === 0) {
+            errors.street = "Street address is required";
+        } else if (street.trim().length < 5) {
+            errors.street = "Street address should be at least 5 characters";
+        }
+
+        if (!city || city.trim().length === 0) {
+            errors.city = "City is required";
+        } else if (!/^[A-Za-z\s]{3,30}$/.test(city.trim())) {
+            errors.city = "City should be 3-30 characters and contain only letters";
+        }
+
+        if (!postalCode || postalCode.trim().length === 0) {
+            errors.postalCode = "Postal code is required";
+        } else if (!/^[0-9]{6}$/.test(postalCode.trim())) {
+            errors.postalCode = "Please enter a valid 6-digit postal code";
+        }
 
         if (Object.keys(errors).length > 0) {
             return res.status(400).json({
                 success: false,
                 errors,
-                message: 'Validation failed'
+                message: 'Please fix the validation errors'
             });
         }
 
         let addressDoc = await Address.findOne({ userId });
         if (!addressDoc) {
-            addressDoc = new Address({ 
-                userId, 
-                address: [] 
-            });
+            addressDoc = new Address({ userId, address: [] });
         }
 
-        // Create new address
         const newAddress = {
-            name,
-            phone,
-            streetAddress: street,
-            city,
-            postalCode,
-            apartment,
-            landMark,
+            name: name.trim(),
+            phone: phone.trim(),
+            streetAddress: street.trim(),
+            city: city.trim(),
+            postalCode: postalCode.trim(),
+            apartment: apartment ? apartment.trim() : '',
+            landMark: landMark ? landMark.trim() : '',
             addressType,
-            isDefault: addressDoc.address.length === 0 // Make first address default
+            isDefault: addressDoc.address.length === 0
         };
 
-        // Add to addresses array
         addressDoc.address.push(newAddress);
         await addressDoc.save();
 
@@ -486,12 +488,11 @@ const addCheckoutAddress = async (req, res) => {
         console.error('Error adding checkout address:', error);
         res.status(500).json({
             success: false,
-            message: 'Error adding address'
+            message: 'Internal server error while adding address'
         });
     }
 };
 
-// Get checkout edit address page
 const getCheckoutEditAddress = async (req, res) => {
     try {
         const userId = req.session.user;
@@ -535,30 +536,52 @@ const getCheckoutEditAddress = async (req, res) => {
     }
 };
 
-// Edit address during checkout
 const editCheckoutAddress = async (req, res) => {
     try {
         const userId = req.session.user;
         const addressId = req.params.id;
         const { name, phone, street, city, postalCode, apartment, landMark, addressType } = req.body;
 
-        // Validation
         const errors = {};
-        if (!name || name.length < 3) errors.name = "Name should be at least 3 characters";
-        if (!phone || !/^[0-9]{10}$/.test(phone)) errors.phone = "Invalid phone number";
-        if (!street || street.length < 5) errors.street = "Street address is required";
-        if (!city || city.length < 3) errors.city = "City is required";
-        if (!postalCode || !/^[0-9]{6}$/.test(postalCode)) errors.postalCode = "Invalid postal code";
+        
+        if (!name || name.trim().length === 0) {
+            errors.name = "Name is required";
+        } else if (!/^[A-Za-z\s]{3,50}$/.test(name.trim())) {
+            errors.name = "Name should be 3-50 characters and contain only letters";
+        }
+
+        if (!phone || phone.trim().length === 0) {
+            errors.phone = "Phone number is required";
+        } else if (!/^[0-9]{10}$/.test(phone.trim())) {
+            errors.phone = "Please enter a valid 10-digit phone number";
+        }
+
+        if (!street || street.trim().length === 0) {
+            errors.street = "Street address is required";
+        } else if (street.trim().length < 5) {
+            errors.street = "Street address should be at least 5 characters";
+        }
+
+        if (!city || city.trim().length === 0) {
+            errors.city = "City is required";
+        } else if (!/^[A-Za-z\s]{3,30}$/.test(city.trim())) {
+            errors.city = "City should be 3-30 characters and contain only letters";
+        }
+
+        if (!postalCode || postalCode.trim().length === 0) {
+            errors.postalCode = "Postal code is required";
+        } else if (!/^[0-9]{6}$/.test(postalCode.trim())) {
+            errors.postalCode = "Please enter a valid 6-digit postal code";
+        }
 
         if (Object.keys(errors).length > 0) {
             return res.status(400).json({
                 success: false,
                 errors,
-                message: 'Validation failed'
+                message: 'Please fix the validation errors'
             });
         }
 
-        // Find address document
         const addressDoc = await Address.findOne({ userId });
         if (!addressDoc) {
             return res.status(404).json({
@@ -575,14 +598,13 @@ const editCheckoutAddress = async (req, res) => {
             });
         }
 
-        // Update address fields
-        address.name = name;
-        address.phone = phone;
-        address.streetAddress = street;
-        address.city = city;
-        address.postalCode = postalCode;
-        address.apartment = apartment;
-        address.landMark = landMark;
+        address.name = name.trim();
+        address.phone = phone.trim();
+        address.streetAddress = street.trim();
+        address.city = city.trim();
+        address.postalCode = postalCode.trim();
+        address.apartment = apartment ? apartment.trim() : '';
+        address.landMark = landMark ? landMark.trim() : '';
         address.addressType = addressType;
 
         await addressDoc.save();
@@ -596,7 +618,7 @@ const editCheckoutAddress = async (req, res) => {
         console.error('Error updating checkout address:', error);
         res.status(500).json({
             success: false,
-            message: 'Error updating address'
+            message: 'Internal server error while updating address'
         });
     }
 };

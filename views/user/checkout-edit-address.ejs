@@ -10,17 +10,24 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         .error-message {
-            color: #DC2626;
+            display: none;
+            color: #EF4444;
             font-size: 0.875rem;
             margin-top: 0.25rem;
-            display: none;
         }
+        
         .error-message.show {
             display: block;
         }
+        
         .input-error {
-            border-color: #DC2626 !important;
-            background-color: #FEF2F2;
+            border-color: #EF4444 !important;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #10B981;
+            box-shadow: 0 0 0 1px #10B981;
         }
     </style>
 </head>
@@ -131,194 +138,79 @@
 
     <script>
         const form = document.getElementById('addressForm');
-        const validationRules = {
-            name: {
-                pattern: /^[A-Za-z\s]{3,50}$/,
-                validate: (value) => {
-                    value = value.trim();
-                    if (!value) return "Name is required";
-                    if (value.length < 3) return "Name should be at least 3 characters";
-                    if (value.length > 50) return "Name should not exceed 50 characters";
-                    if (!/^[A-Za-z]/.test(value)) return "Name should start with a letter";
-                    if (!/^[A-Za-z\s]+$/.test(value)) return "Name should contain only letters and spaces";
-                    if (/\s{2,}/.test(value)) return "Name should not contain consecutive spaces";
-                    return null;
-                }
-            },
-            phone: {
-                pattern: /^[0-9]{10}$/,
-                validate: (value) => {
-                    value = value.trim();
-                    if (!value) return "Phone number is required";
-                    if (!/^\d+$/.test(value)) return "Phone number should contain only digits";
-                    if (value.length !== 10) return "Phone number should be exactly 10 digits";
-                    return null;
-                }
-            },
-            postalCode: {
-                pattern: /^[0-9]{6}$/,
-                validate: (value) => {
-                    value = value.trim();
-                    if (!value) return "Postal code is required";
-                    if (!/^\d+$/.test(value)) return "Postal code should contain only digits";
-                    if (value.length !== 6) return "Postal code should be exactly 6 digits";
-                    return null;
-                }
-            },
-            street: {
-                pattern: /^[A-Za-z0-9\s,.-]{5,100}$/,
-                validate: (value) => {
-                    value = value.trim();
-                    if (!value) return "Street address is required";
-                    if (value.length < 5) return "Street address should be at least 5 characters";
-                    if (value.length > 100) return "Street address should not exceed 100 characters";
-                    if (/^\s/.test(value)) return "Street address should not start with space";
-                    if (/\s{2,}/.test(value)) return "Street address should not contain consecutive spaces";
-                    if (!/^[A-Za-z0-9\s,.-]+$/.test(value)) return "Street address contains invalid characters";
-                    return null;
-                }
-            },
-            city: {
-                pattern: /^[A-Za-z\s]{3,30}$/,
-                validate: (value) => {
-                    value = value.trim();
-                    if (!value) return "City is required";
-                    if (value.length < 3) return "City should be at least 3 characters";
-                    if (value.length > 30) return "City should not exceed 30 characters";
-                    if (!/^[A-Za-z]/.test(value)) return "City should start with a letter";
-                    if (!/^[A-Za-z\s]+$/.test(value)) return "City should contain only letters and spaces";
-                    if (/\s{2,}/.test(value)) return "City should not contain consecutive spaces";
-                    return null;
-                }
-            },
-            apartment: {
-                validate: (value) => {
-                    value = value.trim();
-                    if (value && value.length > 50) return "Apartment/Suite should not exceed 50 characters";
-                    if (value && /\s{2,}/.test(value)) return "Apartment/Suite should not contain consecutive spaces";
-                    if (value && !/^[A-Za-z0-9\s,.-]+$/.test(value)) return "Apartment/Suite contains invalid characters";
-                    return null;
-                }
-            },
-            landMark: {
-                validate: (value) => {
-                    value = value.trim();
-                    if (value && value.length > 50) return "Landmark should not exceed 50 characters";
-                    if (value && /\s{2,}/.test(value)) return "Landmark should not contain consecutive spaces";
-                    if (value && !/^[A-Za-z0-9\s,.-]+$/.test(value)) return "Landmark contains invalid characters";
-                    return null;
-                }
-            }
-        };
-
-        function showError(input, message) {
-            const errorElement = document.querySelector(`[data-error="${input.name}"]`);
-            input.classList.add('input-error');
-            errorElement.textContent = message;
-            errorElement.classList.add('show');
-        }
-
-        function clearError(input) {
-            const errorElement = document.querySelector(`[data-error="${input.name}"]`);
-            input.classList.remove('input-error');
-            errorElement.classList.remove('show');
-        }
-
-        function validateField(input) {
-            const rules = validationRules[input.name];
-            if (!rules) return true;
-
-            const value = input.value;
-            const error = rules.validate(value);
-            
-            if (error) {
-                showError(input, error);
-                return false;
-            }
-
-            clearError(input);
-            return true;
-        }
-
-        // Real-time validation with debounce
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
-        }
-
-        form.querySelectorAll('input').forEach(input => {
-            if (validationRules[input.name]) {
-                const debouncedValidate = debounce(() => validateField(input), 300);
-                input.addEventListener('input', debouncedValidate);
-                input.addEventListener('blur', () => validateField(input));
-            }
-        });
-
-        // Form submission
+        
+        // Form submission handler
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            let isValid = true;
-
-            // Validate all fields
-            form.querySelectorAll('input').forEach(input => {
-                if (validationRules[input.name] && !validateField(input)) {
-                    isValid = false;
-                }
+            
+            // Clear previous error messages
+            document.querySelectorAll('.error-message').forEach(elem => {
+                elem.textContent = '';
+                elem.classList.remove('show');
             });
-
-            if (!isValid) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Validation Error',
-                    text: 'Please check the form for errors'
-                });
-                return;
-            }
+            
+            // Reset input styles
+            form.querySelectorAll('input').forEach(input => {
+                input.classList.remove('border-red-500');
+            });
 
             try {
                 const formData = new FormData(form);
-                const formDataObj = {};
-                
-                // Trim all values before sending
-                formData.forEach((value, key) => {
-                    formDataObj[key] = value.trim();
-                });
-
                 const response = await fetch(form.action, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(formDataObj)
+                    body: JSON.stringify(Object.fromEntries(formData))
                 });
 
                 const data = await response.json();
                 
-                if (data.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Success!',
-                        text: 'Address updated successfully',
-                        showConfirmButton: false,
-                        timer: 1500
-                    }).then(() => {
-                        window.location.href = '/checkout/view-addresses';
-                    });
-                } else {
-                    throw new Error(data.message || 'Failed to update address');
+                if (!data.success) {
+                    // Handle validation errors
+                    if (data.errors) {
+                        Object.entries(data.errors).forEach(([field, message]) => {
+                            const errorElement = document.querySelector(`[data-error="${field}"]`);
+                            const inputElement = form.querySelector(`[name="${field}"]`);
+                            
+                            if (errorElement) {
+                                errorElement.textContent = message;
+                                errorElement.classList.add('show');
+                            }
+                            
+                            if (inputElement) {
+                                inputElement.classList.add('border-red-500');
+                            }
+                        });
+                        
+                        // Show error alert
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Validation Error',
+                            text: 'Please check the form for errors',
+                            confirmButtonColor: '#10B981'
+                        });
+                        return;
+                    }
+                    throw new Error(data.message);
                 }
+
+                // Success case
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: 'Address updated successfully',
+                    showConfirmButton: false,
+                    timer: 1500
+                }).then(() => {
+                    window.location.href = '/checkout';
+                });
             } catch (error) {
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
-                    text: error.message || 'An error occurred while updating the address'
+                    text: error.message || 'An error occurred while updating the address',
+                    confirmButtonColor: '#10B981'
                 });
             }
         });

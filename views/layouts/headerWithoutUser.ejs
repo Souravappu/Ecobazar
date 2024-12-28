@@ -109,16 +109,18 @@
 
                 <!-- Search Bar -->
                 <div class="flex-1 max-w-2xl w-full">
-                    <form action="/search" method="GET" class="relative">
+                    <form action="/search" method="GET" class="relative" id="searchForm" onsubmit="return validateSearch(event)">
                         <input 
                             type="text" 
                             name="q" 
+                            id="searchInput"
                             placeholder="Search products..." 
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500"
                         >
                         <button type="submit" class="absolute right-0 top-0 h-full px-6 bg-green-500 text-white rounded-r-lg hover:bg-green-600 transition-colors">
                             Search
                         </button>
+                        <p id="searchError" class="text-red-500 text-sm mt-1 hidden"></p>
                     </form>
                 </div>
 
@@ -224,15 +226,16 @@
 
                 <!-- Desktop Menu -->
                 <ul class="hidden md:flex items-center gap-8">
-                    <li class="dropdown relative">
-                        <a href="#" class="dropdown-toggle flex items-center gap-1 hover:text-green-500 transition-colors">
-                            Home <i class="fas fa-chevron-down text-xs"></i>
+                    <li>
+                        <a href="/" class="block px-4 py-2 text-white hover:text-green-500 transition-colors">
+                            Home 
                         </a>
-                        <div class="dropdown-content mt-2">
+                    </li>
+                        <!-- <div class="dropdown-content mt-2">
                             <a href="/" class="block px-4 py-2 text-black hover:bg-gray-100">Home v1</a>
                             <a href="/home-2" class="block px-4 py-2 text-black hover:bg-gray-100">Home v2</a>
-                        </div>
-                    </li>
+                        </div> -->
+                    
                     <li>
                         <a href="/shop" class="hover:text-green-500 transition-colors">Shop</a>
                     </li>
@@ -419,6 +422,38 @@ document.querySelector('a[href="/logout"]')?.addEventListener('click', (e) => {
         alert('An error occurred during logout.');
     });
 });
+
+function validateSearch(event) {
+    event.preventDefault();
+    const searchInput = document.getElementById('searchInput');
+    const searchError = document.getElementById('searchError');
+    const searchTerm = searchInput.value.trim();
+    
+    // Reset error state
+    searchError.classList.add('hidden');
+    searchInput.classList.remove('border-red-500');
+    
+    // Check if empty or less than 3 characters
+    if (!searchTerm || searchTerm.length < 3) {
+        searchError.textContent = 'Please enter at least 3 characters to search';
+        searchError.classList.remove('hidden');
+        searchInput.classList.add('border-red-500');
+        return false;
+    }
+    
+    // Regex pattern: only allow letters, numbers, and spaces
+    const searchPattern = /^[a-zA-Z0-9\s]{3,}$/;
+    if (!searchPattern.test(searchTerm)) {
+        searchError.textContent = 'Search can only contain letters, numbers, and spaces';
+        searchError.classList.remove('hidden');
+        searchInput.classList.add('border-red-500');
+        return false;
+    }
+    
+    // If validation passes, submit the form
+    document.getElementById('searchForm').submit();
+    return true;
+}
             </script>
             <script>
                 function handleLogout(event) {

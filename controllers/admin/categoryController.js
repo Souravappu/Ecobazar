@@ -6,7 +6,7 @@ const getCategory = async (req, res, next) => {
     try {
         let search = req.query.search || '';
         let page = parseInt(req.query.page) || 1;
-        const limit = 5;
+        const limit = 4;
 
         const categoryData = await Category.find({
             isDeleted: false,
@@ -53,7 +53,6 @@ const addCategory = async (req, res, next) => {
     try {
         const { categoryName, categoryDescription, offer, isActive } = req.body;
 
-        // Validate required fields
         if (!categoryName || !categoryDescription || !req.file) {
             return res.render('admin/add-category', {
                 errorMessage: 'All fields including image are required.',
@@ -62,7 +61,6 @@ const addCategory = async (req, res, next) => {
             });
         }
 
-        // Validate offer
         const offerValue = offer ? parseInt(offer) : 0;
         if (offerValue > 90) {
             return res.render('admin/add-category', {
@@ -72,7 +70,6 @@ const addCategory = async (req, res, next) => {
             });
         }
 
-        // Check for existing category
         const existingCategory = await Category.findOne({ name: categoryName });
         if (existingCategory) {
             return res.render('admin/add-category', {
@@ -82,7 +79,6 @@ const addCategory = async (req, res, next) => {
             });
         }
 
-        // Create new category with image path
         const createdCategory = new Category({
             name: categoryName,
             description: categoryDescription,
@@ -127,7 +123,7 @@ const getEditCategory = async (req, res, next) => {
 
         return res.render('admin/edit-category', {
             category,
-            categoryId: category._id, // Pass the ID to the EJS template
+            categoryId: category._id, 
             errorMessage: null,
             successMessage: null
         });
@@ -141,7 +137,6 @@ const editCategory = async (req, res) => {
         const id = req.params.id;
         const { name, description, offer, isActive } = req.body;
         
-        // Validate required fields
         if (!name || !description) {
             return res.render('admin/edit-category', {
                 errorMessage: 'Name and description are required',
@@ -149,7 +144,6 @@ const editCategory = async (req, res) => {
             });
         }
 
-        // Prepare the updated category data
         const updatedCategory = {
             name: name.trim(),
             description: description.trim(),
@@ -157,11 +151,9 @@ const editCategory = async (req, res) => {
             isListed: isActive === 'on'
         };
 
-        // Handle image update if new image is uploaded
         if (req.file) {
             updatedCategory.image = `/uploads/categories/${req.file.filename}`;
 
-            // Delete old image if exists
             const oldCategory = await Category.findById(id);
             if (oldCategory.image) {
                 const oldImagePath = path.join(__dirname, '../../public', oldCategory.image);
@@ -173,7 +165,6 @@ const editCategory = async (req, res) => {
             }
         }
 
-        // Update the category in the database
         const category = await Category.findByIdAndUpdate(
             id, 
             updatedCategory, 

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Coupons - Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root {
+            --primary-dark: #1f2937;
+            --secondary-dark: #111827;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+        }
+
+        body {
+            background-color: var(--secondary-dark);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        .search-container {
+            background: linear-gradient(135deg, var(--primary-dark), #1f2a3a);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            transition: all 0.4s ease;
+            padding: 2rem;
+        }
+
+        .search-input {
+            background: rgba(17, 24, 39, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .table-container {
+            background: linear-gradient(145deg, var(--primary-dark), #1c2433);
+            border-radius: 20px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .table-row {
+            transition: all 0.3s ease;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .table-row:hover {
+            background: rgba(59, 130, 246, 0.1);
+            transform: scale(1.01);
+            border-radius: 12px;
+        }
+
+        .action-btn {
+            transition: all 0.3s ease;
+            border-radius: 50%;
+            padding: 0.625rem;
+        }
+
+        .action-btn:hover {
+            transform: scale(1.2) rotate(5deg);
+        }
+
+        .status-badge {
+            padding: 0.375rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-active {
+            background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(16,185,129,0.3));
+            color: #10b981;
+        }
+
+        .status-inactive {
+            background: linear-gradient(135deg, rgba(239,68,68,0.2), rgba(239,68,68,0.3));
+            color: #ef4444;
+        }
+    </style>
+    <script>
+        // Define the functions globally
+        function toggleStatus(couponId, isActive) {
+            Swal.fire({
+                title: `Are you sure?`,
+                text: `Do you want to ${isActive ? 'deactivate' : 'activate'} this coupon?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: isActive ? '#EF4444' : '#10B981',
+                cancelButtonColor: '#6B7280',
+                confirmButtonText: isActive ? 'Yes, deactivate it!' : 'Yes, activate it!',
+                background: '#1F2937',
+                color: '#fff'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`/admin/toggle-coupon/${couponId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Status Updated',
+                                text: data.message,
+                                showConfirmButton: false,
+                                timer: 1500,
+                                background: '#1F2937',
+                                color: '#fff'
+                            }).then(() => {
+                                window.location.reload();
+                            });
+                        } else {
+                            throw new Error(data.message || 'Failed to update status');
+                        }
+                    })
+                    .catch(error => {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: error.message,
+                            background: '#1F2937',
+                            color: '#fff'
+                        });
+                    });
+                }
+            });
+        }
+
+        function deleteCoupon(couponId, couponCode) {
+            Swal.fire({
+                title: 'Are you sure?',
+                html: `You are about to delete coupon <strong>${couponCode}</strong><br>This action cannot be undone!`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#EF4444',
+                cancelButtonColor: '#3B82F6',
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'No, keep it',
+                background: '#1F2937',
+                color: '#fff'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`/admin/delete-coupon/${couponId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Deleted!',
+                                text: data.message,
+                                showConfirmButton: false,
+                                timer: 1500,
+                                background: '#1F2937',
+                                color: '#fff'
+                            }).then(() => {
+                                window.location.reload();
+                            });
+                        } else {
+                            throw new Error(data.message || 'Failed to delete coupon');
+                        }
+                    })
+                    .catch(error => {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: error.message,
+                            background: '#1F2937',
+                            color: '#fff'
+                        });
+                    });
+                }
+            });
+        }
+
+        // Move the filter functions here too
+        function applyFilters() {
+            const search = document.getElementById('searchInput').value;
+            const status = document.getElementById('statusFilter').value;
+            window.location.href = `/admin/coupons?search=${search}&status=${status}`;
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+    </script>
+</head>
+<body class="min-h-screen">
+    <%- include('../layouts/side.ejs') %>
+    <%- include('../layouts/head.ejs') %>
+
+    <div class="flex-1 px-28 py-12 ml-64 bg-gradient-to-br from-[#111827] to-[#1f2937]">
+        <!-- Page Header -->
+        <div class="flex justify-between items-center mb-10">
+            <h1 class="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-pink-600">
+                Coupon Management
+            </h1>
+            <a href="/admin/add-coupon" 
+               class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-xl shadow-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-300 flex items-center gap-2">
+                <i class="fas fa-plus-circle"></i>
+                <span>Add New Coupon</span>
+            </a>
+        </div>
+
+        <!-- Search and Filter -->
+        <div class="search-container mb-8">
+            <div class="grid grid-cols-3 gap-4">
+                <div class="col-span-2 relative">
+                    <input type="text" 
+                           id="searchInput" 
+                           placeholder="Search coupons..." 
+                           class="search-input w-full px-5 py-4 rounded-xl"
+                           value="<%= search %>">
+                    <i class="fas fa-search absolute top-1/2 right-5 transform -translate-y-1/2 text-gray-400"></i>
+                </div>
+                
+                <select id="statusFilter" 
+                        class="search-input px-5 py-4 rounded-xl"
+                        onchange="applyFilters()">
+                    <option value="">All Status</option>
+                    <option value="active" <%= status === 'active' ? 'selected' : '' %>>Active</option>
+                    <option value="inactive" <%= status === 'inactive' ? 'selected' : '' %>>Inactive</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Coupons Table -->
+        <div class="table-container">
+            <table class="w-full min-w-max">
+                <thead>
+                    <tr class="bg-gray-800/50">
+                        <th class="px-6 py-4 text-left text-sm font-medium text-gray-400 uppercase tracking-wider">Code & Details</th>
+                        <th class="px-6 py-4 text-left text-sm font-medium text-gray-400 uppercase tracking-wider">Discount</th>
+                        <th class="px-6 py-4 text-left text-sm font-medium text-gray-400 uppercase tracking-wider">Validity</th>
+                        <th class="px-6 py-4 text-left text-sm font-medium text-gray-400 uppercase tracking-wider">Usage</th>
+                        <th class="px-6 py-4 text-center text-sm font-medium text-gray-400 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-4 text-center text-sm font-medium text-gray-400 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-800">
+                    <% coupons.forEach(coupon => { %>
+                        <tr class="table-row hover:bg-gray-700/30">
+                            <td class="px-6 py-4">
+                                <div class="flex flex-col">
+                                    <span class="text-lg font-semibold text-white"><%= coupon.code %></span>
+                                    <span class="text-sm text-gray-400"><%= coupon.description %></span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex flex-col">
+                                    <span class="text-lg font-medium text-white">
+                                        <%= coupon.discountType === 'percentage' ? `${coupon.discountAmount}%` : `₹${coupon.discountAmount}` %>
+                                    </span>
+                                    <span class="text-sm text-gray-400">Min: ₹<%= coupon.minimumPurchase %></span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex flex-col">
+                                    <span class="text-white">From: <%= new Date(coupon.startDate).toLocaleDateString() %></span>
+                                    <span class="text-gray-400">To: <%= new Date(coupon.expiryDate).toLocaleDateString() %></span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <div class="w-full bg-gray-700 rounded-full h-2.5">
+                                        <div class="bg-blue-600 h-2.5 rounded-full" 
+                                             style="width: <%= (coupon.usedCount / coupon.usageLimit) * 100 %>%"></div>
+                                    </div>
+                                    <span class="ml-2 text-sm text-gray-400">
+                                        <%= coupon.usedCount %>/<%= coupon.usageLimit %>
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex justify-center">
+                                    <span class="status-badge <%= coupon.isActive ? 'status-active' : 'status-inactive' %>">
+                                        <%= coupon.isActive ? 'Active' : 'Inactive' %>
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex justify-center space-x-3">
+                                    <a href="/admin/edit-coupon/<%= coupon._id %>" 
+                                       class="action-btn text-blue-500 hover:bg-blue-500/20">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button"
+                                            onclick="toggleStatus('<%= coupon._id %>', <%= coupon.isActive %>)" 
+                                            class="action-btn text-yellow-500 hover:bg-yellow-500/20">
+                                        <i class="fas fa-power-off"></i>
+                                    </button>
+                                    <button type="button"
+                                            onclick="deleteCoupon('<%= coupon._id %>', '<%= coupon.code %>')"
+                                            class="action-btn text-red-500 hover:bg-red-500/20">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <% if (totalPages > 1) { %>
+            <div class="flex justify-center mt-8 space-x-2">
+                <% if (currentPage > 1) { %>
+                    <a href="?page=<%= currentPage-1 %>&search=<%= search %>&status=<%= status %>" 
+                       class="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-all duration-300 flex items-center gap-2">
+                        <i class="fas fa-chevron-left"></i>
+                        Previous
+                    </a>
+                <% } %>
+
+                <% 
+                let startPage = Math.max(1, currentPage - 2);
+                let endPage = Math.min(totalPages, startPage + 4);
+                
+                if (endPage - startPage < 4) {
+                    startPage = Math.max(1, endPage - 4);
+                }
+                %>
+
+                <% if (startPage > 1) { %>
+                    <a href="?page=1&search=<%= search %>&status=<%= status %>" 
+                       class="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-all duration-300">
+                        1
+                    </a>
+                    <% if (startPage > 2) { %>
+                        <span class="px-4 py-2 text-gray-500">...</span>
+                    <% } %>
+                <% } %>
+
+                <% for(let i = startPage; i <= endPage; i++) { %>
+                    <a href="?page=<%= i %>&search=<%= search %>&status=<%= status %>" 
+                       class="px-4 py-2 rounded-lg <%= currentPage === i ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300' %> hover:bg-blue-500 transition-all duration-300">
+                        <%= i %>
+                    </a>
+                <% } %>
+
+                <% if (endPage < totalPages) { %>
+                    <% if (endPage < totalPages - 1) { %>
+                        <span class="px-4 py-2 text-gray-500">...</span>
+                    <% } %>
+                    <a href="?page=<%= totalPages %>&search=<%= search %>&status=<%= status %>" 
+                       class="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-all duration-300">
+                        <%= totalPages %>
+                    </a>
+                <% } %>
+
+                <% if (currentPage < totalPages) { %>
+                    <a href="?page=<%= currentPage+1 %>&search=<%= search %>&status=<%= status %>" 
+                       class="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-all duration-300 flex items-center gap-2">
+                        Next
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                <% } %>
+            </div>
+
+            <div class="text-center mt-4 text-gray-400 text-sm">
+                Showing page <%= currentPage %> of <%= totalPages %>
+            </div>
+        <% } %>
+    </div>
+
+    <script>
+        // Add event listeners after DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchInput');
+            const statusFilter = document.getElementById('statusFilter');
+
+            if (searchInput) {
+                searchInput.addEventListener('input', debounce(applyFilters, 500));
+            }
+            if (statusFilter) {
+                statusFilter.addEventListener('change', applyFilters);
+            }
+        });
+    </script>
+</body>
+</html> 

@@ -6,12 +6,13 @@ const Category = require("../../models/Category");
 const Product = require("../../models/Products");
 const Cart = require('../../models/Cart');
 const Wishlist = require('../../models/Wishlist');
+const Wallet = require('../../models/Wallet');
 require("dotenv").config();
 
-const OTP_EXPIRY_TIME = 30; // 30 seconds to match frontend timer
-const OTP_RESEND_DELAY = 30; // 30 seconds to match frontend cooldown
+const OTP_EXPIRY_TIME = 30; 
+const OTP_RESEND_DELAY = 30; 
 
-// 404 Error Page Controller
+// 404 Error Page 
 const pageNotFound = async (req, res) => {
   try {
     const categories = await Category.find({ isListed: true });
@@ -90,7 +91,6 @@ const getHome = async (req, res) => {
   }
 };
 
-// Signup Page Controller
 const getSignup = async (req, res) => {
   try {
     const categories = await Category.find({});
@@ -102,7 +102,6 @@ const getSignup = async (req, res) => {
   }
 };
 
-// Utility: Generate OTP
 const generateOtp = () => {
   return {
     code: Math.floor(1000 + Math.random() * 9000).toString(),
@@ -110,7 +109,6 @@ const generateOtp = () => {
   };
 };
 
-// Utility: Send Verification Email
 const sendVerificationEmail = async (email, otp) => {
   try {
     const transporter = nodemailer.createTransport({
@@ -146,12 +144,10 @@ const sendVerificationEmail = async (email, otp) => {
   }
 };
 
-// User Registration Controller
 const insertUser = async (req, res) => {
   try {
     const { fname, lname, email, phone, password } = req.body;
 
-    // Input Validation
     if (!fname || !lname || !email || !phone || !password) {
       return res.status(400).json({
         success: false,
@@ -167,7 +163,6 @@ const insertUser = async (req, res) => {
       });
     }
 
-    // Generate OTP with timestamp
     const otpData = generateOtp();
     console.log(
       "Generated OTP for registration:",
@@ -252,10 +247,9 @@ const verifyOtp = async (req, res) => {
 
     const savedUser = await newUser.save();
 
-    // Initialize cart and wishlist
     await initializeUserCollections(savedUser._id);
 
-    // Clean up session
+  
     delete req.session.userOtp;
     delete req.session.userData;
 
@@ -285,7 +279,6 @@ const resendOtp = async (req, res) => {
       });
     }
 
-    // Check if enough time has passed since last OTP
     if (req.session.userOtp) {
       const timeSinceLastOtp =
         (Date.now() - req.session.userOtp.timestamp) / 1000;
@@ -380,7 +373,6 @@ const checkUser = async (req, res) => {
       });
     }
 
-    // Check if user is blocked - be specific here
     if (user.isBlocked) {
       return res.status(403).json({
         success: false,
@@ -388,7 +380,6 @@ const checkUser = async (req, res) => {
       });
     }
 
-    // Check if it's a Google account
     if (user.googleId && !user.password) {
       return res.status(400).json({
         success: false,
@@ -396,7 +387,6 @@ const checkUser = async (req, res) => {
       });
     }
 
-    // Verify password 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({
@@ -405,11 +395,9 @@ const checkUser = async (req, res) => {
       });
     }
 
-    // Update last login
     user.lastLogin = new Date();
     await user.save();
 
-    // Set session
     req.session.user = user._id;
 
     return res.status(200).json({
@@ -437,7 +425,6 @@ const getLogout = async (req, res) => {
         });
       }
 
-      // Clear session cookie
       res.clearCookie("connect.sid");
 
       return res.status(200).json({
@@ -469,7 +456,6 @@ const forgotEmailValid = async (req, res) => {
     const { email } = req.body;
     const categories = await Category.find({});
 
-    // Check if user exists
     const user = await User.findOne({ email });
     if (!user) {
       return res.render("user/forgot-password", {
@@ -479,17 +465,15 @@ const forgotEmailValid = async (req, res) => {
       });
     }
 
-    // Generate OTP
     const otpData = generateOtp();
     console.log(`Generated OTP for email ${email}: ${otpData.code}`);
-    // Store OTP and timestamp in session
+
     req.session.forgotPasswordOtp = {
       code: otpData.code,
       timestamp: otpData.timestamp,
       email: email,
     };
 
-    // Send OTP email
     const emailSent = await sendVerificationEmail(email, otpData.code);
     if (!emailSent) {
       return res.render("user/forgot-password", {
@@ -499,7 +483,6 @@ const forgotEmailValid = async (req, res) => {
       });
     }
 
-    // Render OTP verification page
     res.render("user/forgotPass-otp", {
       error: null,
       success: "OTP has been sent to your email.",
@@ -548,7 +531,7 @@ const verifyPassOtp = (req, res) => {
         req.session.resetPasswordEmail = otpData.email;
         return res.status(200).json({
             success: true,
-            redirectUrl: '/forgot-password-change'  // Updated redirect URL
+            redirectUrl: '/forgot-password-change'  
         });
 
     } catch (error) {
@@ -570,7 +553,6 @@ const resendPassOtp = async (req, res) => {
       });
     }
 
-    // Check if enough time has passed since last OTP (30 seconds)
     const timeSinceLastOtp = (Date.now() - otpData.timestamp) / 1000;
     if (timeSinceLastOtp < 30) {
       return res.status(400).json({
@@ -581,10 +563,8 @@ const resendPassOtp = async (req, res) => {
       });
     }
 
-    // Generate new OTP
     const newOtpData = generateOtp();
 
-    // Send new OTP
     const emailSent = await sendVerificationEmail(
       otpData.email,
       newOtpData.code
@@ -596,7 +576,6 @@ const resendPassOtp = async (req, res) => {
       });
     }
 
-    // Update session with new OTP data
     req.session.forgotPasswordOtp = {
       code: newOtpData.code,
       timestamp: newOtpData.timestamp,
@@ -626,13 +605,11 @@ const getChangePassword = async (req, res) => {
         }else{
           user = await User.findById(userId);
         }
-        // Fetch user data
        
         if (!user) {
             return res.redirect('/login');
         }
 
-        // Fetch categories
         const categories = await Category.find({ 
             isListed: true,
             isBlocked: false,
@@ -659,7 +636,6 @@ const getNewPassword = async (req, res) => {
         const userId = req.session.user;
         const { currentPassword, newPassword, confirmPassword } = req.body;
 
-        // Fetch user data and categories
         const [user, categories] = await Promise.all([
             User.findById(userId),
             Category.find({ 
@@ -669,7 +645,6 @@ const getNewPassword = async (req, res) => {
             })
         ]);
 
-        // Check if user exists
         if (!user) {
             return res.render('user/change-password', {
                 message: 'User not found',
@@ -678,11 +653,9 @@ const getNewPassword = async (req, res) => {
             });
         }
 
-        // Special handling for Google users with temporary password
         const isGoogleUser = user.googleId && !user.password;
         const tempPassword = 'User@123';
 
-        // Verify current password
         let isPasswordValid;
         if (isGoogleUser) {
             isPasswordValid = currentPassword === tempPassword;
@@ -700,7 +673,6 @@ const getNewPassword = async (req, res) => {
             });
         }
 
-        // Password validation
         const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
         if (!passwordPattern.test(newPassword)) {
             return res.render('user/change-password', {
@@ -718,23 +690,20 @@ const getNewPassword = async (req, res) => {
             });
         }
 
-        // Hash and update password
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         
-        // Update user document
         const updateData = {
             password: hashedPassword,
             hasChangedTemporaryPassword: true
         };
 
-        // If user was a Google user, remove googleId after password change
         if (isGoogleUser) {
-            updateData.googleId = null;  // Remove Google ID
+            updateData.googleId = null; 
         }
 
         await User.findByIdAndUpdate(userId, updateData);
 
-        // Redirect with success message
+        
         req.flash('success_msg', 'Password updated successfully');
         res.redirect('/profile');
 
@@ -748,12 +717,10 @@ const getNewPassword = async (req, res) => {
     }
 };
 
-// Add a new function to get product details
 const getProduct = async (req, res) => {
   try {
     const productId = req.params.id;
 
-    // Fetch product with category information
     const product = await Product.findOne({
       _id: productId,
       isDeleted: false,
@@ -766,7 +733,6 @@ const getProduct = async (req, res) => {
       }
     });
 
-    // If product not found or category is blocked/deleted
     if (!product || !product.category) {
       return res.status(404).render("user/error", {
         message: "Product not found or unavailable",
@@ -774,7 +740,6 @@ const getProduct = async (req, res) => {
       });
     }
 
-    // Fetch active categories for the header
     const categories = await Category.find({ 
       isListed: true,
       isBlocked: false,
@@ -784,7 +749,6 @@ const getProduct = async (req, res) => {
     const user = req.session.user;
     const userData = user ? await User.findOne({ _id: user }) : null;
 
-    // Fetch related products from the same category
     const relatedProducts = await Product.find({
       category: product.category._id,
       _id: { $ne: productId },
@@ -800,10 +764,8 @@ const getProduct = async (req, res) => {
       })
       .limit(4);
 
-    // Filter out products whose category was null after population
     const filteredRelatedProducts = relatedProducts.filter(prod => prod.category !== null);
 
-    // Format image paths
     const formattedProduct = {
       ...product.toObject(),
       images: product.images.map((image) => {
@@ -833,7 +795,6 @@ const getProduct = async (req, res) => {
   }
 };
 
-// Add a function to get products by category
 const getProductsByCategory = async (req, res) => {
   try {
     const categoryId = req.params.categoryId;
@@ -842,7 +803,6 @@ const getProductsByCategory = async (req, res) => {
     const sort = req.query.sort || "default";
     const priceRange = parseInt(req.query.price) || 100000;
 
-    // Find the current category and check if it's active
     const currentCategory = await Category.findOne({
       _id: categoryId,
       isBlocked: false,
@@ -856,7 +816,6 @@ const getProductsByCategory = async (req, res) => {
       });
     }
 
-    // Build query
     let query = {
       category: categoryId,
       isDeleted: false,
@@ -864,7 +823,6 @@ const getProductsByCategory = async (req, res) => {
       salePrice: { $lte: priceRange },
     };
 
-    // Build sort options
     let sortOptions = {};
     switch (sort) {
       case "price-asc":
@@ -880,11 +838,9 @@ const getProductsByCategory = async (req, res) => {
         sortOptions.createdAt = -1;
     }
 
-    // Get total count for pagination
     const total = await Product.countDocuments(query);
     const totalPages = Math.ceil(total / limit);
 
-    // Get products
     const products = await Product.find(query)
       .sort(sortOptions)
       .skip((page - 1) * limit)
@@ -896,7 +852,6 @@ const getProductsByCategory = async (req, res) => {
     const user = req.session.user;
     const userData = user ? await User.findOne({ _id: user }) : null;
 
-    // Render the product listing page
     res.render("user/product-listing", {
       title: currentCategory.name,
       products,
@@ -917,36 +872,130 @@ const getProductsByCategory = async (req, res) => {
   }
 };
 
-// Add a search products function
 const searchProducts = async (req, res) => {
-  try {
-    const searchQuery = req.query.q;
-    const categories = await Category.find({});
+    try {
+        const query = req.query.q;
+        const categoryId = req.query.category;
+        const sortBy = req.query.sort || 'name'; 
+        const page = parseInt(req.query.page) || 1;
+        const limit = 12; 
 
-    const products = await Product.find({
-      isDeleted: false,
-      isBlocked: false,
-      $or: [
-        { name: { $regex: searchQuery, $options: "i" } },
-        { description: { $regex: searchQuery, $options: "i" } },
-      ],
-    }).populate("category");
+        // Base query for products
+        let searchQuery = {
+            isBlocked: false,
+            isDeleted: false
+        };
 
-    const user = req.session.user;
-    const userData = user ? await User.findOne({ _id: user }) : null;
+        // Search in both products and categories
+        let categoryResults = [];
+        if (query) {
+            // Search in categories
+            categoryResults = await Category.find({
+                name: { $regex: query, $options: 'i' },
+                isListed: true,
+                isBlocked: false,
+                isDeleted: false
+            });
 
-    res.render("user/search-results", {
-      products,
-      categories,
-      user: userData,
-      searchQuery,
-    });
-  } catch (error) {
-    console.error("Error searching products:", error);
-    res.status(500).render("user/error", {
-      message: "Error searching products",
-    });
-  }
+            // If searching within a specific category
+            if (categoryId) {
+                searchQuery.category = categoryId;
+            }
+            // If not in specific category, include products from matching categories
+            else if (categoryResults.length > 0) {
+                searchQuery.$or = [
+                    { 
+                        category: { 
+                            $in: categoryResults.map(cat => cat._id) 
+                        } 
+                    },
+                    { 
+                        name: { $regex: query, $options: 'i' } 
+                    },
+                    { 
+                        description: { $regex: query, $options: 'i' } 
+                    }
+                ];
+            } else {
+                // If no matching categories, search only in products
+                searchQuery.$or = [
+                    { name: { $regex: query, $options: 'i' } },
+                    { description: { $regex: query, $options: 'i' } }
+                ];
+            }
+        } else if (categoryId) {
+            // If only category filter is applied
+            searchQuery.category = categoryId;
+        }
+
+        // Get all categories for sidebar
+        const categories = await Category.find({ 
+            isListed: true,
+            isBlocked: false,
+            isDeleted: false 
+        });
+
+        // Build sort object
+        let sortObject = {};
+        switch (sortBy) {
+            case 'price_asc':
+                sortObject.salePrice = 1;
+                break;
+            case 'price_desc':
+                sortObject.salePrice = -1;
+                break;
+            case 'newest':
+                sortObject.createdAt = -1;
+                break;
+            default:
+                sortObject.name = 1;
+        }
+
+        // Get total count for pagination
+        const total = await Product.countDocuments(searchQuery);
+        const totalPages = Math.ceil(total / limit);
+
+        // Get products with category population
+        const products = await Product.find(searchQuery)
+            .populate({
+                path: 'category',
+                match: { 
+                    isBlocked: false, 
+                    isDeleted: false 
+                }
+            })
+            .sort(sortObject)
+            .skip((page - 1) * limit)
+            .limit(limit);
+
+        // Filter out products whose category is null (due to populate match conditions)
+        const filteredProducts = products.filter(product => product.category !== null);
+        const userData = req.session.user ? 
+        await User.findById(req.session.user) : 
+        null;
+        res.render('user/searchResults', {
+            products: filteredProducts,
+            categories,
+            categoryResults, // Pass matching categories to view
+            query,
+            selectedCategory: categoryId,
+            sortBy,
+            pagination: {
+                current: page,
+                total: totalPages,
+                hasNext: page < totalPages,
+                hasPrev: page > 1
+            },
+            user: userData
+        });
+
+    } catch (error) {
+        console.error('Search error:', error);
+        res.status(500).render('error', {
+            message: 'An error occurred while searching products',
+            error: error
+        });
+    }
 };
 
 const getShopProducts = async (req, res) => {
@@ -966,7 +1015,6 @@ const getShopProducts = async (req, res) => {
       query.salePrice = { $lte: priceRange };
     }
 
-    // Build sort options
     let sortOptions = {};
     switch (sort) {
       case "price-asc":
@@ -995,7 +1043,6 @@ const getShopProducts = async (req, res) => {
     const total = filteredProducts.length;
     const totalPages = Math.ceil(total / limit);
 
-    // Get paginated products
     const products = await Product.find(query)
       .sort(sortOptions)
       .populate({
@@ -1056,7 +1103,6 @@ const getCategoryProducts = async (req, res) => {
       });
     }
 
-    // Build base query to show all products in category
     let query = {
       category: categoryId,
       isDeleted: false,
@@ -1064,7 +1110,6 @@ const getCategoryProducts = async (req, res) => {
       quantity: { $exists: true },
     };
 
-    // Only apply price filter if explicitly set in query params
     if (priceRange && req.query.price !== "any") {
       query.salePrice = { $lte: priceRange };
     }
@@ -1115,23 +1160,19 @@ const getCategoryProducts = async (req, res) => {
   }
 };
 
-// Add this helper function
 const initializeUserCollections = async (userId) => {
     try {
-        // create empty cart
         const newCart = new Cart({
             user: userId,
             items: [],
             total: 0
         });
 
-        // create empty wishlist
         const newWishlist = new Wishlist({
             user: userId,
             items: []
         });
 
-        // Save both collections
         await Promise.all([
             newCart.save(),
             newWishlist.save()
@@ -1143,8 +1184,6 @@ const initializeUserCollections = async (userId) => {
         throw error;
     }
 };
-
-// Add these new controller methods
 
 const getForgotPasswordChange = async (req, res) => {
     try {
@@ -1183,7 +1222,6 @@ const postForgotPasswordChange = async (req, res) => {
             });
         }
 
-        // Password validation
         const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
         if (!passwordPattern.test(newPassword)) {
             return res.render('user/forgot-password-change', {
@@ -1199,26 +1237,85 @@ const postForgotPasswordChange = async (req, res) => {
             });
         }
 
-        // Hash new password
         const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-        // Update user's password
         await User.findByIdAndUpdate(user._id, {
             password: hashedPassword,
             hasChangedTemporaryPassword: true
         });
 
-        // Clear session
         delete req.session.resetPasswordEmail;
         delete req.session.forgotPasswordOtp;
 
-        // Redirect to login with success message
         res.redirect('/login?message=Password reset successful. Please login with your new password');
 
     } catch (error) {
         console.error('Password reset error:', error);
         res.render('user/forgot-password-change', {
             message: 'An error occurred while resetting password',
+            categories: []
+        });
+    }
+};
+
+const createUserCollections = async (userId) => {
+    try {
+        await Promise.all([
+            new Cart({ user: userId, items: [], total: 0 }).save(),
+            new Wishlist({ user: userId, items: [] }).save(),
+            new Wallet({ user: userId, balance: 0, transactions: [] }).save()
+        ]);
+    } catch (error) {
+        console.error('Error creating user collections:', error);
+        throw error;
+    }
+};
+
+const getAbout = async (req, res) => {
+    try {
+        const categories = await Category.find({ 
+            isListed: true,
+            isBlocked: false,
+            isDeleted: false 
+        });
+        
+        const userData = req.session.user ? 
+            await User.findById(req.session.user) : 
+            null;
+
+        res.render('user/about', {
+            user: userData,
+            categories
+        });
+    } catch (error) {
+        console.error('Error loading about page:', error);
+        res.status(500).render('error', {
+            message: 'Error loading page',
+            categories: []
+        });
+    }
+};
+
+const getContact = async (req, res) => {
+    try {
+        const categories = await Category.find({ 
+            isListed: true,
+            isBlocked: false,
+            isDeleted: false 
+        });
+        
+        const userData = req.session.user ? 
+            await User.findById(req.session.user) : 
+            null;
+
+        res.render('user/contact', {
+            user: userData,
+            categories
+        });
+    } catch (error) {
+        console.error('Error loading contact page:', error);
+        res.status(500).render('error', {
+            message: 'Error loading page',
             categories: []
         });
     }
@@ -1246,5 +1343,8 @@ module.exports = {
   getShopProducts,
   getCategoryProducts,
   getForgotPasswordChange,
-  postForgotPasswordChange
+  postForgotPasswordChange,
+  createUserCollections,
+  getAbout,
+  getContact
 };

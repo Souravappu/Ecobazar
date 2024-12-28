@@ -161,16 +161,16 @@
                         name="search" 
                         placeholder="Search customers by name, email, phone..." 
                         class="w-full search-input px-5 py-4 rounded-xl"
-                        value="<%= searchTerm %>"
+                        value="<%= filters.search || '' %>"
                     >
                     <i class="fas fa-search absolute top-1/2 right-5 transform -translate-y-1/2 text-gray-400"></i>
                 </div>
                 
                 <select name="status" class="search-input px-5 py-4 rounded-xl">
                     <option value="" class="bg-secondary-dark">All Statuses</option>
-                    <option value="active" class="bg-secondary-dark" <%= currentStatus === 'active' ? 'selected' : '' %>>Active</option>
-                    <option value="blocked" class="bg-secondary-dark" <%= currentStatus === 'blocked' ? 'selected' : '' %>>Blocked</option>
-                    <option value="deleted" class="bg-secondary-dark" <%= currentStatus === 'deleted' ? 'selected' : '' %>>Deleted</option>
+                    <option value="active" class="bg-secondary-dark" <%= filters.status === 'active' ? 'selected' : '' %>>Active</option>
+                    <option value="blocked" class="bg-secondary-dark" <%= filters.status === 'blocked' ? 'selected' : '' %>>Blocked</option>
+                    <option value="deleted" class="bg-secondary-dark" <%= filters.status === 'deleted' ? 'selected' : '' %>>Deleted</option>
                 </select>
                 
                 <button type="submit" class="btn btn-secondary flex items-center justify-center space-x-3 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 transition-all duration-300 px-6 py-4 rounded-xl">
@@ -197,7 +197,7 @@
                     <% data.forEach((customer, index) => { %>
                     <tr class="table-row hover:bg-gray-800/50 border-b border-gray-700/50">
                         <td class="py-5 px-7 text-gray-400">
-                            <%= (currentPage - 1) * 10 + index + 1 %>
+                            <%= (pagination.page - 1) * pagination.limit + index + 1 %>
                         </td>
                         <td class="py-5 px-7 font-medium text-blue-200">
                             <%= customer.fname %> <%= customer.lname %>
@@ -251,11 +251,26 @@
         </div>
 
         <!-- Enhanced Pagination -->
-        <div class="flex justify-center mt-8 space-x-3">
-            <% if (totalPages > 1) { %>
-                <% for(let i = 0; i < totalPages; i++) { %>
-                    <a href="?page=<%= i+1 %>&search=<%= searchTerm %>" class="pagination-btn px-5 py-3 rounded-lg <%= currentPage == i+1 ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300' %> transition-all">
-                        <%= i+1 %>
+        <div class="flex justify-center mt-8 space-x-2">
+            <% if (pagination.totalPages > 1) { %>
+                <% if (pagination.hasPrev) { %>
+                    <a href="?page=<%= pagination.page-1 %>&status=<%= filters.status %>&search=<%= filters.search %>" 
+                       class="pagination-btn px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all">
+                        Previous
+                    </a>
+                <% } %>
+                
+                <% for(let i = 1; i <= pagination.totalPages; i++) { %>
+                    <a href="?page=<%= i %>&status=<%= filters.status %>&search=<%= filters.search %>" 
+                       class="pagination-btn px-4 py-2 <%= pagination.page == i ? 'bg-blue-700 text-white' : 'bg-gray-700 text-gray-300' %> rounded-lg">
+                        <%= i %>
+                    </a>
+                <% } %>
+                
+                <% if (pagination.hasNext) { %>
+                    <a href="?page=<%= pagination.page+1 %>&status=<%= filters.status %>&search=<%= filters.search %>" 
+                       class="pagination-btn px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all">
+                        Next
                     </a>
                 <% } %>
             <% } %>

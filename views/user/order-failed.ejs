@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Failed - Ecobazar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body class="bg-gray-50">
+    <%- include('../layouts/headerWithoutUser.ejs') %>
+
+    <main class="container mx-auto px-4 py-8">
+        <div class="max-w-2xl mx-auto bg-white rounded-lg shadow p-6">
+            <div class="text-center mb-8">
+                <div class="text-red-500 mb-4">
+                    <i class="fas fa-times-circle text-6xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-800 mb-2">Payment Failed</h1>
+                <p class="text-gray-600">Your payment was not completed successfully.</p>
+            </div>
+
+            <% if (order) { %>
+                <div class="border-t border-b py-4 my-4">
+                    <h2 class="font-semibold text-lg mb-4">Order Details</h2>
+                    <div class="space-y-2">
+                        <p><span class="font-medium">Order ID:</span> <%= order.orderId %></p>
+                        <p><span class="font-medium">Total Amount:</span> ₹<%= order.total.toFixed(2) %></p>
+                        <p><span class="font-medium">Payment Method:</span> <%= order.paymentMethod %></p>
+                    </div>
+                </div>
+
+                <div class="flex justify-center space-x-4 mt-6">
+                    <button onclick="retryPayment('<%= order._id %>')"
+                            class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition-colors">
+                        Retry Payment
+                    </button>
+                    <button onclick="abortOrder('<%= order._id %>')"
+                            class="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700 transition-colors">
+                        Abort Order
+                    </button>
+                </div>
+            <% } %>
+
+            <div class="text-center mt-8">
+                <a href="/orders" class="text-green-600 hover:text-green-700">
+                    View All Orders
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <script>
+      async function retryPayment(orderId) {
+            try {
+                const response = await fetch(`/order/retry-payment/${orderId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const options = {
+                        key: '<%= process.env.KEY_ID %>',
+                        amount: data.amount,
+                        currency: "INR",
+                        name: "Ecobazar",
+                        description: "Purchase Payment",
+                        order_id: data.orderId,
+                        handler: async function (response) {
+                            try {
+                                const verifyResponse = await fetch('/order/verify-payment', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({
+                                        razorpay_payment_id: response.razorpay_payment_id,
+                                        razorpay_order_id: response.razorpay_order_id,
+                                        razorpay_signature: response.razorpay_signature,
+                                        orderId: orderId
+                                    })
+                                });
+                                
+                                const verifyData = await verifyResponse.json();
+                                
+                                if (verifyData.success) {
+                                    window.location.href = `/order/confirmation/${verifyData.orderId}`;
+                                } else {
+                                    throw new Error(verifyData.message);
+                                }
+                            } catch (error) {
+                                console.error('Payment verification error:', error);
+                                await Swal.fire({
+                                    icon: 'error',
+                                    title: 'Payment Failed',
+                                    text: error.message || 'Error verifying payment. Please try again.',
+                                    confirmButtonColor: '#22C55E'
+                                });
+                            }
+                        },
+                        modal: {
+                            ondismiss: async function() {
+                                await Swal.fire({
+                                    icon: 'info',
+                                    title: 'Payment Cancelled',
+                                    text: 'You cancelled the payment process.',
+                                    confirmButtonColor: '#22C55E'
+                                });
+                            }
+                        },
+                        theme: {
+                            color: "#22C55E"
+                        }
+                    };
+                    
+                    const rzp = new Razorpay(options);
+                    rzp.open();
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.message || 'Error retrying payment. Please try again.',
+                    confirmButtonColor: '#22C55E'
+                });
+            }
+        }
+
+    async function abortOrder(orderId) {
+        try {
+            const result = await Swal.fire({
+                title: 'Are you sure?',
+                text: "This will cancel your order and refund any wallet amount used.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#22C55E',
+                cancelButtonColor: '#6B7280',
+                confirmButtonText: 'Yes, abort order'
+            });
+
+            if (result.isConfirmed) {
+                const response = await fetch(`/order/${orderId}/abort`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Order Aborted',
+                        text: 'Your order has been cancelled successfully.',
+                        confirmButtonColor: '#22C55E'
+                    }).then(() => {
+                        window.location.href = '/orders';
+                    });
+                } else {
+                    throw new Error(data.message);
+                }
+            }
+        } catch (error) {
+            console.error('Error aborting order:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.message || 'Error aborting order. Please try again.',
+                confirmButtonColor: '#22C55E'
+            });
+        }
+    }
+    </script>
+
+    <%- include('../layouts/footer') %>
+</body>
+</html> 

@@ -8,6 +8,28 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .error-message {
+            display: none;
+            color: #EF4444;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+        
+        .error-message.show {
+            display: block;
+        }
+        
+        .input-error {
+            border-color: #EF4444 !important;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #10B981;
+            box-shadow: 0 0 0 1px #10B981;
+        }
+    </style>
 </head>
 <body class="bg-gray-50">
     <%- include('../layouts/checkoutHeader.ejs', { title: 'Manage Addresses' }) %>
@@ -212,23 +234,17 @@
         // Form submission
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            let isValid = true;
-
-            // Validate all fields
-            form.querySelectorAll('input').forEach(input => {
-                if (validationRules[input.name] && !validateField(input)) {
-                    isValid = false;
-                }
+            
+            // Clear previous error messages
+            document.querySelectorAll('.error-message').forEach(elem => {
+                elem.textContent = '';
+                elem.classList.remove('show');
             });
-
-            if (!isValid) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Validation Error',
-                    text: 'Please check the form for errors'
-                });
-                return;
-            }
+            
+            // Reset input styles
+            form.querySelectorAll('input').forEach(input => {
+                input.classList.remove('border-red-500');
+            });
 
             try {
                 const formData = new FormData(form);
@@ -241,24 +257,52 @@
                 });
 
                 const data = await response.json();
-                if (data.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Success!',
-                        text: 'Address added successfully',
-                        showConfirmButton: false,
-                        timer: 1500
-                    }).then(() => {
-                        window.location.href = '/checkout';
-                    });
-                } else {
+                
+                if (!data.success) {
+                    // Handle validation errors
+                    if (data.errors) {
+                        Object.entries(data.errors).forEach(([field, message]) => {
+                            const errorElement = document.querySelector(`[data-error="${field}"]`);
+                            const inputElement = form.querySelector(`[name="${field}"]`);
+                            
+                            if (errorElement) {
+                                errorElement.textContent = message;
+                                errorElement.classList.add('show');
+                            }
+                            
+                            if (inputElement) {
+                                inputElement.classList.add('border-red-500');
+                            }
+                        });
+                        
+                        // Show error alert
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Validation Error',
+                            text: 'Please check the form for errors',
+                            confirmButtonColor: '#10B981'
+                        });
+                        return;
+                    }
                     throw new Error(data.message);
                 }
+
+                // Success case
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: 'Address added successfully',
+                    showConfirmButton: false,
+                    timer: 1500
+                }).then(() => {
+                    window.location.href = '/checkout';
+                });
             } catch (error) {
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
-                    text: error.message || 'An error occurred while saving the address'
+                    text: error.message || 'An error occurred while saving the address',
+                    confirmButtonColor: '#10B981'
                 });
             }
         });

@@ -1,295 +1,320 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
+    <title>Admin Dashboard - Ecobazar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #111827;
+        :root {
+            --primary-dark: #1f2937;
+            --secondary-dark: #111827;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
         }
-        .stat-card {
+
+        body {
+            background-color: var(--secondary-dark);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .card {
+            background: linear-gradient(135deg, var(--secondary-dark), #273346);
+            border-radius: 16px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .card:hover {
+            box-shadow: 0 20px 45px rgba(0,0,0,0.4);
+        }
+
+        .stats-card {
             background: rgba(17, 24, 39, 0.8);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
+
         .chart-container {
             background: rgba(17, 24, 39, 0.8);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        .table-row-hover:hover {
-            background-color: rgba(55, 65, 81, 0.5);
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in-up {
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+
+        .table-row {
+            transition: all 0.3s ease;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .table-row:hover {
+            background: rgba(59, 130, 246, 0.1);
         }
     </style>
 </head>
-<body class="text-gray-200">
-    <!-- Sidebar -->
-    <aside class="w-64 h-screen bg-[#1A1C1E] flex flex-col fixed left-0 top-0 z-30">
-        <%- include('../layouts/side.ejs') %>
-    </aside>
+<body class="min-h-screen bg-[#111827]">
+    <%- include('../layouts/side.ejs') %>
+    <%- include('../layouts/head.ejs') %>
+    <div class="flex-1 px-28 py-12 ml-64 bg-gradient-to-br from-[#111827] to-[#1f2937]">
+        <!-- Page Header -->
+        <div class="flex justify-between items-center mb-10 fade-in-up">
+            <h1 class="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-pink-600">
+                Dashboard Overview
+            </h1>
+            <form action="/admin/home" method="GET" class="flex gap-4">
+                <select name="period" 
+                        class="bg-[#1A1C1E] text-gray-300 rounded-xl px-4 py-2 border border-gray-700 focus:border-blue-500 focus:ring-blue-500"
+                        onchange="this.form.submit()">
+                    <option value="yearly" <%= period === 'yearly' ? 'selected' : '' %>>Yearly</option>
+                    <option value="monthly" <%= period === 'monthly' ? 'selected' : '' %>>Monthly</option>
+                    <option value="weekly" <%= period === 'weekly' ? 'selected' : '' %>>Weekly</option>
+                    <option value="daily" <%= period === 'daily' ? 'selected' : '' %>>Daily</option>
+                </select>
+            </form>
+        </div>
 
-    <!-- Main Content Wrapper -->
-    <div class="flex flex-col min-h-screen">
-        <!-- Header -->
-        <header class="fixed top-0 right-0 left-64 z-20 bg-[#1A1C1E] shadow-lg">
-            <%- include('../layouts/head.ejs') %>
-        </header>
-
-        <!-- Main Content Area -->
-        <main class="ml-64 pt-16 min-h-screen">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <!-- Stats Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <!-- Potential Growth -->
-                    <div class="stat-card rounded-xl p-6 transition-all duration-300 hover:transform hover:scale-105">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h3 class="text-gray-400 text-sm font-medium">Potential Growth</h3>
-                                <div class="mt-2 flex items-baseline">
-                                    <span class="text-2xl font-semibold">$12.34</span>
-                                    <span class="ml-2 text-green-500 text-sm">+3.5%</span>
-                                </div>
-                            </div>
-                            <div class="p-3 bg-green-500/10 rounded-lg">
-                                <i class="fas fa-arrow-trend-up text-green-500"></i>
-                            </div>
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="stats-card rounded-xl p-6 fade-in-up">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="text-gray-400 text-sm font-medium">Total Users</h3>
+                        <div class="mt-2 flex items-baseline">
+                            <span class="text-2xl font-semibold text-white"><%= stats.totalUsers %></span>
+                            <span class="ml-2 text-green-500 text-sm">Active: <%= stats.activeUsers %></span>
                         </div>
                     </div>
-
-                    <!-- Revenue Current -->
-                    <div class="stat-card rounded-xl p-6 transition-all duration-300 hover:transform hover:scale-105">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h3 class="text-gray-400 text-sm font-medium">Revenue Current</h3>
-                                <div class="mt-2 flex items-baseline">
-                                    <span class="text-2xl font-semibold">$17.34</span>
-                                    <span class="ml-2 text-green-500 text-sm">+11%</span>
-                                </div>
-                            </div>
-                            <div class="p-3 bg-blue-500/10 rounded-lg">
-                                <i class="fas fa-arrow-trend-up text-blue-500"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Daily Income -->
-                    <div class="stat-card rounded-xl p-6 transition-all duration-300 hover:transform hover:scale-105">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h3 class="text-gray-400 text-sm font-medium">Daily Income</h3>
-                                <div class="mt-2 flex items-baseline">
-                                    <span class="text-2xl font-semibold">$12.34</span>
-                                    <span class="ml-2 text-red-500 text-sm">-2.4%</span>
-                                </div>
-                            </div>
-                            <div class="p-3 bg-red-500/10 rounded-lg">
-                                <i class="fas fa-arrow-trend-down text-red-500"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Expense Current -->
-                    <div class="stat-card rounded-xl p-6 transition-all duration-300 hover:transform hover:scale-105">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h3 class="text-gray-400 text-sm font-medium">Expense Current</h3>
-                                <div class="mt-2 flex items-baseline">
-                                    <span class="text-2xl font-semibold">$31.53</span>
-                                    <span class="ml-2 text-green-500 text-sm">+3.5%</span>
-                                </div>
-                            </div>
-                            <div class="p-3 bg-purple-500/10 rounded-lg">
-                                <i class="fas fa-arrow-trend-up text-purple-500"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Charts Section -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                    <!-- Transaction History -->
-                    <div class="chart-container rounded-xl p-6">
-                        <h2 class="text-lg font-semibold mb-6">Transaction History</h2>
-                        <div class="flex justify-center mb-8">
-                            <canvas id="doughnutChart" width="250" height="250"></canvas>
-                        </div>
-                        <div class="space-y-4">
-                            <div class="flex justify-between items-center p-3 rounded-lg bg-gray-800/50">
-                                <div class="flex items-center gap-3">
-                                    <i class="fas fa-wallet text-blue-500"></i>
-                                    <span>Online Payment</span>
-                                </div>
-                                <span>$4,000</span>
-                            </div>
-                            <div class="flex justify-between items-center p-3 rounded-lg bg-gray-800/50">
-                                <div class="flex items-center gap-3">
-                                    <i class="fas fa-truck text-green-500"></i>
-                                    <span>Cash on Delivery</span>
-                                </div>
-                                <span>$4,000</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Bar Chart -->
-                    <div class="chart-container rounded-xl p-6">
-                        <h2 class="text-lg font-semibold mb-6">Revenue Analytics</h2>
-                        <canvas id="barChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Revenue Stats -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div class="chart-container rounded-xl p-6">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h3 class="text-gray-400 text-sm font-medium">Revenue</h3>
-                                <div class="mt-2">
-                                    <span class="text-2xl font-semibold">$32,123</span>
-                                    <span class="ml-2 text-green-500 text-sm">+3.5%</span>
-                                </div>
-                                <p class="text-sm text-gray-400 mt-2">11.38% Since last month</p>
-                            </div>
-                            <div class="p-3 bg-blue-500/10 rounded-lg">
-                                <i class="fas fa-cube text-blue-500 text-xl"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="chart-container rounded-xl p-6">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h3 class="text-gray-400 text-sm font-medium">Sales</h3>
-                                <div class="mt-2">
-                                    <span class="text-2xl font-semibold">$45,850</span>
-                                    <span class="ml-2 text-green-500 text-sm">+8.3%</span>
-                                </div>
-                                <p class="text-sm text-gray-400 mt-2">9.61% Since last month</p>
-                            </div>
-                            <div class="p-3 bg-red-500/10 rounded-lg">
-                                <i class="fas fa-shopping-cart text-red-500 text-xl"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="chart-container rounded-xl p-6">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h3 class="text-gray-400 text-sm font-medium">Purchase</h3>
-                                <div class="mt-2">
-                                    <span class="text-2xl font-semibold">$2,039</span>
-                                    <span class="ml-2 text-red-500 text-sm">-2.1%</span>
-                                </div>
-                                <p class="text-sm text-gray-400 mt-2">2.27% Since last month</p>
-                            </div>
-                            <div class="p-3 bg-green-500/10 rounded-lg">
-                                <i class="fas fa-desktop text-green-500 text-xl"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Order Status Table -->
-                <div class="chart-container rounded-xl overflow-hidden">
-                    <div class="p-6 flex justify-between items-center">
-                        <h2 class="text-lg font-semibold">Order Status</h2>
-                        <select class="bg-gray-800 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option>Last 7 days</option>
-                            <option>Last 30 days</option>
-                            <option>Last 90 days</option>
-                        </select>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead>
-                                <tr class="bg-gray-800/50">
-                                    <th class="p-4 text-left">
-                                        <input type="checkbox" class="rounded bg-gray-700 border-gray-600">
-                                    </th>
-                                    <th class="p-4 text-left text-sm font-medium text-gray-400">Client Name</th>
-                                    <th class="p-4 text-left text-sm font-medium text-gray-400">Order No</th>
-                                    <th class="p-4 text-left text-sm font-medium text-gray-400">Product Cost</th>
-                                    <th class="p-4 text-left text-sm font-medium text-gray-400">Project</th>
-                                    <th class="p-4 text-left text-sm font-medium text-gray-400">Payment Mode</th>
-                                    <th class="p-4 text-left text-sm font-medium text-gray-400">Start Date</th>
-                                    <th class="p-4 text-left text-sm font-medium text-gray-400">Payment Status</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-800">
-                                <tr class="table-row-hover transition-colors">
-                                    <td class="p-4">
-                                        <input type="checkbox" class="rounded bg-gray-700 border-gray-600">
-                                    </td>
-                                    <td class="p-4">
-                                        <div class="flex items-center gap-3">
-                                            <img src="/api/placeholder/32/32" class="w-8 h-8 rounded-full bg-gray-700" alt="User">
-                                            <span class="font-medium">Henry Klein</span>
-                                        </div>
-                                    </td>
-                                    <td class="p-4">#02312</td>
-                                    <td class="p-4">$14,500</td>
-                                    <td class="p-4">Dashboard</td>
-                                    <td class="p-4">Credit card</td>
-                                    <td class="p-4">04 Dec 2023</td>
-                                    <td class="p-4">
-                                        <span class="px-3 py-1 rounded-full text-sm bg-green-500/20 text-green-500">
-                                            Approved
-                                        </span>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="p-3 bg-blue-500/10 rounded-lg">
+                        <i class="fas fa-users text-blue-500"></i>
                     </div>
                 </div>
             </div>
-        </main>
+
+            <div class="stats-card rounded-xl p-6 fade-in-up">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="text-gray-400 text-sm font-medium">Total Orders</h3>
+                        <div class="mt-2 flex items-baseline">
+                            <span class="text-2xl font-semibold text-white"><%= stats.totalOrders %></span>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-green-500/10 rounded-lg">
+                        <i class="fas fa-shopping-cart text-green-500"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-card rounded-xl p-6 fade-in-up">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="text-gray-400 text-sm font-medium">Total Revenue</h3>
+                        <div class="mt-2 flex items-baseline">
+                            <span class="text-2xl font-semibold text-white">₹<%= stats.totalRevenue.toFixed(2) %></span>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-purple-500/10 rounded-lg">
+                        <i class="fas fa-rupee-sign text-purple-500"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-card rounded-xl p-6 fade-in-up">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="text-gray-400 text-sm font-medium">Total Products</h3>
+                        <div class="mt-2 flex items-baseline">
+                            <span class="text-2xl font-semibold text-white"><%= stats.totalProducts %></span>
+                            <span class="ml-2 text-blue-500 text-sm">Categories: <%= stats.totalCategories %></span>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-red-500/10 rounded-lg">
+                        <i class="fas fa-box text-red-500"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- Revenue Chart -->
+            <div class="chart-container rounded-xl p-6 fade-in-up">
+                <h3 class="text-lg font-semibold mb-4 text-gray-300">Revenue Trend</h3>
+                <canvas id="revenueChart"></canvas>
+            </div>
+
+            <!-- Order Status Distribution -->
+            <div class="chart-container rounded-xl p-6 fade-in-up">
+                <h3 class="text-lg font-semibold mb-4 text-gray-300">Order Status Distribution</h3>
+                <canvas id="orderStatusChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Best Selling Products and Categories -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- Best Selling Products -->
+            <div class="chart-container rounded-xl p-6 fade-in-up">
+                <h3 class="text-lg font-semibold mb-4 text-gray-300">Best Selling Products</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="text-left py-3 text-gray-400">Product</th>
+                                <th class="text-right py-3 text-gray-400">Quantity</th>
+                                <th class="text-right py-3 text-gray-400">Revenue</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% bestSellingProducts.forEach(product => { %>
+                                <tr class="table-row">
+                                    <td class="py-3 text-gray-300"><%= product.product.name %></td>
+                                    <td class="text-right text-gray-300"><%= product.totalQuantity %></td>
+                                    <td class="text-right text-gray-300">₹<%= product.totalRevenue.toFixed(2) %></td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Best Selling Categories -->
+            <div class="chart-container rounded-xl p-6 fade-in-up">
+                <h3 class="text-lg font-semibold mb-4 text-gray-300">Best Selling Categories</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="text-left py-3 text-gray-400">Category</th>
+                                <th class="text-right py-3 text-gray-400">Quantity</th>
+                                <th class="text-right py-3 text-gray-400">Revenue</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% bestSellingCategories.forEach(category => { %>
+                                <tr class="table-row">
+                                    <td class="py-3 text-gray-300"><%= category.category.name %></td>
+                                    <td class="text-right text-gray-300"><%= category.totalQuantity %></td>
+                                    <td class="text-right text-gray-300">₹<%= category.totalRevenue.toFixed(2) %></td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Users and Recent Activity -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Top Users -->
+            <div class="chart-container rounded-xl p-6 fade-in-up">
+                <h3 class="text-lg font-semibold mb-4 text-gray-300">Top Customers</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="text-left py-3 text-gray-400">Customer</th>
+                                <th class="text-right py-3 text-gray-400">Orders</th>
+                                <th class="text-right py-3 text-gray-400">Total Spent</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% topUsers.forEach(user => { %>
+                                <tr class="table-row">
+                                    <td class="py-3 text-gray-300"><%= user.user.fname %> <%= user.user.lname %></td>
+                                    <td class="text-right text-gray-300"><%= user.totalOrders %></td>
+                                    <td class="text-right text-gray-300">₹<%= user.totalSpent.toFixed(2) %></td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="chart-container rounded-xl p-6 fade-in-up">
+                <h3 class="text-lg font-semibold mb-4 text-gray-300">Recent Activity</h3>
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="font-medium mb-2 text-gray-400">Recent Orders</h4>
+                        <div class="space-y-2">
+                            <% recentOrders.forEach(order => { %>
+                                <div class="flex justify-between items-center border-b border-gray-700 pb-2">
+                                    <div>
+                                        <p class="font-medium text-gray-300">#<%= order.orderId %></p>
+                                        <p class="text-sm text-gray-400">
+                                            <%= order.user ? `${order.user.fname} ${order.user.lname}` : 'Deleted User' %>
+                                        </p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="font-medium text-gray-300">₹<%= order.total.toFixed(2) %></p>
+                                        <p class="text-sm text-gray-400">
+                                            <%= new Date(order.createdAt).toLocaleDateString() %>
+                                        </p>
+                                    </div>
+                                </div>
+                            <% }); %>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="font-medium mb-2 text-gray-400">Recent Users</h4>
+                        <div class="space-y-2">
+                            <% recentUsers.forEach(user => { %>
+                                <div class="flex justify-between items-center border-b border-gray-700 pb-2">
+                                    <div>
+                                        <p class="font-medium text-gray-300"><%= user.fname %> <%= user.lname %></p>
+                                        <p class="text-sm text-gray-400"><%= user.email %></p>
+                                    </div>
+                                    <p class="text-sm text-gray-400">
+                                        <%= new Date(user.createdAt).toLocaleDateString() %>
+                                    </p>
+                                </div>
+                            <% }); %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+
     <script>
-        // Theme configuration for charts
+        // Configure Chart.js defaults for dark theme
         Chart.defaults.color = '#9CA3AF';
         Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)';
 
-        // Doughnut Chart
-        const doughnutCtx = document.getElementById('doughnutChart').getContext('2d');
-        new Chart(doughnutCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Online Payment', 'Cash on Delivery'],
-                datasets: [{
-                    data: [4000, 4000],
-                    backgroundColor: ['#3B82F6', '#22C55E'],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                cutout: '75%',
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                }
-            }
-        });
+        // Revenue Chart
+        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+        const monthlyRevenue = <%- JSON.stringify(monthlyRevenue) %>;
+        
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const revenueData = {
+            labels: monthlyRevenue.map(item => `${monthNames[item._id.month - 1]} ${item._id.year}`),
+            datasets: [{
+                label: 'Revenue',
+                data: monthlyRevenue.map(item => item.total),
+                borderColor: '#3B82F6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        };
 
-        // Bar Chart
-        const barCtx = document.getElementById('barChart').getContext('2d');
-        new Chart(barCtx, {
-            type: 'bar',
-            data: {
-                labels: ['2018', '2019', '2020', '2021', '2022', '2023'],
-                datasets: [{
-                    label: 'Revenue',
-                    data: [10, 17, 3, 5, 2, 3],
-                    backgroundColor: ['#EF4444', '#3B82F6', '#F59E0B', '#22C55E', '#8B5CF6', '#EC4899'],
-                    borderWidth: 0,
-                    borderRadius: 4
-                }]
-            },
+        new Chart(revenueCtx, {
+            type: 'line',
+            data: revenueData,
             options: {
                 responsive: true,
                 plugins: {
@@ -311,6 +336,61 @@
                     }
                 }
             }
+        });
+
+        // Order Status Distribution Chart
+        const statusCtx = document.getElementById('orderStatusChart').getContext('2d');
+        const orderStatusData = <%- JSON.stringify(orderStatusDistribution) %>;
+        
+        const statusColors = {
+            'Pending': '#FCD34D',
+            'Processing': '#60A5FA',
+            'Shipped': '#34D399',
+            'Delivered': '#10B981',
+            'Cancelled': '#EF4444',
+            'Failed': '#F87171'
+        };
+
+        new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: orderStatusData.map(item => item._id),
+                datasets: [{
+                    data: orderStatusData.map(item => item.count),
+                    backgroundColor: orderStatusData.map(item => statusColors[item._id] || '#CBD5E1'),
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            color: '#9CA3AF',
+                            padding: 20,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    }
+                },
+                cutout: '70%'
+            }
+        });
+
+        // Add animation for table rows
+        document.addEventListener('DOMContentLoaded', function() {
+            const tableRows = document.querySelectorAll('.table-row');
+            tableRows.forEach((row, index) => {
+                row.style.opacity = '0';
+                row.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    row.style.transition = 'all 0.4s ease';
+                    row.style.opacity = '1';
+                    row.style.transform = 'translateY(0)';
+                }, 100 * index);
+            });
         });
     </script>
 </body>

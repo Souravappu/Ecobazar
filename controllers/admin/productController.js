@@ -13,12 +13,10 @@ const getProduct = async (req, res, next) => {
 
         const limit = 5;
 
-        // Build query
         let query = {
             isDeleted: false,
         };
 
-        // Add search condition
         if (search) {
             query.$or = [
                 { name: { $regex: search, $options: "i" } },
@@ -26,12 +24,10 @@ const getProduct = async (req, res, next) => {
             ];
         }
 
-        // Add category filter
         if (category) {
             query.category = category;
         }
 
-        // Add status filter
         if (status) {
             if (status === 'inStock') {
                 query.quantity = { $gt: 0 };
@@ -40,7 +36,6 @@ const getProduct = async (req, res, next) => {
             }
         }
 
-        //  order sorting
         let sortOption = {};
         switch (sort) {
             case 'newest':
@@ -129,7 +124,6 @@ const addProduct = async (req, res, next) => {
             unitQuantity 
         } = req.body;
 
-        // Validation checks
         if (!name || !description || !category || !quantity || !price || !unit || !unitQuantity) {
             const oldValue = { 
                 name, 
@@ -146,7 +140,6 @@ const addProduct = async (req, res, next) => {
             return res.redirect('/admin/add-product');
         }
 
-        // Unit-specific validation
         if (unit === 'kg' && (unitQuantity < 0.01 || unitQuantity > 25)) {
             req.flash('error_msg', 'Weight per unit must be between 0.01 and 25 kg');
             return res.redirect('/admin/add-product');
@@ -157,7 +150,6 @@ const addProduct = async (req, res, next) => {
             return res.redirect('/admin/add-product');
         }
 
-        // Price validation
         if (price < 1) {
             const oldValue = { name, description, category, quantity, discount, price };
             req.session.oldValue = oldValue;
@@ -165,7 +157,6 @@ const addProduct = async (req, res, next) => {
             return res.redirect('/admin/add-product');
         }
 
-        // Quantity validation
         if (quantity <= 0) {
             const oldValue = { name, description, category, quantity, discount, price };
             req.session.oldValue = oldValue;
@@ -173,7 +164,6 @@ const addProduct = async (req, res, next) => {
             return res.redirect('/admin/add-product');
         }
 
-        // Discount validation
         if (discount > 91) {
             const oldValue = { name, description, category, quantity, discount, price };
             req.session.oldValue = oldValue;
@@ -181,7 +171,6 @@ const addProduct = async (req, res, next) => {
             return res.redirect('/admin/add-product');
         }
 
-        // Check if product already exists
         const existingProduct = await Product.findOne({ name });
         if (existingProduct) {
             const oldValue = { name, description, category, quantity, discount, price };
@@ -190,7 +179,6 @@ const addProduct = async (req, res, next) => {
             return res.redirect('/admin/add-product');
         }
 
-        // Find category document
         const categoryDoc = await Category.findOne({ name: category });
         if (!categoryDoc) {
             const oldValue = { name, description, category, quantity, discount, price };
@@ -199,7 +187,6 @@ const addProduct = async (req, res, next) => {
             return res.redirect('/admin/add-product');
         }
 
-        // Image validation
         let imagePaths = [];
         if (req.files && req.files.length > 0) {
             if (req.files.length > 5) {
@@ -212,7 +199,6 @@ const addProduct = async (req, res, next) => {
             return res.redirect('/admin/add-product');
         }
 
-        // Create new product
         const newProduct = new Product({
             name,
             description,
@@ -238,7 +224,6 @@ const addProduct = async (req, res, next) => {
     }
 };
 
-//  get Edit Product
 
 const getEditProduct = async (req, res, next) => {
     try {
@@ -251,15 +236,21 @@ const getEditProduct = async (req, res, next) => {
             return res.redirect('/admin/products')
         }
 
-        return res.render('admin/edit-product', { product, category, categories });
+        const discount = product.regularPrice > 0 ? 
+            Math.round(((product.regularPrice - product.salePrice) / product.regularPrice) * 100) : 0;
+
+        const productWithDiscount = {
+            ...product.toObject(),
+            discount
+        };
+
+        return res.render('admin/edit-product', { product: productWithDiscount, category, categories });
     } catch (error) {
         console.log(error.message)
         next(error)
     }
 }
 
-
-// Edit Product
 
 const editProduct = async (req, res, next) => {
     try {
@@ -274,34 +265,28 @@ const editProduct = async (req, res, next) => {
             existingImages
         } = req.body;
 
-        // Validation checks
         if (!name || !description || !category || !quantity || !price) {
             req.flash('error_msg', 'Please provide all required fields');
             return res.redirect(`/admin/editProduct/${id}`);
         }
 
-        // Find category document
         const categoryDoc = await Category.findOne({ name: category });
         if (!categoryDoc) {
             req.flash('error_msg', 'Invalid category');
             return res.redirect(`/admin/editProduct/${id}`);
         }
 
-        // Get existing product
         const product = await Product.findById(id);
         if (!product) {
             req.flash('error_msg', 'Product not found');
             return res.redirect('/admin/products');
         }
 
-        // Handle the images
         let finalImagePaths = [];
 
-        // Handle existing images
         const existingImagesArray = existingImages ? (Array.isArray(existingImages) ? existingImages : [existingImages]) : [];
         finalImagePaths = [...existingImagesArray];
 
-        // Handle new images
         if (req.files && req.files.length > 0) {
             
             if (finalImagePaths.length + req.files.length > 5) {
@@ -309,18 +294,15 @@ const editProduct = async (req, res, next) => {
                 return res.redirect(`/admin/editProduct/${id}`);
             }
 
-            // Add new image paths
             const newImagePaths = req.files.map(file => `/products/${file.filename}`);
             finalImagePaths = [...finalImagePaths, ...newImagePaths];
         }
 
-        // Ensure at least one image
         if (finalImagePaths.length === 0) {
             req.flash('error_msg', 'Product must have at least one image');
             return res.redirect(`/admin/editProduct/${id}`);
         }
 
-        // Update product
         const updatedProduct = {
             name,
             description,
@@ -356,7 +338,7 @@ const viewProduct = async (req, res, next) => {
         }
         return res.render('admin/viewProduct', { 
             product, 
-            categories: [product.category] // Pass category information
+            categories: [product.category] 
         });
     } catch (error) {
         console.log(error.message);
@@ -375,7 +357,6 @@ const deleteProduct = async (req, res, next) => {
             return res.redirect('/admin/products');
         }
 
-        // Instead of deleting, mark as deleted
         await Product.findByIdAndUpdate(id, { 
             isDeleted: true,
             status: 'Discontinued' 
@@ -400,13 +381,11 @@ const blockProduct = async (req, res, next) => {
             return res.redirect('/admin/product');
         }
 
-        // Check if product is already blocked
         if (findProduct.isBlocked) {
             req.flash('warning_msg', `${findProduct.name} is already blocked`);
             return res.redirect('/admin/product');
         }
 
-        // Update product block status
         await Product.findByIdAndUpdate(id, { isBlocked: true }, { new: true });
         
         req.flash('success_msg', `${findProduct.name} has been blocked successfully`);
@@ -428,13 +407,11 @@ const unblockProduct = async (req, res, next) => {
             return res.redirect('/admin/product');
         }
 
-        // Check product is already unblocked
         if (!findProduct.isBlocked) {
             req.flash('warning_msg', `${findProduct.name} is already active`);
             return res.redirect('/admin/product');
         }
 
-        // product block status
         await Product.findByIdAndUpdate(id, { isBlocked: false }, { new: true });
         
         req.flash('success_msg', `${findProduct.name} has been unblocked successfully`);

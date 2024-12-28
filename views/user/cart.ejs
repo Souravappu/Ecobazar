@@ -40,23 +40,38 @@
                                         <h3 class="font-semibold mb-2"><%= item.product.name %></h3>
                                         <div class="text-green-600 font-bold">₹<%= item.product.salePrice %></div>
                                         
+                                        <!-- Stock Status Messages -->
+                                        <% if (!item.stockStatus.inStock) { %>
+                                            <div class="text-red-500 text-sm mt-2">
+                                                <i class="fas fa-exclamation-circle"></i>
+                                                Out of stock
+                                            </div>
+                                        <% } else if (!item.stockStatus.hasEnoughStock) { %>
+                                            <div class="text-orange-500 text-sm mt-2">
+                                                <i class="fas fa-exclamation-triangle"></i>
+                                                Only <%= item.stockStatus.availableStock %> units available
+                                            </div>
+                                        <% } %>
+                                        
                                         <div class="flex items-center gap-4 mt-4">
                                             <div class="flex items-center space-x-2">
                                                 <button onclick="updateCartQuantity('<%= item.product._id %>', -1)" 
-                                                        class="p-1 rounded-md hover:bg-gray-100">
+                                                        class="p-1 rounded-md hover:bg-gray-100"
+                                                        <%= !item.stockStatus.inStock ? 'disabled' : '' %>>
                                                     <i class="fas fa-minus"></i>
                                                 </button>
                                                 <input type="number" 
                                                        value="<%= item.quantity %>" 
                                                        min="1" 
-                                                       max="<%= Math.min(5, item.product.quantity) %>"
+                                                       max="<%= item.stockStatus.maxAllowed %>"
                                                        data-product-id="<%= item.product._id %>"
                                                        data-price="<%= item.product.salePrice %>"
-                                                       data-max-stock="<%= item.product.quantity %>"
-                                                       class="w-16 text-center border rounded-md"
+                                                       data-max-stock="<%= item.stockStatus.availableStock %>"
+                                                       class="w-16 text-center border rounded-md <%= !item.stockStatus.hasEnoughStock ? 'border-orange-500' : '' %>"
                                                        readonly>
                                                 <button onclick="updateCartQuantity('<%= item.product._id %>', 1)"
-                                                        class="p-1 rounded-md hover:bg-gray-100">
+                                                        class="p-1 rounded-md hover:bg-gray-100"
+                                                        <%= !item.stockStatus.hasEnoughStock || item.quantity >= item.stockStatus.maxAllowed ? 'disabled' : '' %>>
                                                     <i class="fas fa-plus"></i>
                                                 </button>
                                             </div>
@@ -127,9 +142,9 @@
             // Check maximum quantity (5 or available stock)
             const maxAllowed = Math.min(5, maxStock);
             if (newQuantity > maxAllowed) {
-                const message = maxAllowed === 5 ? 
-                    'Maximum 5 units allowed per item' : 
-                    `Only ${maxAllowed} units available in stock`;
+                const message = maxStock < 5 ? 
+                    `Only ${maxStock} units available in stock` : 
+                    'Maximum 5 units allowed per item';
                 
                 Swal.fire({
                     icon: 'warning',

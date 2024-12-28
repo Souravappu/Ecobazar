@@ -39,6 +39,28 @@
             padding-top: 2rem;
             padding-bottom: 2rem;
         }
+        .status-badge {
+            @apply px-3 py-1 rounded-full text-sm font-medium;
+        }
+        
+        .status-pending {
+            @apply bg-yellow-100 text-yellow-700;
+        }
+        
+        .status-approved {
+            @apply bg-green-100 text-green-700;
+        }
+        
+        .status-rejected {
+            @apply bg-red-100 text-red-700;
+        }
+        
+        .status-none {
+            @apply bg-gray-100 text-gray-700;
+        }
+        .status-returned {
+            @apply bg-purple-100 text-purple-700;
+        }
     </style>
 </head>
 <body>
@@ -46,44 +68,7 @@
 
     <main class="container mx-auto grid grid-cols-12 gap-6 animate__animated animate__fadeIn p-6">
         <!-- Navigation Sidebar -->
-        <div class="col-span-3 bg-white rounded-2xl shadow-2xl p-6 space-y-4">
-            <div class="flex items-center space-x-4 mb-8">
-                <div class="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white text-xl border-4 border-green-200">
-                    <i class="fas fa-user"></i>
-                </div>
-                <div>
-                    <h3 class="font-bold text-lg"><%= user.fname %> <%= user.lname %></h3>
-                    <p class="text-sm text-gray-500">User</p>
-                </div>
-            </div>
-            <nav class="space-y-2">
-                <a href="/profile" class="nav-item flex items-center p-3 rounded-lg space-x-3">
-                    <i class="fas fa-home w-6"></i>
-                    <span>Dashboard</span>
-                </a>
-                <a href="/orders" class="nav-item active flex items-center p-3 rounded-lg space-x-3">
-                    <i class="fas fa-shopping-basket w-6"></i>
-                    <span>Orders</span>
-                </a>
-                <a href="/wishlist" class="nav-item flex items-center p-3 rounded-lg space-x-3">
-                    <i class="fas fa-heart w-6"></i>
-                    <span>Wishlist</span>
-                </a>
-                <a href="/address" class="nav-item flex items-center p-3 rounded-lg space-x-3">
-                    <i class="fas fa-map-marker-alt w-6"></i>
-                    <span>Address</span>
-                </a>
-                <a href="#" class="nav-item flex items-center p-3 rounded-lg space-x-3">
-                    <i class="fas fa-cog w-6"></i>
-                    <span>Settings</span>
-                </a>
-                <form action="/logout" method="POST" class="block">
-                    <button type="submit" class="nav-item flex items-center p-3 rounded-lg space-x-3 text-red-500 w-full">
-                        <i class="fas fa-sign-out-alt w-6"></i>
-                        <span>Log Out</span>
-                    </button>
-                </form>
-            </nav>
+        <%- include('../layouts/profileSidebar.ejs', { currentPage: 'order-details ' }) %>
         </div>
 
         <!-- Order Details Content -->
@@ -97,46 +82,52 @@
                             Back to Orders
                         </a>
                         <h2 class="text-2xl font-bold">Order #<%= order.orderId %></h2>
-                    </div>
-                    <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-xl font-semibold">Order Status</h2>
-                        <div class="flex items-center">
-                            <span class="px-4 py-2 rounded-full text-sm font-medium
-                                <%= order.orderStatus === 'Delivered' ? 'bg-green-100 text-green-700' :
-                                    order.orderStatus === 'Cancelled' ? 'bg-red-100 text-red-700' :
-                                    'bg-blue-100 text-blue-700' %>">
-                                <%= order.orderStatus %>
-                            </span>
-                            <% if (order.orderStatus === 'Cancelled') { %>
-                                <button onclick="showCancelReason(`<%= order.cancelReason %>`)"
-                                        class="ml-2 text-gray-500 hover:text-gray-700">
-                                    <i class="fas fa-info-circle"></i>
-                                </button>
-                            <% } %>
+                        <div class="mt-2">
+                            <a href="/order/<%= order._id %>/invoice" 
+                               class="text-green-600 hover:text-green-700 inline-flex items-center">
+                                <i class="fas fa-download mr-2"></i>
+                                Download Invoice
+                            </a>
                         </div>
                     </div>
-                    <% if (order.orderStatus === 'Cancelled') { %>
-                        <div class="bg-red-50 border border-red-100 rounded-lg p-4 mb-6">
-                            <h3 class="text-red-700 font-medium mb-2">Cancellation Details</h3>
-                            <p class="text-red-600"><%= order.cancelReason ? order.cancelReason : 'No reason provided' %></p>
-                            <p class="text-red-500 text-sm mt-2">
-                                Cancelled on: <%= order.cancelledAt ? new Date(order.cancelledAt).toLocaleString('en-US', {
-                                    year: 'numeric',
-                                    month: 'long',
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                }) : 'Date not available' %>
-                            </p>
-                        </div>
-                    <% } %>
-                    <% if (!['Delivered', 'Cancelled'].includes(order.orderStatus)) { %>
-                        <button onclick="cancelOrder('<%= order._id %>')"
-                                class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors">
-                            Cancel Order
-                        </button>
-                    <% } %>
+                    <div class="flex items-center">
+                        <span class="px-4 py-2 rounded-full text-sm font-medium
+                            <%= order.orderStatus === 'Delivered' ? 'bg-green-100 text-green-700' :
+                                order.orderStatus === 'Cancelled' ? 'bg-red-100 text-red-700' :
+                                'bg-blue-100 text-blue-700' %>">
+                            <%= order.orderStatus %>
+                        </span>
+                        <% if (order.orderStatus === 'Cancelled') { %>
+                            <button onclick="showCancelReason(`<%= order.cancelReason %>`)"
+                                    class="ml-2 text-gray-500 hover:text-gray-700">
+                                <i class="fas fa-info-circle"></i>
+                            </button>
+                        <% } %>
+                    </div>
                 </div>
+
+                <% if (order.orderStatus === 'Cancelled') { %>
+                    <div class="bg-red-50 border border-red-100 rounded-lg p-4 mb-6">
+                        <h3 class="text-red-700 font-medium mb-2">Cancellation Details</h3>
+                        <p class="text-red-600"><%= order.cancelReason ? order.cancelReason : 'No reason provided' %></p>
+                        <p class="text-red-500 text-sm mt-2">
+                            Cancelled on: <%= order.cancelledAt ? new Date(order.cancelledAt).toLocaleString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            }) : 'Date not available' %>
+                        </p>
+                    </div>
+                <% } %>
+                <% if (!['Delivered', 'Cancelled', 'Returned'].includes(order.orderStatus) && 
+                       !(order.returnRequested && ['Approved', 'Pending'].includes(order.returnStatus))) { %>
+                    <button onclick="cancelOrder('<%= order._id %>')"
+                            class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
+                        Cancel Order
+                    </button>
+                <% } %>
 
                 <!-- Order Information -->
                 <div class="grid grid-cols-2 gap-8 mb-8">
@@ -205,12 +196,35 @@
                                         </button>
                                     <% } %>
                                 </div>
-                                <% if (!['Delivered', 'Cancelled'].includes(item.status)) { %>
-                                    <button onclick="cancelOrderItem('<%= order._id %>', '<%= item._id %>')"
-                                            class="text-red-600 hover:text-red-700 text-sm">
-                                        Cancel Item
-                                    </button>
-                                <% } %>
+                                <div class="flex flex-col items-end gap-2">
+                                    <% if (!['Delivered', 'Cancelled', 'Returned'].includes(item.status) && 
+                                           !(item.returnRequested && ['Approved', 'Pending'].includes(item.returnStatus))) { %>
+                                        <button onclick="cancelOrderItem('<%= order._id %>', '<%= item._id %>')"
+                                                class="text-red-600 hover:text-red-700 text-sm">
+                                            Cancel Item
+                                        </button>
+                                    <% } %>
+                                    
+                                    <% if (item.status === 'Delivered' && !item.returnRequested) { %>
+                                        <button onclick="requestItemReturn('<%= order._id %>', '<%= item._id %>')"
+                                                class="text-blue-600 hover:text-blue-700 text-sm">
+                                            Request Return
+                                        </button>
+                                    <% } else if (item.returnRequested) { %>
+                                        <div class="flex items-center gap-2">
+                                            <span class="px-3 py-1 rounded-full text-sm font-medium
+                                                <%= item.returnStatus === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
+                                                    item.returnStatus === 'Approved' ? 'bg-green-100 text-green-700' :
+                                                    'bg-red-100 text-red-700' %>">
+                                                Return <%= item.returnStatus %>
+                                            </span>
+                                            <button onclick="showReturnReason(`<%= item.returnReason %>`)"
+                                                    class="text-gray-500 hover:text-gray-700">
+                                                <i class="fas fa-info-circle"></i>
+                                            </button>
+                                        </div>
+                                    <% } %>
+                                </div>
                             </div>
                         </div>
                     <% }); %>
@@ -251,6 +265,40 @@
                         </div>
                     </div>
                 </div>
+
+                <% if (order.orderStatus === 'Delivered' && !order.returnRequested) { %>
+                    <div class="mt-6 border-t pt-6">
+                        <div class="flex justify-end">
+                            <button onclick="requestOrderReturn('<%= order._id %>')"
+                                    class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                                Request Full Order Return
+                            </button>
+                        </div>
+                    </div>
+                <% } else if (order.returnRequested) { %>
+                    <div class="mt-6 border-t pt-6">
+                        <div class="p-4 rounded-lg <%= 
+                            order.returnStatus === 'Pending' ? 'bg-yellow-50 border border-yellow-200' :
+                            order.returnStatus === 'Approved' ? 'bg-green-50 border border-green-200' :
+                            'bg-red-50 border border-red-200' %>">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h3 class="font-medium text-lg mb-2">Return Request Status</h3>
+                                    <p class="text-sm text-gray-600"><%= order.returnReason %></p>
+                                    <p class="text-xs text-gray-500 mt-2">
+                                        Requested on: <%= new Date(order.returnRequestedAt).toLocaleString() %>
+                                    </p>
+                                </div>
+                                <span class="px-4 py-2 rounded-full text-sm font-medium <%= 
+                                    order.returnStatus === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
+                                    order.returnStatus === 'Approved' ? 'bg-green-100 text-green-700' :
+                                    'bg-red-100 text-red-700' %>">
+                                    <%= order.returnStatus %>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                <% } %>
             </div>
         </div>
     </main>
@@ -265,12 +313,31 @@
             inputLabel: 'Reason for cancellation',
             inputPlaceholder: 'Enter your reason for cancellation...',
             inputAttributes: {
-                'aria-label': 'Reason for cancellation'
+                'aria-label': 'Reason for cancellation',
+                'minlength': '10',
+                'maxlength': '200'
             },
             showCancelButton: true,
             confirmButtonText: 'Cancel Order',
             confirmButtonColor: '#EF4444',
-            cancelButtonText: 'Keep Order'
+            cancelButtonText: 'Keep Order',
+            inputValidator: (value) => {
+                if (!value) {
+                    return 'Please provide a reason for cancellation';
+                }
+                if (value.trim().length < 10) {
+                    return 'Reason must be at least 10 characters long';
+                }
+                if (value.trim().length > 200) {
+                    return 'Reason cannot exceed 200 characters';
+                }
+                if (!/^[a-zA-Z0-9\s.,!?-]+$/.test(value)) {
+                    return 'Reason contains invalid characters';
+                }
+            },
+            preConfirm: (value) => {
+                return value.trim();
+            }
         });
 
         if (reason) {
@@ -315,12 +382,31 @@
             inputLabel: 'Reason for cancellation',
             inputPlaceholder: 'Enter your reason for cancellation...',
             inputAttributes: {
-                'aria-label': 'Reason for cancellation'
+                'aria-label': 'Reason for cancellation',
+                'minlength': '10',
+                'maxlength': '200'
             },
             showCancelButton: true,
             confirmButtonText: 'Cancel Item',
             confirmButtonColor: '#EF4444',
-            cancelButtonText: 'Keep Item'
+            cancelButtonText: 'Keep Item',
+            inputValidator: (value) => {
+                if (!value) {
+                    return 'Please provide a reason for cancellation';
+                }
+                if (value.trim().length < 10) {
+                    return 'Reason must be at least 10 characters long';
+                }
+                if (value.trim().length > 200) {
+                    return 'Reason cannot exceed 200 characters';
+                }
+                if (!/^[a-zA-Z0-9\s.,!?-]+$/.test(value)) {
+                    return 'Reason contains invalid characters';
+                }
+            },
+            preConfirm: (value) => {
+                return value.trim();
+            }
         });
 
         if (reason) {
@@ -364,6 +450,150 @@
             text: reason || 'No reason provided',
             icon: 'info',
             confirmButtonColor: '#10b981'
+        });
+    }
+
+    async function requestItemReturn(orderId, itemId) {
+        const { value: reason } = await Swal.fire({
+            title: 'Request Item Return',
+            input: 'textarea',
+            inputLabel: 'Reason for return',
+            inputPlaceholder: 'Enter your reason for return...',
+            inputAttributes: {
+                'aria-label': 'Reason for return',
+                'minlength': '10',
+                'maxlength': '200'
+            },
+            showCancelButton: true,
+            confirmButtonColor: '#3B82F6',
+            confirmButtonText: 'Submit Return Request',
+            inputValidator: (value) => {
+                if (!value) {
+                    return 'Please provide a reason for return';
+                }
+                if (value.trim().length < 10) {
+                    return 'Reason must be at least 10 characters long';
+                }
+                if (value.trim().length > 200) {
+                    return 'Reason cannot exceed 200 characters';
+                }
+                if (!/^[a-zA-Z0-9\s.,!?-]+$/.test(value)) {
+                    return 'Reason contains invalid characters';
+                }
+            },
+            preConfirm: (value) => {
+                return value.trim();
+            }
+        });
+
+        if (reason) {
+            try {
+                const response = await fetch(`/order/${orderId}/item/${itemId}/return`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ reason })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Return Requested',
+                        text: data.message,
+                        showConfirmButton: false,
+                        timer: 1500
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.message || 'Error requesting return'
+                });
+            }
+        }
+    }
+
+    async function requestOrderReturn(orderId) {
+        const { value: reason } = await Swal.fire({
+            title: 'Request Order Return',
+            input: 'textarea',
+            inputLabel: 'Reason for return',
+            inputPlaceholder: 'Enter your reason for return...',
+            inputAttributes: {
+                'aria-label': 'Reason for return',
+                'minlength': '10',
+                'maxlength': '200'
+            },
+            showCancelButton: true,
+            confirmButtonColor: '#3B82F6',
+            confirmButtonText: 'Submit Return Request',
+            inputValidator: (value) => {
+                if (!value) {
+                    return 'Please provide a reason for return';
+                }
+                if (value.trim().length < 10) {
+                    return 'Reason must be at least 10 characters long';
+                }
+                if (value.trim().length > 200) {
+                    return 'Reason cannot exceed 200 characters';
+                }
+                if (!/^[a-zA-Z0-9\s.,!?-]+$/.test(value)) {
+                    return 'Reason contains invalid characters';
+                }
+            },
+            preConfirm: (value) => {
+                return value.trim();
+            }
+        });
+
+        if (reason) {
+            try {
+                const response = await fetch(`/order/${orderId}/return`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ reason })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Return Requested',
+                        text: data.message,
+                        showConfirmButton: false,
+                        timer: 1500
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.message || 'Error requesting return'
+                });
+            }
+        }
+    }
+
+    function showReturnReason(reason) {
+        Swal.fire({
+            title: 'Return Reason',
+            text: reason || 'No reason provided',
+            icon: 'info'
         });
     }
     </script>

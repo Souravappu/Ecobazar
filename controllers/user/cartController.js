@@ -13,19 +13,18 @@ const checkQuantityLimits = async (productId, requestedQuantity, userId) => {
         throw new Error('Product not found');
     }
 
-    // Get current quantity in cart (if any)
+    
     const currentCartItem = cart?.items.find(item => 
         item.product.toString() === productId.toString()
     );
     const currentQty = currentCartItem ? currentCartItem.quantity : 0;
     const newTotalQty = currentQty + requestedQuantity;
 
-    // Check stock availability
+   
     if (newTotalQty > product.quantity) {
         throw new Error('Not enough stock available');
     }
 
-    // Check maximum limit (5)
     if (newTotalQty > 5) {
         throw new Error('Maximum quantity limit (5) exceeded');
     }
@@ -98,7 +97,6 @@ const cartController = {
         }
     }],
 
-    // Remove from cart
     removeFromCart: async (req, res) => {
         try {
             const { productId } = req.params;
@@ -142,7 +140,6 @@ const cartController = {
         }
     },
 
-    // UpdateCartQuantity
     updateCartQuantity: async (req, res) => {
         try {
             const { productId, quantity } = req.body;
@@ -205,7 +202,6 @@ const cartController = {
         }
     },
 
-    // Get Cart
     getCart: async (req, res) => {
         try {
             const userId = req.session.user;
@@ -215,11 +211,31 @@ const cartController = {
                 Category.find({ isListed: true, isBlocked: false, isDeleted: false })
             ]);
 
-            let user= await User.findById(userId)
+            if (cart && cart.items.length > 0) {
+                cart.items.forEach(item => {
+                    item.stockStatus = {
+                        inStock: item.product.quantity > 0,
+                        hasEnoughStock: item.product.quantity >= item.quantity,
+                        availableStock: item.product.quantity,
+                        maxAllowed: Math.min(5, item.product.quantity)
+                    };
+                });
+
+                cart.total = cart.items.reduce((sum, item) => {
+                    if (item.stockStatus.hasEnoughStock) {
+                        return sum + (item.product.salePrice * item.quantity);
+                    }
+                    return sum;
+                }, 0);
+
+                await cart.save();
+            }
+
+            let user = await User.findById(userId);
             res.render('user/cart', {
                 cart,
                 categories,
-                user:user,
+                user: user,
                 title: 'Shopping Cart'
             });
         } catch (error) {
@@ -231,7 +247,6 @@ const cartController = {
         }
     },
 
-    // check Quantity
     checkQuantity: async (req, res) => {
         try {
             const userId = req.session.user;

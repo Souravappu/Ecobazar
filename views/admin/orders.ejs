@@ -35,6 +35,42 @@
             box-shadow: 0 15px 35px rgba(0,0,0,0.3);
             border: 1px solid rgba(255,255,255,0.05);
         }
+
+         /* Pagination Styling */
+         .pagination-btn {
+            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+        }
+
+        .pagination-btn:hover {
+            transform: scale(1.1);
+            background: rgba(59,130,246,0.2);
+        }
+
+        @keyframes ping {
+            75%, 100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+
+        .animate-ping {
+            animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: .5;
+            }
+        }
     </style>
     <%- include('../layouts/side.ejs') %>
     <%- include('../layouts/head.ejs') %>
@@ -107,6 +143,7 @@
                         <th class="px-6 py-4 text-black text-left text-sm font-medium text-gray-500">Customer</th>
                         <th class="px-6 py-4 text-black text-left text-sm font-medium text-gray-500">Date</th>
                         <th class="px-6 py-4 text-black text-right text-sm font-medium text-gray-500">Amount</th>
+                        <th class="px-6 py-4 text-black text-center text-sm font-medium text-gray-500">Return Requests</th>
                         <th class="px-6 py-4 text-black text-center text-sm font-medium text-gray-500">Status</th>
                         <th class="px-6 py-4 text-black text-center text-sm font-medium text-gray-500">Actions</th>
                     </tr>
@@ -145,29 +182,59 @@
                                 ₹<%= order.total %>
                             </td>
                             <td class="px-6 py-4">
-                                <% if (order.orderStatus === 'Cancelled') { %>
-                                    <span class="px-3 py-1.5 rounded-full text-sm font-medium bg-red-100 text-red-700">
-                                        Cancelled
-                                    </span>
-                                <% } else { %>
-                                    <select 
-                                        onchange="updateOrderStatus('<%= order._id %>', this.value)"
-                                        class="w-full px-3 py-1.5 rounded-full text-sm font-medium
-                                            <%= order.orderStatus === 'Delivered' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700' %>"
-                                        <%= order.orderStatus === 'Delivered' ? 'disabled' : '' %>
-                                    >
-                                        <option value="Pending" <%= order.orderStatus === 'Pending' ? 'selected' : '' %>>Pending</option>
-                                        <option value="Processing" <%= order.orderStatus === 'Processing' ? 'selected' : '' %>>Processing</option>
-                                        <option value="Shipped" <%= order.orderStatus === 'Shipped' ? 'selected' : '' %>>Shipped</option>
-                                        <option value="Delivered" <%= order.orderStatus === 'Delivered' ? 'selected' : '' %>>Delivered</option>
-                                    </select>
-                                <% } %>
-                                <% if (order.orderStatus === 'Cancelled') { %>
-                                    <button onclick="showCancelReason(`<%= order.cancelReason %>`)"
-                                            class="ml-2 text-gray-400 hover:text-gray-300">
-                                        <i class="fas fa-info-circle"></i>
-                                    </button>
-                                <% } %>
+                                <div class="flex flex-col items-center gap-2">
+                                    <% 
+                                        const pendingItemReturns = order.items.filter(item => 
+                                            item.returnRequested && item.returnStatus === 'Pending'
+                                        ).length;
+                                    %>
+                                    <% if (order.returnRequested || pendingItemReturns > 0) { %>
+                                        <div class="flex items-center gap-2">
+                                            <% if (order.returnRequested) { %>
+                                                <span class="px-3 py-1 rounded-full text-sm font-medium
+                                                    <%= order.returnStatus === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
+                                                        order.returnStatus === 'Approved' ? 'bg-green-100 text-green-700' :
+                                                        'bg-red-100 text-red-700' %>">
+                                                    Full Return <%= order.returnStatus %>
+                                                </span>
+                                            <% } %>
+                                            <% if (pendingItemReturns > 0) { %>
+                                                <span class="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700">
+                                                    <%= pendingItemReturns %> Item<%= pendingItemReturns > 1 ? 's' : '' %> Pending
+                                                </span>
+                                            <% } %>
+                                        </div>
+                                    <% } else { %>
+                                        <span class="text-gray-400">No Returns</span>
+                                    <% } %>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-2">
+                                    <% if (order.orderStatus === 'Cancelled') { %>
+                                        <span class="px-3 py-1.5 rounded-full text-sm font-medium bg-red-100 text-red-700">
+                                            Cancelled
+                                        </span>
+                                    <% } else if (order.orderStatus === 'Returned' || order.partiallyReturned) { %>
+                                        <span class="px-3 py-1.5 rounded-full text-sm font-medium
+                                            <%= order.orderStatus === 'Returned' ? 'bg-purple-100 text-purple-700' : 'bg-indigo-100 text-indigo-700' %>">
+                                            <%= order.orderStatus %>
+                                            <%= order.partiallyReturned ? '(Partially Returned)' : '' %>
+                                        </span>
+                                    <% } else { %>
+                                        <select 
+                                            onchange="updateOrderStatus('<%= order._id %>', this.value)"
+                                            class="w-full px-3 py-1.5 rounded-full text-sm font-medium
+                                                <%= order.orderStatus === 'Delivered' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700' %>"
+                                            <%= order.orderStatus === 'Delivered' ? 'disabled' : '' %>
+                                        >
+                                            <option value="Pending" <%= order.orderStatus === 'Pending' ? 'selected' : '' %>>Pending</option>
+                                            <option value="Processing" <%= order.orderStatus === 'Processing' ? 'selected' : '' %>>Processing</option>
+                                            <option value="Shipped" <%= order.orderStatus === 'Shipped' ? 'selected' : '' %>>Shipped</option>
+                                            <option value="Delivered" <%= order.orderStatus === 'Delivered' ? 'selected' : '' %>>Delivered</option>
+                                        </select>
+                                    <% } %>
+                                </div>
                             </td>
                             <td class="px-6 py-4">
                                 <div class="flex justify-center space-x-3">
@@ -175,10 +242,19 @@
                                        class="text-blue-600 hover:text-blue-800">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <% if (!['Delivered', 'Cancelled'].includes(order.orderStatus)) { %>
+                                    <% if (pendingItemReturns > 0 || (order.returnRequested && order.returnStatus === 'Pending')) { %>
+                                        <span class="relative">
+                                            <i class="fas fa-undo-alt text-yellow-500"></i>
+                                            <span class="absolute -top-2 -right-2 h-4 w-4 flex items-center justify-center rounded-full bg-red-500 text-white text-xs">
+                                                <%= pendingItemReturns + (order.returnRequested && order.returnStatus === 'Pending' ? 1 : 0) %>
+                                            </span>
+                                        </span>
+                                    <% } %>
+                                    <% if (!['Delivered', 'Cancelled', 'Returned'].includes(order.orderStatus) && 
+                                           !order.returnRequested) { %>
                                         <button onclick="cancelOrder('<%= order._id %>')"
                                                 class="text-red-600 hover:text-red-800">
-                                            <i class="fas fa-times-circle">Cancel Order</i>
+                                            <i class="fas fa-times-circle"></i>
                                         </button>
                                     <% } %>
                                 </div>
@@ -189,31 +265,28 @@
             </table>
 
             <!-- Pagination -->
+        <div class="flex justify-center mt-8 space-x-2">
             <% if (pagination.totalPages > 1) { %>
-                <div class="px-6 py-4 border-t">
-                    <div class="flex justify-center items-center space-x-4">
-                        <% if (pagination.hasPrev) { %>
-                            <a href="?page=<%= pagination.page - 1 %>" 
-                               class="px-4 py-2 bg-white border rounded-lg hover:bg-gray-50">
-                                Previous
-                            </a>
-                        <% } %>
-
-                        <% for(let i = 1; i <= pagination.totalPages; i++) { %>
-                            <a href="?page=<%= i %>"
-                               class="px-4 py-2 rounded-lg <%= pagination.page === i ? 'bg-green-600 text-white' : 'bg-white border hover:bg-gray-50' %>">
-                                <%= i %>
-                            </a>
-                        <% } %>
-
-                        <% if (pagination.hasNext) { %>
-                            <a href="?page=<%= pagination.page + 1 %>"
-                               class="px-4 py-2 bg-white border rounded-lg hover:bg-gray-50">
-                                Next
-                            </a>
-                        <% } %>
-                    </div>
-                </div>
+                <% if (pagination.hasPrev) { %>
+                    <a href="?page=<%= pagination.page-1 %>&status=<%= filters.status %>&search=<%= filters.search %>&dateRange=<%= filters.dateRange %>&sortBy=<%= filters.sortBy %>&sortOrder=<%= filters.sortOrder %>" 
+                       class="pagination-btn px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all">
+                        Previous
+                    </a>
+                <% } %>
+                
+                <% for(let i = 1; i <= pagination.totalPages; i++) { %>
+                    <a href="?page=<%= i %>&status=<%= filters.status %>&search=<%= filters.search %>&dateRange=<%= filters.dateRange %>&sortBy=<%= filters.sortBy %>&sortOrder=<%= filters.sortOrder %>" 
+                       class="pagination-btn px-4 py-2 <%= pagination.page == i ? 'bg-blue-700 text-white' : 'bg-gray-700 text-gray-300' %> rounded-lg">
+                        <%= i %>
+                    </a>
+                <% } %>
+                
+                <% if (pagination.hasNext) { %>
+                    <a href="?page=<%= pagination.page+1 %>&status=<%= filters.status %>&search=<%= filters.search %>&dateRange=<%= filters.dateRange %>&sortBy=<%= filters.sortBy %>&sortOrder=<%= filters.sortOrder %>" 
+                       class="pagination-btn px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all">
+                        Next
+                    </a>
+                <% } %>
             <% } %>
         </div>
     </main>
@@ -330,9 +403,32 @@
                 input: 'textarea',
                 inputLabel: 'Reason for cancellation',
                 inputPlaceholder: 'Enter reason for cancellation...',
+                inputAttributes: {
+                    'aria-label': 'Reason for cancellation',
+                    'minlength': '10',
+                    'maxlength': '200'
+                },
                 showCancelButton: true,
                 confirmButtonColor: '#EF4444',
-                confirmButtonText: 'Cancel Order'
+                confirmButtonText: 'Cancel Order',
+                cancelButtonText: 'Keep Order',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'Please provide a reason for cancellation';
+                    }
+                    if (value.trim().length < 10) {
+                        return 'Reason must be at least 10 characters long';
+                    }
+                    if (value.trim().length > 200) {
+                        return 'Reason cannot exceed 200 characters';
+                    }
+                    if (!/^[a-zA-Z0-9\s.,!?-]+$/.test(value)) {
+                        return 'Reason contains invalid characters';
+                    }
+                },
+                preConfirm: (value) => {
+                    return value.trim();
+                }
             });
 
             if (reason) {
@@ -374,7 +470,8 @@
             Swal.fire({
                 title: 'Cancellation Reason',
                 text: reason || 'No reason provided',
-                icon: 'info'
+                icon: 'info',
+                confirmButtonColor: '#10b981'
             });
         }
     </script>

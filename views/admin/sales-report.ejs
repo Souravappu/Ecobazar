@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Report - Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+    <style>
+        :root {
+            --primary-dark: #1f2937;
+            --secondary-dark: #111827;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+        }
+
+        /* Add custom styles for daterangepicker */
+        .daterangepicker {
+            background-color: #1f2937 !important;
+            border: 1px solid #374151 !important;
+            color: #e5e7eb !important;
+        }
+
+        .daterangepicker .calendar-table {
+            background-color: #1f2937 !important;
+            border: none !important;
+        }
+
+        .daterangepicker td.off, .daterangepicker td.off.in-range, .daterangepicker td.off.start-date, .daterangepicker td.off.end-date {
+            background-color: #111827 !important;
+            color: #4b5563 !important;
+        }
+
+        .daterangepicker td.active, .daterangepicker td.active:hover {
+            background-color: #3b82f6 !important;
+            color: #ffffff !important;
+        }
+
+        .daterangepicker td.available:hover, .daterangepicker th.available:hover {
+            background-color: #374151 !important;
+            color: #ffffff !important;
+        }
+
+        .daterangepicker td.in-range {
+            background-color: rgba(59, 130, 246, 0.3) !important;
+            color: #ffffff !important;
+        }
+
+        .daterangepicker .calendar-table .next span, 
+        .daterangepicker .calendar-table .prev span {
+            border-color: #e5e7eb !important;
+        }
+
+        .daterangepicker .ranges li:hover {
+            background-color: #374151 !important;
+        }
+
+        .daterangepicker .ranges li.active {
+            background-color: #3b82f6 !important;
+        }
+
+        .daterangepicker select.hourselect,
+        .daterangepicker select.minuteselect,
+        .daterangepicker select.secondselect,
+        .daterangepicker select.ampmselect {
+            background-color: #374151 !important;
+            color: #e5e7eb !important;
+            border: 1px solid #4b5563 !important;
+        }
+
+        /* Update search input styles */
+        .search-input {
+            background: #1f2937 !important;
+            border: 1px solid #374151 !important;
+            color: #e5e7eb !important;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3) !important;
+        }
+
+        .search-input:disabled {
+            background: #111827 !important;
+            color: #6b7280 !important;
+        }
+
+        /* Rest of your existing styles */
+        body {
+            background-color: var(--secondary-dark);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        /* Advanced Animations */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in-up { animation: fadeInUp 0.6s ease-out forwards; }
+
+        /* Enhanced Card Styles */
+        .card {
+            background: linear-gradient(135deg, var(--secondary-dark), #273346);
+            border-radius: 16px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .card:hover {
+            box-shadow: 0 20px 45px rgba(0,0,0,0.4);
+        }
+
+        /* Search and Filter Enhancements */
+        .search-container {
+            background: linear-gradient(135deg, var(--primary-dark), #1f2a3a);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            transition: all 0.4s ease;
+            padding: 2rem;
+        }
+
+        .search-input {
+            background: rgba(17, 24, 39, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .search-input:focus {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        }
+
+        /* Table Styling */
+        .table-container {
+            background: linear-gradient(145deg, var(--primary-dark), #1c2433);
+            border-radius: 20px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .table-row {
+            transition: all 0.3s ease;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .table-row:hover {
+            background: rgba(59, 130, 246, 0.1);
+            transform: scale(1.01);
+        }
+
+        /* Pagination Styling */
+        .pagination-btn {
+            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+        }
+
+        .pagination-btn:hover {
+            transform: scale(1.1);
+            background: rgba(59,130,246,0.2);
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-[#111827]">
+    <%- include('../layouts/side.ejs') %>
+    <%- include('../layouts/head.ejs') %>
+    
+    <div class="flex-1 px-28 py-12 ml-64 bg-gradient-to-br from-[#111827] to-[#1f2937]">
+        <!-- Page Header -->
+        <div class="flex justify-between items-center mb-10 fade-in-up">
+            <h1 class="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-pink-600">
+                Sales Report
+            </h1>
+            <div class="flex gap-4">
+                <button onclick="downloadReport('excel')" class="btn bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl shadow-lg transition-all duration-300">
+                    <i class="fas fa-file-excel mr-2"></i>Excel
+                </button>
+                <button onclick="downloadReport('pdf')" class="btn bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl shadow-lg transition-all duration-300">
+                    <i class="fas fa-file-pdf mr-2"></i>PDF
+                </button>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="search-container mb-10 fade-in-up">
+            <form id="filterForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Date Range -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-2">Date Range</label>
+                    <input type="text" 
+                           id="dateRange" 
+                           name="dateRange" 
+                           class="search-input w-full px-4 py-3 rounded-xl"
+                           placeholder="Select date range"
+                           value="<%= filters.startDate && filters.endDate ? `${filters.startDate} - ${filters.endDate}` : '' %>">
+                </div>
+
+                <!-- Period Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-2">Period</label>
+                    <select name="period" id="periodSelect" class="search-input w-full px-4 py-3 rounded-xl">
+                        <option value="">Custom</option>
+                        <option value="daily" <%= filters.period === 'daily' ? 'selected' : '' %>>Daily</option>
+                        <option value="weekly" <%= filters.period === 'weekly' ? 'selected' : '' %>>Weekly</option>
+                        <option value="monthly" <%= filters.period === 'monthly' ? 'selected' : '' %>>Monthly</option>
+                        <option value="yearly" <%= filters.period === 'yearly' ? 'selected' : '' %>>Yearly</option>
+                    </select>
+                </div>
+
+                <!-- Status Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-2">Order Status</label>
+                    <select name="status" class="search-input w-full px-4 py-3 rounded-xl">
+                        <option value="all">All Status</option>
+                        <option value="Pending" <%= filters.status === 'Pending' ? 'selected' : '' %>>Pending</option>
+                        <option value="Processing" <%= filters.status === 'Processing' ? 'selected' : '' %>>Processing</option>
+                        <option value="Shipped" <%= filters.status === 'Shipped' ? 'selected' : '' %>>Shipped</option>
+                        <option value="Delivered" <%= filters.status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
+                    </select>
+                </div>
+
+                <!-- Apply Button -->
+                <div class="flex items-end">
+                    <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-xl transition-all duration-300">
+                        Apply Filters
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 fade-in-up">
+            <!-- Total Orders -->
+            <div class="card p-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-blue-500/20 rounded-full">
+                        <i class="fas fa-shopping-cart text-blue-500"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-sm font-medium text-gray-400">Total Orders</h3>
+                        <p class="text-2xl font-semibold"><%= summary.totalOrders %></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Revenue -->
+            <div class="card p-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-green-500/20 rounded-full">
+                        <i class="fas fa-dollar-sign text-green-500"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-sm font-medium text-gray-400">Total Revenue</h3>
+                        <p class="text-2xl font-semibold">₹<%= summary.totalRevenue.toFixed(2) %></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Discount -->
+            <div class="card p-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-purple-500/20 rounded-full">
+                        <i class="fas fa-tags text-purple-500"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-sm font-medium text-gray-400">Total Discount</h3>
+                        <p class="text-2xl font-semibold">₹<%= summary.totalDiscount.toFixed(2) %></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Average Order Value -->
+            <div class="card p-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-yellow-500/20 rounded-full">
+                        <i class="fas fa-chart-line text-yellow-500"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-sm font-medium text-gray-400">Avg. Order Value</h3>
+                        <p class="text-2xl font-semibold">₹<%= summary.averageOrderValue.toFixed(2) %></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orders Table -->
+        <div class="table-container fade-in-up">
+            <table class="w-full min-w-max">
+                <thead>
+                    <tr class="text-gray-400 text-sm uppercase">
+                        <th class="py-5 px-7 text-left">Order ID</th>
+                        <th class="py-5 px-7 text-left">Date</th>
+                        <th class="py-5 px-7 text-left">Customer</th>
+                        <th class="py-5 px-7 text-center">Status</th>
+                        <th class="py-5 px-7 text-right">Subtotal</th>
+                        <th class="py-5 px-7 text-right">Discount</th>
+                        <th class="py-5 px-7 text-right">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% orders.forEach((order, index) => { %>
+                        <tr class="table-row">
+                            <td class="py-5 px-7">
+                                <a href="/admin/order/<%= order._id %>" class="text-blue-400 hover:text-blue-300">
+                                    <%= order.orderId %>
+                                </a>
+                            </td>
+                            <td class="py-5 px-7 text-gray-300">
+                                <%= new Date(order.createdAt).toLocaleDateString() %>
+                            </td>
+                            <td class="py-5 px-7 text-gray-300">
+                                <%= order.user ? `${order.user.fname} ${order.user.lname}` : 'Deleted User' %>
+                            </td>
+                            <td class="py-5 px-7">
+                                <div class="flex justify-center">
+                                    <span class="px-3 py-1 rounded-full text-sm
+                                        <%= order.orderStatus === 'Delivered' ? 'bg-green-500/20 text-green-400' :
+                                            order.orderStatus === 'Cancelled' ? 'bg-red-500/20 text-red-400' :
+                                            'bg-yellow-500/20 text-yellow-400' %>">
+                                        <%= order.orderStatus %>
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="py-5 px-7 text-right text-gray-300">₹<%= order.subtotal.toFixed(2) %></td>
+                            <td class="py-5 px-7 text-right text-gray-300">₹<%= (order.couponDiscount || 0).toFixed(2) %></td>
+                            <td class="py-5 px-7 text-right font-medium text-gray-200">₹<%= order.total.toFixed(2) %></td>
+                        </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="flex justify-center mt-8 space-x-2">
+            <% if (pagination.totalPages > 1) { %>
+                <% if (pagination.hasPrev) { %>
+                    <a href="?page=<%= pagination.page-1 %>&status=<%= filters.status %>&period=<%= filters.period %>&dateRange=<%= filters.dateRange %>" 
+                       class="pagination-btn px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all">
+                        Previous
+                    </a>
+                <% } %>
+                
+                <% for(let i = 1; i <= pagination.totalPages; i++) { %>
+                    <a href="?page=<%= i %>&status=<%= filters.status %>&period=<%= filters.period %>&dateRange=<%= filters.dateRange %>" 
+                       class="pagination-btn px-4 py-2 <%= pagination.page == i ? 'bg-blue-700 text-white' : 'bg-gray-700 text-gray-300' %> rounded-lg">
+                        <%= i %>
+                    </a>
+                <% } %>
+                
+                <% if (pagination.hasNext) { %>
+                    <a href="?page=<%= pagination.page+1 %>&status=<%= filters.status %>&period=<%= filters.period %>&dateRange=<%= filters.dateRange %>" 
+                       class="pagination-btn px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all">
+                        Next
+                    </a>
+                <% } %>
+            <% } %>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // Initialize date range picker with improved options
+            $('#dateRange').daterangepicker({
+                autoUpdateInput: false,
+                showDropdowns: true,
+                opens: 'left',
+                locale: {
+                    cancelLabel: 'Clear',
+                    format: 'YYYY-MM-DD',
+                    applyLabel: 'Apply',
+                    separator: ' - ',
+                    fromLabel: 'From',
+                    toLabel: 'To',
+                    customRangeLabel: 'Custom Range',
+                    daysOfWeek: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+                    monthNames: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+                },
+                ranges: {
+                    'Today': [moment(), moment()],
+                    'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                    'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+                    'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+                    'This Month': [moment().startOf('month'), moment().endOf('month')],
+                    'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+                }
+            });
+
+            // Handle date range selection
+            $('#dateRange').on('apply.daterangepicker', function(ev, picker) {
+                $(this).val(picker.startDate.format('YYYY-MM-DD') + ' - ' + picker.endDate.format('YYYY-MM-DD'));
+                
+                // Update or create hidden inputs
+                if ($('#startDate').length === 0) {
+                    $(this).after('<input type="hidden" name="startDate" id="startDate">');
+                    $(this).after('<input type="hidden" name="endDate" id="endDate">');
+                }
+                $('#startDate').val(picker.startDate.format('YYYY-MM-DD'));
+                $('#endDate').val(picker.endDate.format('YYYY-MM-DD'));
+                
+                // Clear period selection when date range is selected
+                $('#periodSelect').val('');
+            });
+
+            $('#dateRange').on('cancel.daterangepicker', function(ev, picker) {
+                $(this).val('');
+                $('#startDate, #endDate').remove();
+            });
+
+            // Handle period selection
+            $('#periodSelect').change(function() {
+                if ($(this).val()) {
+                    $('#dateRange').prop('disabled', true).val('');
+                    $('#startDate, #endDate').remove();
+                } else {
+                    $('#dateRange').prop('disabled', false);
+                }
+            });
+
+            // Initialize period selection state
+            if ($('#periodSelect').val()) {
+                $('#dateRange').prop('disabled', true);
+            }
+
+            // Handle form submission
+            $('#filterForm').submit(function(e) {
+                if ($('#periodSelect').val()) {
+                    $('#dateRange').prop('disabled', true);
+                    $('#startDate, #endDate').remove();
+                }
+            });
+        });
+
+        // Download report function
+        function downloadReport(format) {
+            const currentUrl = new URL(window.location.href);
+            const params = new URLSearchParams(currentUrl.search);
+            params.append('downloadFormat', format);
+            window.location.href = `/admin/sales-report?${params.toString()}`;
+        }
+
+        // Add animation for table rows
+        document.addEventListener('DOMContentLoaded', function() {
+            const tableRows = document.querySelectorAll('.table-row');
+            tableRows.forEach((row, index) => {
+                row.style.opacity = '0';
+                row.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    row.style.transition = 'all 0.4s ease';
+                    row.style.opacity = '1';
+                    row.style.transform = 'translateY(0)';
+                }, 100 * index);
+            });
+        });
+    </script>
+</body>
+</html> 

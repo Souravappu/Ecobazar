@@ -215,7 +215,7 @@
               ₹<%= product.regularPrice %>
             </span>
             <span class="ml-2 px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm">
-              <%= product.productOffer %>% off
+              <%= Math.round(((product.regularPrice - product.salePrice) / product.regularPrice) * 100) %>% off
             </span>
           </div>
         </div>

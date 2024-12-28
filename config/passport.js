@@ -3,13 +3,14 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const User = require('../models/User');
 const Cart = require('../models/Cart');
 const Wishlist = require('../models/Wishlist');
+const Wallet = require('../models/Wallet');
 require('dotenv').config();
 const bcrypt = require('bcrypt');
 
 // Helper function for initializing user collections
 const initializeUserCollections = async (userId) => {
     try {
-        const [newCart, newWishlist] = await Promise.all([
+        const [newCart, newWishlist, newWallet] = await Promise.all([
             new Cart({ 
                 user: userId, 
                 items: [], 
@@ -18,6 +19,11 @@ const initializeUserCollections = async (userId) => {
             new Wishlist({ 
                 user: userId, 
                 items: [] 
+            }).save(),
+            new Wallet({
+                user: userId,
+                balance: 0,
+                transactions: []
             }).save()
         ]);
         return true;

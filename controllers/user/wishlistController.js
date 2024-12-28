@@ -17,13 +17,11 @@ const wishlistController = {
                 });
             }
 
-            // Find or create wishlist
             let wishlist = await Wishlist.findOne({ user: userId });
             if (!wishlist) {
                 wishlist = new Wishlist({ user: userId, items: [] });
             }
 
-            // Check if product already in wishlist
             const existingItem = wishlist.items.find(item => 
                 item.product.toString() === productId
             );
@@ -49,7 +47,6 @@ const wishlistController = {
         }
     },
 
-    // Remove from wishlist
     removeFromWishlist: async (req, res) => {
         try {
             const { productId } = req.params;
@@ -85,7 +82,6 @@ const wishlistController = {
         }
     },
 
-    // Get wishlist
     getWishlist: async (req, res) => {
         try {
             const userId = req.session.user;
@@ -134,7 +130,8 @@ const wishlistController = {
                     totalPages,
                     hasNext: page < totalPages,
                     hasPrev: page > 1
-                }
+                },
+                currentPage: 'wishlist'
             });
         } catch (error) {
             console.error('Error fetching wishlist:', error);
@@ -146,7 +143,7 @@ const wishlistController = {
         }
     },
 
-    // Add this method to wishlistController
+ 
     getWishlistItems: async (req, res) => {
         try {
             const userId = req.session.user;
@@ -173,7 +170,6 @@ const wishlistController = {
         }
     },
 
-    // Add auth check method
     checkAuth: async (req, res) => {
         res.json({
             authenticated: !!req.session.user

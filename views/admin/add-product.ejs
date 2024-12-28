@@ -912,6 +912,308 @@
         }
     });
   </script>
+
+  <script>
+        // Product Validation Rules
+        const validationRules = {
+            name: {
+                min: 3,
+                max: 100,
+                pattern: /^[a-zA-Z0-9\s-&()]+$/,
+                message: {
+                    required: 'Product name is required',
+                    min: 'Product name must be at least 3 characters',
+                    max: 'Product name cannot exceed 100 characters',
+                    pattern: 'Product name can only contain letters, numbers, spaces, and basic punctuation'
+                }
+            },
+            description: {
+                min: 20,
+                max: 1000,
+                message: {
+                    required: 'Product description is required',
+                    min: 'Description must be at least 20 characters',
+                    max: 'Description cannot exceed 1000 characters'
+                }
+            },
+            price: {
+                min: 1,
+                max: 1000000,
+                pattern: /^\d+(\.\d{1,2})?$/,
+                message: {
+                    required: 'Price is required',
+                    min: 'Price must be at least ₹1',
+                    max: 'Price cannot exceed ₹10,00,000',
+                    pattern: 'Price must be a valid number with up to 2 decimal places'
+                }
+            },
+            quantity: {
+                min: 0,
+                max: 10000,
+                pattern: /^\d+$/,
+                message: {
+                    required: 'Stock quantity is required',
+                    min: 'Stock quantity cannot be negative',
+                    max: 'Stock quantity cannot exceed 10,000 units',
+                    pattern: 'Stock quantity must be a whole number'
+                }
+            },
+            discount: {
+                min: 0,
+                max: 90,
+                pattern: /^\d+(\.\d{1,2})?$/,
+                message: {
+                    min: 'Discount cannot be negative',
+                    max: 'Discount cannot exceed 90%',
+                    pattern: 'Discount must be a valid number with up to 2 decimal places'
+                }
+            },
+            unit: {
+                message: {
+                    required: 'Please select a unit type'
+                }
+            },
+            unitQuantity: {
+                kg: {
+                    min: 0.01,
+                    max: 25,
+                    pattern: /^\d+(\.\d{1,3})?$/,
+                    message: {
+                        required: 'Weight per unit is required',
+                        min: 'Weight must be at least 0.01 kg',
+                        max: 'Weight cannot exceed 25 kg',
+                        pattern: 'Weight must be a valid number with up to 3 decimal places'
+                    }
+                },
+                nos: {
+                    min: 1,
+                    max: 100,
+                    pattern: /^\d+$/,
+                    message: {
+                        required: 'Pieces per unit is required',
+                        min: 'Pieces must be at least 1',
+                        max: 'Pieces cannot exceed 100',
+                        pattern: 'Pieces must be a whole number'
+                    }
+                }
+            },
+            category: {
+                message: {
+                    required: 'Please select a category'
+                }
+            },
+            images: {
+                min: 1,
+                max: 5,
+                types: ['image/jpeg', 'image/png', 'image/jpg'],
+                maxSize: 5 * 1024 * 1024, // 5MB
+                message: {
+                    required: 'At least one product image is required',
+                    max: 'Maximum 5 images allowed',
+                    type: 'Only JPG, JPEG, and PNG images are allowed',
+                    size: 'Image size cannot exceed 5MB'
+                }
+            }
+        };
+
+        // Validation Functions
+        function validateField(field, value, type = null) {
+            const rules = validationRules[field];
+            let errors = [];
+
+            // Skip validation if field is optional and empty
+            if (value === '' && field === 'discount') return errors;
+
+            // Required validation
+            if (!value && rules.message.required) {
+                errors.push(rules.message.required);
+                return errors;
+            }
+
+            // Type-specific validation for unitQuantity
+            if (field === 'unitQuantity' && type) {
+                const typeRules = rules[type];
+                if (value < typeRules.min) errors.push(typeRules.message.min);
+                if (value > typeRules.max) errors.push(typeRules.message.max);
+                if (!typeRules.pattern.test(value)) errors.push(typeRules.message.pattern);
+                return errors;
+            }
+
+            // Standard validations
+            if (rules.min && value.length < rules.min) errors.push(rules.message.min);
+            if (rules.max && value.length > rules.max) errors.push(rules.message.max);
+            if (rules.pattern && !rules.pattern.test(value)) errors.push(rules.message.pattern);
+
+            // Numeric validations
+            if (['price', 'quantity', 'discount'].includes(field)) {
+                const num = parseFloat(value);
+                if (rules.min && num < rules.min) errors.push(rules.message.min);
+                if (rules.max && num > rules.max) errors.push(rules.message.max);
+            }
+
+            return errors;
+        }
+
+        function showError(input, message) {
+            clearError(input);
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'text-red-500 text-sm mt-1';
+            errorDiv.textContent = message;
+            input.classList.add('border-red-500');
+            input.parentElement.appendChild(errorDiv);
+        }
+
+        function clearError(input) {
+            const errorDiv = input.parentElement.querySelector('.text-red-500');
+            if (errorDiv) errorDiv.remove();
+            input.classList.remove('border-red-500');
+        }
+
+        function clearAllErrors() {
+            document.querySelectorAll('.text-red-500').forEach(error => error.remove());
+            document.querySelectorAll('.border-red-500').forEach(input => 
+                input.classList.remove('border-red-500')
+            );
+        }
+
+        // Real-time validation
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            const inputs = form.querySelectorAll('input, textarea, select');
+
+            inputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    validateInput(this);
+                    if (this.name === 'price' || this.name === 'discount') {
+                        updateSalePrice();
+                    }
+                });
+
+                input.addEventListener('blur', function() {
+                    validateInput(this);
+                });
+            });
+
+            // Special handling for unit type change
+            const unitSelect = form.querySelector('select[name="unit"]');
+            const unitQuantityInput = form.querySelector('input[name="unitQuantity"]');
+
+            unitSelect.addEventListener('change', function() {
+                const unitType = this.value;
+                updateUnitQuantityValidation(unitType, unitQuantityInput);
+                validateInput(unitQuantityInput);
+            });
+
+            // Form submission
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                if (validateForm()) {
+                    const loadingOverlay = document.getElementById('loadingOverlay');
+                    if (loadingOverlay) {
+                        loadingOverlay.classList.remove('hidden');
+                        loadingOverlay.classList.add('flex');
+                    }
+                    this.submit();
+                }
+            });
+        });
+
+        function validateInput(input) {
+            clearError(input);
+            let errors = [];
+
+            if (input.name === 'unitQuantity') {
+                const unitType = document.querySelector('select[name="unit"]').value;
+                errors = validateField('unitQuantity', input.value, unitType);
+            } else {
+                errors = validateField(input.name, input.value);
+            }
+
+            if (errors.length > 0) {
+                showError(input, errors[0]);
+                return false;
+            }
+            return true;
+        }
+
+        function updateUnitQuantityValidation(unitType, input) {
+            if (unitType === 'kg') {
+                input.setAttribute('step', '0.001');
+                input.setAttribute('min', '0.01');
+                input.setAttribute('max', '25');
+            } else if (unitType === 'nos') {
+                input.setAttribute('step', '1');
+                input.setAttribute('min', '1');
+                input.setAttribute('max', '100');
+            }
+        }
+
+        function validateForm() {
+            clearAllErrors();
+            let isValid = true;
+            const form = document.querySelector('form');
+            const requiredFields = ['name', 'description', 'price', 'quantity', 'unit', 'unitQuantity', 'category'];
+
+            requiredFields.forEach(field => {
+                const input = form.querySelector(`[name="${field}"]`);
+                if (!validateInput(input)) {
+                    isValid = false;
+                }
+            });
+
+            // Validate images
+            const imageInput = document.getElementById('imageInput');
+            const totalImages = imageInput.files.length;
+
+            if (totalImages === 0) {
+                showError(imageInput, validationRules.images.message.required);
+                isValid = false;
+            } else if (totalImages > validationRules.images.max) {
+                showError(imageInput, validationRules.images.message.max);
+                isValid = false;
+            }
+
+            // Validate each image
+            for (let i = 0; i < imageInput.files.length; i++) {
+                const file = imageInput.files[i];
+                if (!validationRules.images.types.includes(file.type)) {
+                    showError(imageInput, validationRules.images.message.type);
+                    isValid = false;
+                    break;
+                }
+                if (file.size > validationRules.images.maxSize) {
+                    showError(imageInput, validationRules.images.message.size);
+                    isValid = false;
+                    break;
+                }
+            }
+
+            return isValid;
+        }
+
+        function updateSalePrice() {
+            const price = parseFloat(document.querySelector('input[name="price"]').value) || 0;
+            const discount = parseFloat(document.querySelector('input[name="discount"]').value) || 0;
+            const salePrice = price - (price * (discount / 100));
+            
+            const salePriceDisplay = document.getElementById('salePriceDisplay') || createSalePriceDisplay();
+            salePriceDisplay.textContent = `Sale Price: ₹${salePrice.toFixed(2)}`;
+            
+            if (salePrice < price) {
+                salePriceDisplay.classList.add('text-green-500');
+            } else {
+                salePriceDisplay.classList.remove('text-green-500');
+            }
+        }
+
+        function createSalePriceDisplay() {
+            const div = document.createElement('div');
+            div.id = 'salePriceDisplay';
+            div.className = 'text-lg font-semibold mt-2';
+            document.querySelector('input[name="price"]').parentElement.appendChild(div);
+            return div;
+        }
+    </script>
 </body>
 
 </html>

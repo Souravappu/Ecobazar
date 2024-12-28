@@ -47,6 +47,8 @@
         .status-shipped { background: rgba(139, 92, 246, 0.2); color: #8b5cf6; }
         .status-delivered { background: rgba(16, 185, 129, 0.2); color: #10b981; }
         .status-cancelled { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+        .status-returned { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .status-partial-return { background: rgba(16, 185, 129, 0.2); color: #10b981; }
     </style>
 </head>
 <body>
@@ -61,14 +63,21 @@
                 Back to Orders
             </a>
             <div class="flex items-center space-x-4">
-                <% if (!['Delivered', 'Cancelled'].includes(order.orderStatus)) { %>
+                <% if (!['Delivered', 'Cancelled', 'Returned'].includes(order.orderStatus) && 
+                       !order.returnRequested && 
+                       !order.partiallyReturned && 
+                       !order.items.some(item => item.returnRequested || item.status === 'Returned')) { %>
                     <button onclick="cancelEntireOrder('<%= order._id %>')"
                             class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
                         Cancel Order
                     </button>
                 <% } %>
-                <span class="status-badge status-<%= order.orderStatus.toLowerCase() %>">
+                <span class="status-badge <%= 
+                    order.orderStatus === 'Returned' ? 'status-returned' :
+                    order.partiallyReturned ? 'status-partial-return' :
+                    `status-${order.orderStatus.toLowerCase()}` %>">
                     <%= order.orderStatus %>
+                    <%= order.partiallyReturned ? '(Partially Returned)' : '' %>
                 </span>
                 <% if (order.orderStatus === 'Cancelled' && order.cancelReason) { %>
                     <button onclick="showCancelReason(`<%= order.cancelReason %>`)"
@@ -174,10 +183,12 @@
                                     </span>
                                 </td>
                                 <td class="py-4">
-                                    <% if (!['Delivered', 'Cancelled'].includes(item.status)) { %>
+                                    <% if (!['Delivered', 'Cancelled', 'Returned'].includes(item.status) && 
+                                           !item.returnRequested && 
+                                           !order.returnRequested) { %>
                                         <button onclick="cancelOrderItem('<%= order._id %>', '<%= item._id %>')"
-                                                class="text-red-400 hover:text-red-300 transition-colors">
-                                            <i class="fas fa-times-circle">Cancel Item</i>
+                                                class="text-red-600 hover:text-red-700 text-sm">
+                                            Cancel Item
                                         </button>
                                     <% } %>
                                     <% if (item.status === 'Cancelled') { %>
@@ -185,6 +196,29 @@
                                                 class="text-gray-400 hover:text-gray-300 transition-colors ml-2">
                                             <i class="fas fa-info-circle"></i>
                                         </button>
+                                    <% } %>
+                                    <% if (item.returnRequested) { %>
+                                        <div class="flex flex-col gap-2">
+                                            <span class="status-badge status-<%= item.returnStatus.toLowerCase() %>">
+                                                Return <%= item.returnStatus %>
+                                            </span>
+                                            <% if (item.returnStatus === 'Pending') { %>
+                                                <div class="flex gap-2">
+                                                    <button onclick="approveItemReturn('<%= order._id %>', '<%= item._id %>')"
+                                                            class="text-green-600 hover:text-green-700">
+                                                        <i class="fas fa-check"></i> Approve
+                                                    </button>
+                                                    <button onclick="rejectItemReturn('<%= order._id %>', '<%= item._id %>')"
+                                                            class="text-red-600 hover:text-red-700">
+                                                        <i class="fas fa-times"></i> Reject
+                                                    </button>
+                                                </div>
+                                            <% } %>
+                                            <button onclick="showReturnReason(`<%= item.returnReason %>`)"
+                                                    class="text-gray-500 hover:text-gray-700">
+                                                <i class="fas fa-info-circle"></i> View Reason
+                                            </button>
+                                        </div>
                                     <% } %>
                                 </td>
                             </tr>
@@ -222,6 +256,40 @@
                 </p>
             </div>
         <% } %>
+
+        <% if (order.returnRequested) { %>
+            <div class="mt-6 p-4 rounded-lg <%= 
+                order.returnStatus === 'Pending' ? 'bg-yellow-50 border-yellow-200' :
+                order.returnStatus === 'Approved' ? 'bg-green-50 border-green-200' :
+                'bg-red-50 border-red-200' %> border">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="text-lg font-medium mb-2">Order Return Request</h3>
+                        <p class="text-sm text-gray-600"><%= order.returnReason %></p>
+                        <p class="text-xs text-gray-500 mt-2">
+                            Requested on: <%= new Date(order.returnRequestedAt).toLocaleString() %>
+                        </p>
+                    </div>
+                    <div class="flex flex-col items-end gap-2">
+                        <span class="status-badge status-<%= order.returnStatus.toLowerCase() %>">
+                            <%= order.returnStatus %>
+                        </span>
+                        <% if (order.returnStatus === 'Pending') { %>
+                            <div class="flex gap-2">
+                                <button onclick="approveReturn('<%= order._id %>')"
+                                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                                    Approve Return
+                                </button>
+                                <button onclick="rejectReturn('<%= order._id %>')"
+                                        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                                    Reject Return
+                                </button>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        <% } %>
     </main>
 
     <script>
@@ -240,14 +308,31 @@
                 input: 'textarea',
                 inputLabel: 'Reason for cancellation',
                 inputPlaceholder: 'Enter reason for cancellation...',
+                inputAttributes: {
+                    'aria-label': 'Reason for cancellation',
+                    'minlength': '10',
+                    'maxlength': '200'
+                },
                 showCancelButton: true,
                 confirmButtonColor: '#EF4444',
                 confirmButtonText: 'Cancel Order',
                 cancelButtonText: 'Keep Order',
                 inputValidator: (value) => {
                     if (!value) {
-                        return 'You need to provide a reason for cancellation!';
+                        return 'Please provide a reason for cancellation';
                     }
+                    if (value.trim().length < 10) {
+                        return 'Reason must be at least 10 characters long';
+                    }
+                    if (value.trim().length > 200) {
+                        return 'Reason cannot exceed 200 characters';
+                    }
+                    if (!/^[a-zA-Z0-9\s.,!?-]+$/.test(value)) {
+                        return 'Reason contains invalid characters';
+                    }
+                },
+                preConfirm: (value) => {
+                    return value.trim();
                 }
             });
 
@@ -292,14 +377,31 @@
                 input: 'textarea',
                 inputLabel: 'Reason for cancellation',
                 inputPlaceholder: 'Enter reason for cancellation...',
+                inputAttributes: {
+                    'aria-label': 'Reason for cancellation',
+                    'minlength': '10',
+                    'maxlength': '200'
+                },
                 showCancelButton: true,
                 confirmButtonColor: '#EF4444',
                 confirmButtonText: 'Cancel Item',
                 cancelButtonText: 'Keep Item',
                 inputValidator: (value) => {
                     if (!value) {
-                        return 'You need to provide a reason for cancellation!';
+                        return 'Please provide a reason for cancellation';
                     }
+                    if (value.trim().length < 10) {
+                        return 'Reason must be at least 10 characters long';
+                    }
+                    if (value.trim().length > 200) {
+                        return 'Reason cannot exceed 200 characters';
+                    }
+                    if (!/^[a-zA-Z0-9\s.,!?-]+$/.test(value)) {
+                        return 'Reason contains invalid characters';
+                    }
+                },
+                preConfirm: (value) => {
+                    return value.trim();
                 }
             });
 
@@ -336,6 +438,216 @@
                     });
                 }
             }
+        }
+
+        async function approveReturn(orderId) {
+            try {
+                const response = await fetch(`/admin/order/${orderId}/approve-return`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Return Approved',
+                        text: data.message,
+                        showConfirmButton: false,
+                        timer: 1500
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.message || 'Error approving return'
+                });
+            }
+        }
+
+        async function rejectReturn(orderId) {
+            const { value: reason } = await Swal.fire({
+                title: 'Reject Return',
+                input: 'textarea',
+                inputLabel: 'Reason for rejection',
+                inputPlaceholder: 'Enter reason for rejecting the return...',
+                inputAttributes: {
+                    'aria-label': 'Reason for rejection',
+                    'minlength': '10',
+                    'maxlength': '200'
+                },
+                showCancelButton: true,
+                confirmButtonColor: '#EF4444',
+                confirmButtonText: 'Reject Return',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'Please provide a reason for rejection';
+                    }
+                    if (value.trim().length < 10) {
+                        return 'Reason must be at least 10 characters long';
+                    }
+                    if (value.trim().length > 200) {
+                        return 'Reason cannot exceed 200 characters';
+                    }
+                    if (!/^[a-zA-Z0-9\s.,!?-]+$/.test(value)) {
+                        return 'Reason contains invalid characters';
+                    }
+                },
+                preConfirm: (value) => {
+                    return value.trim();
+                }
+            });
+
+            if (reason) {
+                try {
+                    const response = await fetch(`/admin/order/${orderId}/reject-return`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ reason })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Return Rejected',
+                            text: data.message,
+                            showConfirmButton: false,
+                            timer: 1500
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        throw new Error(data.message);
+                    }
+                } catch (error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: error.message || 'Error rejecting return'
+                    });
+                }
+            }
+        }
+
+        async function approveItemReturn(orderId, itemId) {
+            try {
+                const response = await fetch(`/admin/order/${orderId}/item/${itemId}/approve-return`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Item Return Approved',
+                        text: data.message,
+                        showConfirmButton: false,
+                        timer: 1500
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.message || 'Error approving item return'
+                });
+            }
+        }
+
+        async function rejectItemReturn(orderId, itemId) {
+            const { value: reason } = await Swal.fire({
+                title: 'Reject Item Return',
+                input: 'textarea',
+                inputLabel: 'Reason for rejection',
+                inputPlaceholder: 'Enter reason for rejecting the item return...',
+                inputAttributes: {
+                    'aria-label': 'Reason for rejection',
+                    'minlength': '10',
+                    'maxlength': '200'
+                },
+                showCancelButton: true,
+                confirmButtonColor: '#EF4444',
+                confirmButtonText: 'Reject Return',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'Please provide a reason for rejection';
+                    }
+                    if (value.trim().length < 10) {
+                        return 'Reason must be at least 10 characters long';
+                    }
+                    if (value.trim().length > 200) {
+                        return 'Reason cannot exceed 200 characters';
+                    }
+                    if (!/^[a-zA-Z0-9\s.,!?-]+$/.test(value)) {
+                        return 'Reason contains invalid characters';
+                    }
+                },
+                preConfirm: (value) => {
+                    return value.trim();
+                }
+            });
+
+            if (reason) {
+                try {
+                    const response = await fetch(`/admin/order/${orderId}/item/${itemId}/reject-return`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ reason })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Item Return Rejected',
+                            text: data.message,
+                            showConfirmButton: false,
+                            timer: 1500
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        throw new Error(data.message);
+                    }
+                } catch (error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: error.message || 'Error rejecting item return'
+                    });
+                }
+            }
+        }
+
+        function showReturnReason(reason) {
+            Swal.fire({
+                title: 'Return Reason',
+                text: reason || 'No reason provided',
+                icon: 'info'
+            });
         }
     </script>
 </body>

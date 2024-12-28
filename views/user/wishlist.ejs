@@ -47,45 +47,7 @@
 
     <main class="container mx-auto grid grid-cols-12 gap-6 animate__animated animate__fadeIn p-6">
         <!-- Navigation Sidebar -->
-        <div class="col-span-3 bg-white rounded-2xl shadow-2xl p-6 space-y-4">
-            <div class="flex items-center space-x-4 mb-8">
-                <div class="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white text-xl border-4 border-green-200">
-                    <i class="fas fa-user"></i>
-                </div>
-                <div>
-                    <h3 class="font-bold text-lg"><%= user.fname %> <%= user.lname %></h3>
-                    <p class="text-sm text-gray-500">User</p>
-                </div>
-            </div>
-            <nav class="space-y-2">
-                <a href="/profile" class="nav-item flex items-center p-3 rounded-lg space-x-3">
-                    <i class="fas fa-home w-6"></i>
-                    <span>Dashboard</span>
-                </a>
-                <a href="/orders" class="nav-item flex items-center p-3 rounded-lg space-x-3">
-                    <i class="fas fa-shopping-basket w-6"></i>
-                    <span>Orders</span>
-                </a>
-                <a href="/wishlist" class="nav-item active flex items-center p-3 rounded-lg space-x-3">
-                    <i class="fas fa-heart w-6"></i>
-                    <span>Wishlist</span>
-                </a>
-                <a href="/address" class="nav-item flex items-center p-3 rounded-lg space-x-3">
-                    <i class="fas fa-map-marker-alt w-6"></i>
-                    <span>Address</span>
-                </a>
-                <a href="#" class="nav-item flex items-center p-3 rounded-lg space-x-3">
-                    <i class="fas fa-cog w-6"></i>
-                    <span>Settings</span>
-                </a>
-                <form action="/logout" method="POST" class="block">
-                    <button type="submit" class="nav-item flex items-center p-3 rounded-lg space-x-3 text-red-500 w-full">
-                        <i class="fas fa-sign-out-alt w-6"></i>
-                        <span>Log Out</span>
-                    </button>
-                </form>
-            </nav>
-            </div>
+        <%- include('../layouts/profileSidebar.ejs', { currentPage: 'wishlist' }) %>
 
         <!-- Wishlist Content -->
         <div class="col-span-9 space-y-6">

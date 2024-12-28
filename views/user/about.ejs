@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - Ecobazar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <%- include('../layouts/headerWithoutUser.ejs') %>
+
+    <!-- Hero Section -->
+    <div class="bg-green-500 text-white py-20">
+        <div class="container mx-auto px-4 text-center">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">Fresh From Farm to Your Table</h1>
+            <p class="text-xl opacity-90">Delivering Nature's Best Since 2020</p>
+        </div>
+    </div>
+
+        <div class="max-w-3xl mx-auto text-center mb-16">
+            <h2 class="text-3xl font-bold mb-6">Our Story</h2>
+            <p class="text-gray-600 leading-relaxed">
+                Founded in 2020, Ecobazar was born from a simple idea: everyone deserves access to fresh, high-quality produce 
+                without leaving their home. What started as a small local delivery service has grown into a comprehensive 
+                online marketplace for fresh vegetables, fruits, eggs, meat, and poultry.
+            </p>
+        </div>
+
+        <!-- Values Grid -->
+        <div class="grid md:grid-cols-3 gap-8 mb-16">
+            <div class="text-center p-6 bg-white rounded-lg shadow-md">
+                <div class="text-green-500 text-4xl mb-4">
+                    <i class="fas fa-leaf"></i>
+                </div>
+                <h3 class="text-xl font-semibold mb-3">Fresh & Organic</h3>
+                <p class="text-gray-600">
+                    We partner with local farmers to bring you the freshest organic produce straight from the farm.
+                </p>
+            </div>
+            <div class="text-center p-6 bg-white rounded-lg shadow-md">
+                <div class="text-green-500 text-4xl mb-4">
+                    <i class="fas fa-truck"></i>
+                </div>
+                <h3 class="text-xl font-semibold mb-3">Fast Delivery</h3>
+                <p class="text-gray-600">
+                    Same-day delivery ensures your products reach you at their freshest.
+                </p>
+            </div>
+            <div class="text-center p-6 bg-white rounded-lg shadow-md">
+                <div class="text-green-500 text-4xl mb-4">
+                    <i class="fas fa-heart"></i>
+                </div>
+                <h3 class="text-xl font-semibold mb-3">Quality Guaranteed</h3>
+                <p class="text-gray-600">
+                    We stand behind the quality of every product we deliver.
+                </p>
+            </div>
+        </div>
+
+        <!-- Product Categories -->
+        <div class="mb-16">
+            <h2 class="text-3xl font-bold text-center mb-8">What We Offer</h2>
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="font-semibold mb-3">Fresh Vegetables</h3>
+                    <p class="text-gray-600">Locally sourced, seasonal vegetables delivered fresh daily.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="font-semibold mb-3">Fresh Fruits</h3>
+                    <p class="text-gray-600">Sweet and juicy fruits from trusted orchards.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="font-semibold mb-3">Farm Fresh Eggs</h3>
+                    <p class="text-gray-600">Free-range eggs from healthy, happy hens.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="font-semibold mb-3">Quality Meats</h3>
+                    <p class="text-gray-600">Premium cuts of meat and fresh poultry products.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sustainability Section -->
+        <div class="bg-green-50 p-8 rounded-lg">
+            <div class="max-w-3xl mx-auto text-center">
+                <h2 class="text-3xl font-bold mb-6">Our Commitment to Sustainability</h2>
+                <p class="text-gray-600 mb-6">
+                    We're committed to sustainable practices throughout our supply chain. From eco-friendly packaging 
+                    to supporting local farmers who use sustainable farming methods, we're doing our part to protect 
+                    the environment while delivering quality products to your doorstep.
+                </p>
+                <div class="flex justify-center space-x-4">
+                    <div class="flex items-center">
+                        <i class="fas fa-recycle text-green-500 mr-2"></i>
+                        <span>Eco-Friendly Packaging</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fas fa-seedling text-green-500 mr-2"></i>
+                        <span>Sustainable Farming</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fas fa-hand-holding-heart text-green-500 mr-2"></i>
+                        <span>Community Support</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <%- include('../layouts/footer.ejs') %>
+</body>
+</html> 
