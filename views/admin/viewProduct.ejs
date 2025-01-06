@@ -180,11 +180,11 @@
       <!-- Image Gallery Section -->
       <div class="fade-in-up" style="animation-delay: 0.2s;">
         <div class="image-container group mb-4">
-          <img id="mainImage" src="http://localhost:3000/uploads<%= product.images[0] %>" alt="Product Image" class="w-full h-auto rounded-lg transition-transform duration-300 group-hover:scale-105">
+          <img id="mainImage" src="https://ecobazar.shop/uploads<%= product.images[0] %>" alt="Product Image" class="w-full h-auto rounded-lg transition-transform duration-300 group-hover:scale-105">
         </div>
         <div class="grid grid-cols-5 gap-2">
           <% product.images.forEach((image, index) => { %>
-          <img src="http://localhost:3000/uploads<%= image %>" alt="<%= product.name %>" class="thumbnail w-full h-auto rounded-md cursor-pointer <%= index === 0 ? 'active' : '' %>" onclick="updateMainImage(this.src, this)">
+          <img src="https://ecobazar.shop/uploads<%= image %>" alt="<%= product.name %>" class="thumbnail w-full h-auto rounded-md cursor-pointer <%= index === 0 ? 'active' : '' %>" onclick="updateMainImage(this.src, this)">
           <% }) %>
         </div>
       </div>
