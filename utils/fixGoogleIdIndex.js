@@ -3,11 +3,9 @@ const User = require('../models/User');
 
 async function fixGoogleIdIndex() {
     try {
-        // Drop the existing index
         await User.collection.dropIndex('googleId_1');
         console.log('Successfully dropped the old index');
 
-        // Create the new sparse index
         await User.collection.createIndex(
             { googleId: 1 }, 
             { unique: true, sparse: true }

@@ -202,7 +202,6 @@ const deleteCategory = async (req, res) => {
             });
         }
 
-        // Soft delete
         const updatedCategory = await Category.findByIdAndUpdate(
             id,
             {

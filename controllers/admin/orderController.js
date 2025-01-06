@@ -45,7 +45,6 @@ const orderController = {
                 }
             }
 
-            // return status 
             if (req.query.returnStatus) {
                 query.returnRequested = true;
                 if (req.query.returnStatus !== 'all') {

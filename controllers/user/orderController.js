@@ -119,7 +119,7 @@ const orderController = {
             await User.findByIdAndUpdate(userId, {
                 $push: {
                     appliedCoupons: {
-                        coupon: coupon._id,
+                        coupon: coupon,
                         discountAmount: couponDiscount,
                         status: 'applied'
                     }
@@ -309,7 +309,6 @@ const orderController = {
         try {
             const orderId = req.params.id;
             
-            // If the ID is 'failed', redirect to the failed page
             if (orderId === 'failed') {
                 return res.redirect('/order/failed');
             }
@@ -533,7 +532,6 @@ const orderController = {
             const { razorpay_payment_id, razorpay_order_id, razorpay_signature, useWallet, walletAmount, coupon } = req.body;
             const userId = req.session.user;
 
-            // Check if order already exists
             const existingOrder = await Order.findOne({ razorpayOrderId: razorpay_order_id });
             if (existingOrder) {
                 if (!razorpay_signature) {
@@ -548,7 +546,6 @@ const orderController = {
                     });
                 }
 
-                // Verify signature
                 const hmac = crypto.createHmac('sha256', process.env.KEY_SECRET);
                 hmac.update(razorpay_order_id + "|" + razorpay_payment_id);
                 const generatedSignature = hmac.digest('hex');
@@ -577,7 +574,6 @@ const orderController = {
                 }
             }
 
-            // If no existing order, create new order
             const [cart, addressRecord] = await Promise.all([
                 Cart.findOne({ user: userId }).populate('items.product'),
                 Address.findOne({ userId })
@@ -592,7 +588,6 @@ const orderController = {
                 throw new Error('Default address not found');
             }
 
-            // Calculate totals
             const subtotal = cart.total;
             const shippingCharge = 35;
             let total = subtotal + shippingCharge;
@@ -605,7 +600,6 @@ const orderController = {
                 total -= Number(coupon.discountAmount);
             }
 
-            // Create new order
             const order = new Order({
                 user: userId,
                 items: cart.items.map(item => ({
@@ -637,7 +631,6 @@ const orderController = {
                 couponDiscount: coupon?.discountAmount || 0
             });
 
-            // Verify signature for new order
             if (razorpay_signature) {
                 const hmac = crypto.createHmac('sha256', process.env.KEY_SECRET);
                 hmac.update(razorpay_order_id + "|" + razorpay_payment_id);
@@ -651,7 +644,6 @@ const orderController = {
 
             await order.save();
 
-            // Handle wallet deduction if used
             if (useWallet && walletAmount > 0) {
                 const wallet = await Wallet.findOne({ user: userId });
                 if (wallet) {
@@ -667,7 +659,6 @@ const orderController = {
                 }
             }
 
-            // Handle coupon if used
             if (coupon?.couponId) {
                 await Promise.all([
                     Coupon.findByIdAndUpdate(coupon.couponId, { $inc: { usedCount: 1 } }),
@@ -686,10 +677,8 @@ const orderController = {
                 }
             });
 
-            // Clear the cart
             await Cart.findOneAndDelete({ user: userId });
 
-            // Update product quantities
             const updatePromises = cart.items.map(item => 
                 Product.findByIdAndUpdate(item.product._id, {
                     $inc: { quantity: -item.quantity }
@@ -875,20 +864,17 @@ const orderController = {
                 });
             }
 
-            // Calculate final amount
             let finalAmount = order.total;
             if (order.walletAmount > 0) {
                 finalAmount -= order.walletAmount;
             }
 
-            // Create new Razorpay order
             const razorpayOrder = await razorpay.orders.create({
                 amount: Math.round(finalAmount * 100),
                 currency: 'INR',
                 receipt: order._id.toString()
             });
 
-            // Update order with new Razorpay order ID
             order.razorpayOrderId = razorpayOrder.id;
             await order.save();
 
@@ -931,7 +917,6 @@ const orderController = {
                 });
             }
 
-            // Restore product quantities
             const stockUpdatePromises = order.items.map(item =>
                 Product.findByIdAndUpdate(
                     item.product,
@@ -939,7 +924,6 @@ const orderController = {
                 )
             );
 
-            // If wallet was used, refund the amount
             if (order.walletAmount > 0) {
                 const wallet = await Wallet.findOne({ user: order.user });
                 if (wallet) {
@@ -957,7 +941,6 @@ const orderController = {
                 }
             }
 
-            // If coupon was used, restore it
             if (order.coupon) {
                 const user = await User.findById(order.user);
                 if (user) {
@@ -968,14 +951,12 @@ const orderController = {
                 }
             }
 
-            // Update order status
             order.orderStatus = 'Cancelled';
             order.paymentStatus = 'Aborted';
             order.cancelReason = 'Payment failed and order aborted by user';
             order.cancelledAt = new Date();
             await order.save();
 
-            // Execute all updates
             await Promise.all(stockUpdatePromises);
 
             res.json({
@@ -997,7 +978,6 @@ const orderController = {
             const { razorpay_order_id, useWallet, walletAmount, coupon, error } = req.body;
             const userId = req.session.user;
 
-            // Get cart and address details
             const [cart, addressRecord] = await Promise.all([
                 Cart.findOne({ user: userId }).populate('items.product'),
                 Address.findOne({ userId })
@@ -1018,22 +998,18 @@ const orderController = {
                 });
             }
 
-            // Calculate totals
             const subtotal = cart.total;
             const shippingCharge = 35;
             let total = subtotal + shippingCharge;
 
-            // Apply wallet deduction if used
             if (useWallet && walletAmount) {
                 total -= Number(walletAmount);
             }
 
-            // Apply coupon discount if used
             if (coupon && coupon.discountAmount) {
                 total -= Number(coupon.discountAmount);
             }
 
-            // Create a failed order record with all required fields
             const order = new Order({
                 user: userId,
                 items: cart.items.map(item => ({
@@ -1067,10 +1043,8 @@ const orderController = {
 
             await order.save();
 
-            // Clear the cart after order is created
             await Cart.findOneAndDelete({ user: userId });
 
-            // Return the order ID for redirection
             res.json({
                 success: true,
                 orderId: order._id.toString()
@@ -1096,32 +1070,25 @@ const orderController = {
                 return res.status(404).json({ message: 'Order not found' });
             }
 
-            // Create a new PDF document
             const doc = new PDFDocument({
                 margin: 50
             });
             
-            // Set response headers
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', `attachment; filename=invoice-${order.orderId}.pdf`);
             
-            // Pipe the PDF to the response
             doc.pipe(res);
 
-            // Add company logo/header
             doc.fontSize(20).text('Ecobazar', { align: 'center' });
             doc.fontSize(14).text('Invoice', { align: 'center' });
             doc.moveDown();
 
-            // Add a line separator
             doc.moveTo(50, doc.y)
                .lineTo(550, doc.y)
                .stroke();
             doc.moveDown();
 
-            // Invoice details in a grid
             const startY = doc.y;
-            // Left side
             doc.fontSize(10);
             doc.text('Bill To:', 50, startY);
             doc.fontSize(12);
@@ -1134,7 +1101,6 @@ const orderController = {
             doc.text(`${order.shippingAddress.city} - ${order.shippingAddress.postalCode}`, 50, startY + 65);
             doc.text(`Phone: ${order.shippingAddress.phone}`, 50, startY + 80);
 
-            // Right side
             doc.fontSize(10);
             doc.text('Invoice Details:', 350, startY);
             doc.text(`Invoice No: ${order.orderId}`, 350, startY + 20);
@@ -1146,23 +1112,19 @@ const orderController = {
             doc.text(`Payment Status: ${order.paymentStatus}`, 350, startY + 50);
             doc.text(`Payment Method: ${order.paymentMethod}`, 350, startY + 65);
 
-            // Move down after the header section
             doc.moveDown(5);
 
-            // Add a line separator
             doc.moveTo(50, doc.y)
                .lineTo(550, doc.y)
                .stroke();
             doc.moveDown();
 
-            // Table header with background
             const tableTop = doc.y;
             doc.fillColor('#f3f4f6')
                .rect(50, tableTop, 500, 20)
                .fill();
             doc.fillColor('#000');
 
-            // Table headers
             doc.fontSize(10);
             doc.text('Item', 60, tableTop + 5);
             doc.text('Quantity', 280, tableTop + 5);
@@ -1171,7 +1133,6 @@ const orderController = {
 
             let tableRow = tableTop + 25;
 
-            // Table content
             order.items.forEach((item, index) => {
                 doc.text(item.product.name, 60, tableRow);
                 doc.text(item.quantity.toString(), 280, tableRow);
@@ -1179,7 +1140,6 @@ const orderController = {
                 doc.text(`₹${(item.quantity * item.price).toFixed(2)}`, 480, tableRow);
                 tableRow += 20;
 
-                // Add a light line between items
                 if (index < order.items.length - 1) {
                     doc.moveTo(50, tableRow - 5)
                        .lineTo(550, tableRow - 5)
@@ -1188,13 +1148,11 @@ const orderController = {
                 }
             });
 
-            // Add a line before totals
             doc.moveTo(50, tableRow + 5)
                .lineTo(550, tableRow + 5)
                .strokeColor('#000')
                .stroke();
 
-            // Totals section
             tableRow += 20;
             doc.fontSize(10);
             doc.text('Subtotal:', 380, tableRow);
@@ -1216,7 +1174,6 @@ const orderController = {
                 doc.text(`-₹${order.walletAmount.toFixed(2)}`, 480, tableRow);
             }
 
-            // Final total with background
             tableRow += 25;
             doc.fillColor('#f3f4f6')
                .rect(350, tableRow - 5, 200, 25)
@@ -1226,13 +1183,11 @@ const orderController = {
             doc.text('Total:', 380, tableRow);
             doc.text(`₹${order.total.toFixed(2)}`, 480, tableRow);
 
-            // Footer
             doc.fontSize(10).font('Helvetica');
             doc.text('Thank you for shopping with Ecobazar!', 50, doc.page.height - 100, {
                 align: 'center'
             });
 
-            // Finalize the PDF
             doc.end();
         } catch (error) {
             console.error('Error generating invoice:', error);

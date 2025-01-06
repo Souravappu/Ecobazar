@@ -1,4 +1,26 @@
 <!DOCTYPE html>
+<%
+function updateQueryString(key, value) {
+    const currentQuery = {};
+    // Copy existing query parameters
+    for (const [k, v] of Object.entries(query || {})) {
+        if (k !== key && k !== 'page') {
+            currentQuery[k] = v;
+        }
+    }
+    // Add or update the new key-value pair
+    if (value !== null && value !== undefined && value !== '') {
+        currentQuery[key] = value;
+    }
+    
+    // Build the query string
+    const queryString = Object.entries(currentQuery)
+        .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+        .join('&');
+    
+    return queryString ? `?${queryString}` : '';
+}
+%>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -14,13 +36,21 @@
 
     <div class="container mx-auto px-4 py-8">
         <!-- Search Results Header -->
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold mb-2">
-                <%= query ? `Search Results for "${query}"` : 'All Products' %>
-            </h1>
-            <p class="text-gray-600">
-                <%= products.length %> products found
-            </p>
+        <div class="mb-8 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold mb-2">
+                    <%= query ? `Search Results for "${query}"` : 'All Products' %>
+                </h1>
+                <p class="text-gray-600">
+                    <%= products.length %> products found
+                </p>
+            </div>
+            <% if (query) { %>
+                <a href="/search" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg flex items-center gap-2">
+                    <i class="fas fa-times"></i>
+                    Clear Search
+                </a>
+            <% } %>
         </div>
 
         <!-- Add this section after the search results header -->
@@ -67,12 +97,12 @@
                 <div class="bg-white p-4 rounded-lg shadow">
                     <h3 class="font-semibold mb-4">Categories</h3>
                     <div class="space-y-2">
-                        <a href="/search?q=<%= query %>" 
+                        <a href="/search<%= query ? '?q=' + query : '' %>" 
                            class="block px-2 py-1 rounded <%= !selectedCategory ? 'bg-green-50 text-green-600' : 'hover:bg-gray-50' %>">
                             All Categories
                         </a>
                         <% categories.forEach(category => { %>
-                            <a href="/search?q=<%= query %>&category=<%= category._id %>" 
+                            <a href="/search<%= updateQueryString('category', category._id) %>" 
                                class="block px-2 py-1 rounded <%= selectedCategory === category._id.toString() ? 'bg-green-50 text-green-600' : 'hover:bg-gray-50' %>">
                                 <%= category.name %>
                             </a>
@@ -177,8 +207,12 @@
         // Function to update query string parameters
         function updateQueryString(key, value) {
             const urlParams = new URLSearchParams(window.location.search);
-            urlParams.set(key, value);
-            return `${window.location.pathname}?${urlParams.toString()}`;
+            if (value === null || value === undefined || value === '') {
+                urlParams.delete(key);
+            } else {
+                urlParams.set(key, value);
+            }
+            return `${window.location.pathname}${urlParams.toString() ? '?' + urlParams.toString() : ''}`;
         }
 
         // Initialize wishlist buttons

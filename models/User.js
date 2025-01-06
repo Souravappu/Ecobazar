@@ -26,7 +26,7 @@ const userSchema = mongoose.Schema({
     password: {
         type: String,
         required: function() {
-            return !this.googleId; // Only required if not using Google auth
+            return !this.googleId; 
         }
     },
     isBlocked: {

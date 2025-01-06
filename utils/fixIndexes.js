@@ -3,11 +3,9 @@ const User = require('../models/User');
 
 async function fixIndexes() {
     try {
-        // Drop existing indexes
         await User.collection.dropIndexes();
         console.log('Dropped existing indexes');
 
-        // Recreate necessary indexes
         await User.collection.createIndex(
             { email: 1 },
             { unique: true }

@@ -62,7 +62,7 @@ const couponController = {
 
     applyCoupon: async (req, res) => {
         try {
-            const { code, cartTotal, subtotal } = req.body; // cartTotal includes shipping, subtotal is without shipping
+            const { code, cartTotal, subtotal } = req.body; 
             const userId = req.session.user;
             
             const user = await User.findById(userId);
@@ -96,7 +96,6 @@ const couponController = {
                 });
             }
             
-            // Check minimum purchase against subtotal (excluding shipping)
             if (subtotal < coupon.minimumPurchase) {
                 return res.json({
                     success: false,
@@ -111,18 +110,14 @@ const couponController = {
                 });
             }
 
-            // Calculate discount based on coupon type using subtotal
             let calculatedDiscount;
             if (coupon.discountType === 'percentage') {
-                // For percentage discount
                 const discountAmount = (subtotal * coupon.discountAmount) / 100;
                 calculatedDiscount = Math.min(discountAmount, coupon.maximumDiscount);
             } else {
-                // For fixed amount discount
                 calculatedDiscount = Math.min(coupon.discountAmount, subtotal);
             }
 
-            // Ensure discount doesn't exceed subtotal
             calculatedDiscount = Math.min(calculatedDiscount, subtotal);
 
             

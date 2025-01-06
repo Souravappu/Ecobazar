@@ -59,7 +59,6 @@ userRouter.put('/profile/set-default-address/:id',checkUserSession, addressContr
 
 
 
-
 userRouter.get('/auth/google',
     passport.authenticate('google', { 
         scope: ['profile', 'email'],

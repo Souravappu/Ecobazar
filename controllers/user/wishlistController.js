@@ -4,7 +4,7 @@ const Category = require('../../models/Category');
 const User = require('../../models/User');
 const Address = require('../../models/Address');
 const wishlistController = {
-    // Add to wishlist
+    
     addToWishlist: async (req, res) => {
         try {
             const { productId } = req.body;

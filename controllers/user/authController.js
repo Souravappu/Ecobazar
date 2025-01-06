@@ -70,7 +70,7 @@ const getHome = async (req, res) => {
     if (user) {
       const userData = await User.findOne({ _id: user });
   
-      res.render("user/homeWithoutuser", {
+      res.render("user/homeWithoutUser", {
         user: userData || null,
         categories,
         products: filteredProducts.slice(0, 10),
@@ -880,16 +880,13 @@ const searchProducts = async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = 12; 
 
-        // Base query for products
         let searchQuery = {
             isBlocked: false,
             isDeleted: false
         };
 
-        // Search in both products and categories
         let categoryResults = [];
         if (query) {
-            // Search in categories
             categoryResults = await Category.find({
                 name: { $regex: query, $options: 'i' },
                 isListed: true,
@@ -897,11 +894,9 @@ const searchProducts = async (req, res) => {
                 isDeleted: false
             });
 
-            // If searching within a specific category
             if (categoryId) {
                 searchQuery.category = categoryId;
             }
-            // If not in specific category, include products from matching categories
             else if (categoryResults.length > 0) {
                 searchQuery.$or = [
                     { 
@@ -917,25 +912,21 @@ const searchProducts = async (req, res) => {
                     }
                 ];
             } else {
-                // If no matching categories, search only in products
                 searchQuery.$or = [
                     { name: { $regex: query, $options: 'i' } },
                     { description: { $regex: query, $options: 'i' } }
                 ];
             }
         } else if (categoryId) {
-            // If only category filter is applied
             searchQuery.category = categoryId;
         }
 
-        // Get all categories for sidebar
         const categories = await Category.find({ 
             isListed: true,
             isBlocked: false,
             isDeleted: false 
         });
 
-        // Build sort object
         let sortObject = {};
         switch (sortBy) {
             case 'price_asc':
@@ -951,11 +942,9 @@ const searchProducts = async (req, res) => {
                 sortObject.name = 1;
         }
 
-        // Get total count for pagination
         const total = await Product.countDocuments(searchQuery);
         const totalPages = Math.ceil(total / limit);
 
-        // Get products with category population
         const products = await Product.find(searchQuery)
             .populate({
                 path: 'category',
@@ -968,7 +957,6 @@ const searchProducts = async (req, res) => {
             .skip((page - 1) * limit)
             .limit(limit);
 
-        // Filter out products whose category is null (due to populate match conditions)
         const filteredProducts = products.filter(product => product.category !== null);
         const userData = req.session.user ? 
         await User.findById(req.session.user) : 
@@ -976,7 +964,7 @@ const searchProducts = async (req, res) => {
         res.render('user/searchResults', {
             products: filteredProducts,
             categories,
-            categoryResults, // Pass matching categories to view
+            categoryResults, 
             query,
             selectedCategory: categoryId,
             sortBy,
