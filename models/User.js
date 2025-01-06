@@ -9,7 +9,6 @@ const userSchema = mongoose.Schema({
     },
     lname: {
         type: String,
-        required: [true, 'Last name is required'],
         trim: true
     },
     email: {
