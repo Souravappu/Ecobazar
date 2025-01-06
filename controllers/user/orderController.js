@@ -670,7 +670,7 @@ const orderController = {
             await User.findByIdAndUpdate(userId, {
                 $push: {
                     appliedCoupons: {
-                        coupon: coupon._id,
+                        coupon: coupon,
                         discountAmount:  coupon?.discountAmount,
                         status: 'applied'
                     }
