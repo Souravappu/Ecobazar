@@ -37,7 +37,7 @@ const initializeUserCollections = async (userId) => {
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: '/auth/google/callback'
+    callbackURL:"https://ecobazar.shop/auth/google/callback"|| '/auth/google/callback'
 }, 
 async (accessToken, refreshToken, profile, done) => {
     try {
