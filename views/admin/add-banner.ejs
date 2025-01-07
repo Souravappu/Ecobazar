@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecobazar - Add Banner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .error-message {
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+        .form-group.error input,
+        .form-group.error textarea {
+            border-color: #ef4444;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-[#111827]">
+    <%- include('../layouts/side.ejs') %>
+    <%- include('../layouts/head.ejs') %>
+
+    <div class="flex-1 px-28 py-12 ml-64 bg-gradient-to-br from-[#111827] to-[#1f2937]">
+        <!-- Header Section -->
+        <div class="mb-8">
+            <h1 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-pink-600">
+                Add New Banner
+            </h1>
+        </div>
+
+        <!-- Banner Form -->
+        <form id="bannerForm" action="/admin/add-banner" method="POST" enctype="multipart/form-data" class="bg-gray-800 rounded-xl p-6 shadow-lg max-w-3xl" novalidate>
+            <!-- Title Field -->
+            <div class="form-group mb-6">
+                <label for="title" class="block text-gray-300 text-sm font-medium mb-2">Banner Title *</label>
+                <input type="text" 
+                       id="title" 
+                       name="title" 
+                       class="w-full bg-gray-700 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                       required
+                       minlength="3"
+                       maxlength="100">
+                <div class="error-message" id="titleError"></div>
+            </div>
+
+            <!-- Description Field -->
+            <div class="form-group mb-6">
+                <label for="description" class="block text-gray-300 text-sm font-medium mb-2">Banner Description *</label>
+                <textarea id="description" 
+                          name="description" 
+                          rows="4" 
+                          class="w-full bg-gray-700 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          required
+                          minlength="10"
+                          maxlength="500"></textarea>
+                <div class="error-message" id="descriptionError"></div>
+            </div>
+
+            <!-- Image Upload Field -->
+            <div class="form-group mb-6">
+                <label for="bannerImage" class="block text-gray-300 text-sm font-medium mb-2">Banner Image</label>
+                <div class="flex items-center justify-center w-full">
+                    <label for="bannerImage" class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-600 border-dashed rounded-lg cursor-pointer bg-gray-700 hover:bg-gray-600">
+                        <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-3"></i>
+                            <p class="mb-2 text-sm text-gray-400"><span class="font-semibold">Click to upload</span> or drag and drop</p>
+                            <p class="text-xs text-gray-400">PNG, JPG or JPEG (MAX. 2MB)</p>
+                        </div>
+                        <input id="bannerImage" 
+                               name="bannerImage" 
+                               type="file" 
+                               class="hidden"
+                               accept="image/png, image/jpeg, image/jpg">
+                    </label>
+                </div>
+                <div id="imagePreview" class="mt-4 hidden">
+                    <img src="" alt="Preview" class="max-h-64 rounded-lg mx-auto">
+                </div>
+                <div class="error-message" id="imageError"></div>
+                <p class="text-sm text-gray-400 mt-2">* Image is required if no link is provided</p>
+            </div>
+
+            <!-- Link Field -->
+            <div class="form-group mb-6">
+                <label for="link" class="block text-gray-300 text-sm font-medium mb-2">Image URL</label>
+                <input type="url" 
+                       id="link" 
+                       name="link" 
+                       class="w-full bg-gray-700 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                       pattern="https?://.+">
+                <div class="error-message" id="linkError"></div>
+                <p class="text-sm text-gray-400 mt-2">* Enter a direct link to an image (e.g., https://example.com/image.jpg)</p>
+            </div>
+
+            <!-- Default Banner Checkbox -->
+            <div class="form-group mb-6">
+                <label class="inline-flex items-center">
+                    <input type="checkbox" 
+                           name="isDefault" 
+                           value="true"
+                           class="form-checkbox h-5 w-5 text-green-500 rounded focus:ring-green-500 focus:ring-2 bg-gray-700 border-gray-600">
+                    <span class="ml-2 text-gray-300">Set as Default Banner</span>
+                </label>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="flex justify-end gap-4">
+                <a href="/admin/banners" class="px-6 py-2.5 rounded-lg bg-gray-600 text-white hover:bg-gray-700 transition-colors">
+                    Cancel
+                </a>
+                <button type="submit" class="px-6 py-2.5 rounded-lg bg-green-500 text-white hover:bg-green-600 transition-colors">
+                    Add Banner
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Function to check if URL is an image
+        async function isImageUrl(url) {
+            try {
+                const response = await fetch(url, { method: 'HEAD' });
+                const contentType = response.headers.get('Content-Type');
+                return contentType.startsWith('image/');
+            } catch (e) {
+                return false;
+            }
+        }
+
+        // Form validation
+        const form = document.getElementById('bannerForm');
+        const title = document.getElementById('title');
+        const description = document.getElementById('description');
+        const image = document.getElementById('bannerImage');
+        const link = document.getElementById('link');
+
+        // Image preview for file upload
+        image.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Validate file type
+                const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+                if (!validTypes.includes(file.type)) {
+                    showError('imageError', 'Please upload a valid image file (PNG, JPG, or JPEG)');
+                    image.value = '';
+                    return;
+                }
+
+                // Validate file size (2MB)
+                if (file.size > 2 * 1024 * 1024) {
+                    showError('imageError', 'Image size should not exceed 2MB');
+                    image.value = '';
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('imagePreview');
+                    preview.classList.remove('hidden');
+                    preview.querySelector('img').src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+                clearError('imageError');
+            }
+        });
+
+        // Preview image URL
+        link.addEventListener('change', async function(e) {
+            const url = this.value.trim();
+            if (url) {
+                const preview = document.getElementById('imagePreview');
+                const previewImg = preview.querySelector('img');
+                
+                // Show loading state
+                preview.classList.remove('hidden');
+                previewImg.src = '/images/loading.gif'; // Add a loading image to your project
+                
+                if (await isImageUrl(url)) {
+                    previewImg.src = url;
+                    clearError('linkError');
+                } else {
+                    previewImg.src = '';
+                    preview.classList.add('hidden');
+                    showError('linkError', 'Please enter a valid direct image URL');
+                }
+            }
+        });
+
+        // Form submission
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Reset errors
+            clearAllErrors();
+            
+            let isValid = true;
+
+            // Validate title
+            if (!title.value.trim()) {
+                showError('titleError', 'Title is required');
+                isValid = false;
+            } else if (title.value.length < 3) {
+                showError('titleError', 'Title must be at least 3 characters long');
+                isValid = false;
+            } else if (title.value.length > 100) {
+                showError('titleError', 'Title must not exceed 100 characters');
+                isValid = false;
+            }
+
+            // Validate description
+            if (!description.value.trim()) {
+                showError('descriptionError', 'Description is required');
+                isValid = false;
+            } else if (description.value.length < 10) {
+                showError('descriptionError', 'Description must be at least 10 characters long');
+                isValid = false;
+            } else if (description.value.length > 500) {
+                showError('descriptionError', 'Description must not exceed 500 characters');
+                isValid = false;
+            }
+
+            // Validate image or link
+            const hasImage = image.files && image.files[0];
+            const hasLink = link.value.trim();
+
+            if (!hasImage && !hasLink) {
+                showError('imageError', 'Either upload an image or provide an image URL');
+                showError('linkError', 'Either upload an image or provide an image URL');
+                isValid = false;
+            }
+
+            // Validate image URL if provided
+            if (hasLink) {
+                if (!isValidUrl(link.value)) {
+                    showError('linkError', 'Please enter a valid URL');
+                    isValid = false;
+                } else if (!(await isImageUrl(link.value))) {
+                    showError('linkError', 'Please enter a valid direct image URL');
+                    isValid = false;
+                }
+            }
+
+            if (isValid) {
+                form.submit();
+            }
+        });
+
+        function showError(elementId, message) {
+            const errorDiv = document.getElementById(elementId);
+            errorDiv.textContent = message;
+            errorDiv.parentElement.classList.add('error');
+        }
+
+        function clearError(elementId) {
+            const errorDiv = document.getElementById(elementId);
+            errorDiv.textContent = '';
+            errorDiv.parentElement.classList.remove('error');
+        }
+
+        function clearAllErrors() {
+            const errorDivs = document.querySelectorAll('.error-message');
+            errorDivs.forEach(div => {
+                div.textContent = '';
+                div.parentElement.classList.remove('error');
+            });
+        }
+
+        function isValidUrl(url) {
+            try {
+                new URL(url);
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        // Show success/error messages using SweetAlert2
+        <% if (messages.success_msg && messages.success_msg.length > 0) { %>
+            Swal.fire({
+                icon: 'success',
+                title: 'Success!',
+                text: '<%= messages.success_msg %>',
+                showConfirmButton: false,
+                timer: 1500
+            });
+        <% } %>
+
+        <% if (messages.error_msg && messages.error_msg.length > 0) { %>
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: '<%= messages.error_msg %>'
+            });
+        <% } %>
+    </script>
+</body>
+</html> 

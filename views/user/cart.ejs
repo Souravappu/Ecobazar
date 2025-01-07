@@ -231,11 +231,17 @@
                             itemElement.remove();
                             }
 
-                            // Update cart total
-                            const cartTotalElements = document.querySelectorAll('.cart-total');
-                            cartTotalElements.forEach(element => {
-                                element.textContent = `₹${data.cart.total}`;
-                            });
+                            // Update subtotal
+                            const subtotalElement = document.querySelector('.subtotal-amount');
+                            if (subtotalElement) {
+                                subtotalElement.textContent = `₹${data.cart.total}`;
+                            }
+
+                            // Update total (subtotal + shipping)
+                            const totalElement = document.querySelector('.total-amount');
+                            if (totalElement) {
+                                totalElement.textContent = `₹${parseFloat(data.cart.total) + 35}`;
+                            }
 
                             // Update cart count in header
                             const cartCountElement = document.querySelector('.cart-count');

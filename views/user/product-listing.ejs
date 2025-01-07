@@ -104,7 +104,11 @@
                     <h3 class="font-semibold text-lg mb-4">Categories</h3>
                     <div class="space-y-2">
                         <% categories.forEach(category => { %>
-                            <a href="/category/<%= category._id %>" 
+                            <a href="/category/<%= category._id %>?<%= new URLSearchParams({
+                                ...(sort && sort !== 'default' ? {sort} : {}),
+                                ...(priceRange && priceRange !== 'any' ? {price: priceRange} : {}),
+                                page: '1'
+                            }).toString() %>"
                                class="filter-option flex items-center space-x-3 px-3 py-2 rounded-md <%= currentCategory && currentCategory._id.toString() === category._id.toString() ? 'active' : '' %>">
                                 <div class="w-10 h-10 rounded-full overflow-hidden">
                                     <img src="/uploads/categories/<%= category.image.split('/').pop() %>" 
@@ -126,14 +130,14 @@
                         <input type="range" 
                                class="price-slider" 
                                min="0" 
-                               max="10000" 
-                               step="100"
+                               max="1000" 
+                               step="50"
                                id="priceRange"
-                               value="10000">
+                               value="<%= priceRange === 'any' ? 1000 : priceRange %>">
                         <div class="flex justify-between text-sm text-gray-600">
                             <span>₹0</span>
-                            <span id="priceValue">₹Any</span>
-                            <span>₹10000</span>
+                            <span id="priceValue">₹<%= priceRange === 'any' ? 'Any' : priceRange %></span>
+                            <span>₹1000</span>
                         </div>
                         <% if (priceRange && priceRange !== 'any') { %>
                             <button onclick="clearPriceFilter()" 
@@ -170,10 +174,10 @@
                 <div class="flex justify-between items-center mb-6">
                     <p class="text-gray-600"><%= products.length %> Products</p>
                     <select class="border rounded-md px-3 py-2" onchange="sortProducts(this.value)">
-                        <option value="default">Default Sorting</option>
-                        <option value="price-asc">Price: Low to High</option>
-                        <option value="price-desc">Price: High to Low</option>
-                        <option value="newest">Newest First</option>
+                        <option value="default" <%= sort === 'default' ? 'selected' : '' %>>Default Sorting</option>
+                        <option value="price-asc" <%= sort === 'price-asc' ? 'selected' : '' %>>Price: Low to High</option>
+                        <option value="price-desc" <%= sort === 'price-desc' ? 'selected' : '' %>>Price: High to Low</option>
+                        <option value="newest" <%= sort === 'newest' ? 'selected' : '' %>>Newest First</option>
                     </select>
                 </div>
 
@@ -246,10 +250,37 @@
                 <!-- Pagination -->
                 <div class="mt-8 flex justify-center">
                     <div class="flex space-x-2">
+                        <% if (currentPage > 1) { %>
+                            <a href="/shop?<%= new URLSearchParams({
+                                ...(sort && sort !== 'default' ? {sort} : {}),
+                                ...(priceRange && priceRange !== 'any' ? {price: priceRange} : {}),
+                                ...(currentCategory ? {category: currentCategory._id} : {}),
+                                page: (currentPage - 1).toString()
+                            }).toString() %>"
+                               class="px-4 py-2 rounded-md bg-white text-gray-700 hover:bg-gray-50">
+                                Previous
+                            </a>
+                        <% } %>
                         <% for(let i = 1; i <= totalPages; i++) { %>
-                            <a href="?page=<%= i %>" 
+                            <a href="/shop?<%= new URLSearchParams({
+                                ...(sort && sort !== 'default' ? {sort} : {}),
+                                ...(priceRange && priceRange !== 'any' ? {price: priceRange} : {}),
+                                ...(currentCategory ? {category: currentCategory._id} : {}),
+                                page: i.toString()
+                            }).toString() %>"
                                class="px-4 py-2 rounded-md <%= currentPage === i ? 'bg-green-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50' %>">
                                 <%= i %>
+                            </a>
+                        <% } %>
+                        <% if (currentPage < totalPages) { %>
+                            <a href="/shop?<%= new URLSearchParams({
+                                ...(sort && sort !== 'default' ? {sort} : {}),
+                                ...(priceRange && priceRange !== 'any' ? {price: priceRange} : {}),
+                                ...(currentCategory ? {category: currentCategory._id} : {}),
+                                page: (currentPage + 1).toString()
+                            }).toString() %>"
+                               class="px-4 py-2 rounded-md bg-white text-gray-700 hover:bg-gray-50">
+                                Next
                             </a>
                         <% } %>
                     </div>
@@ -261,57 +292,67 @@
     <%- include('../layouts/footer.ejs') %>
 
     <script>
-        // Price Range Slider
-        const priceRange = document.getElementById('priceRange');
-        const priceValue = document.getElementById('priceValue');
-        let isFirstChange = true;
-
-        priceRange.addEventListener('input', function() {
-            const value = this.value;
-            priceValue.textContent = value === '10000' ? '₹Any' : `₹${value}`;
-        });
-
-        priceRange.addEventListener('change', function() {
-            const value = this.value;
-            // Only update URL if user has actually changed the value
-            if (!isFirstChange) {
-                if (value === '10000') {
-                    // Remove price parameter from URL
-                    const url = new URL(window.location.href);
-                    url.searchParams.delete('price');
-                    window.location.href = url.toString();
-                } else {
-                    // Add or update price parameter
-                    const url = new URL(window.location.href);
-                    url.searchParams.set('price', value);
-                    window.location.href = url.toString();
-                }
-            }
-            isFirstChange = false;
-        });
-
-        // Function to clear price filter
-        function clearPriceFilter() {
+        // Utility function to update URL parameters
+        function updateURL(updates) {
             const url = new URL(window.location.href);
-            url.searchParams.delete('price');
-            window.location.href = url.toString();
+            const params = new URLSearchParams(url.search);
+            
+            // Reset page to 1 if we're changing filters
+            if (!updates.hasOwnProperty('page')) {
+                params.set('page', '1');
+            }
+            
+            // Update or remove parameters
+            Object.entries(updates).forEach(([key, value]) => {
+                if (value === null || value === undefined || value === '' || 
+                    (key === 'sort' && value === 'default') || 
+                    (key === 'price' && value === '10000')) {
+                    params.delete(key);
+                } else {
+                    params.set(key, value);
+                }
+            });
+            
+            window.location.href = `/shop?${params.toString()}`;
         }
 
-        // Initialize price display
-        document.addEventListener('DOMContentLoaded', function() {
-            const currentPrice = new URLSearchParams(window.location.search).get('price');
-            if (!currentPrice) {
-                priceValue.textContent = '₹Any';
-                priceRange.value = 10000;
-            }
-            isFirstChange = false;
+        // Price Range Slider
+        const priceSlider = document.getElementById('priceRange');
+        const priceValue = document.getElementById('priceValue');
+
+        priceSlider.addEventListener('input', function() {
+            const value = this.value;
+            priceValue.textContent = `₹${value}`;
         });
+
+        priceSlider.addEventListener('change', function() {
+            const value = this.value;
+            const currentUrl = new URL(window.location.href);
+            const params = new URLSearchParams(currentUrl.search);
+            
+            // Reset to page 1 when filter changes
+            params.set('page', '1');
+            
+            if (value >= 1000) {
+                params.delete('price');
+            } else {
+                params.set('price', value);
+            }
+            
+            window.location.href = `${currentUrl.pathname}?${params.toString()}`;
+        });
+
+        function clearPriceFilter() {
+            const currentUrl = new URL(window.location.href);
+            const params = new URLSearchParams(currentUrl.search);
+            params.delete('price');
+            params.set('page', '1');
+            window.location.href = `${currentUrl.pathname}?${params.toString()}`;
+        }
 
         // Sort Products
         function sortProducts(sortBy) {
-            const currentUrl = new URL(window.location.href);
-            currentUrl.searchParams.set('sort', sortBy);
-            window.location.href = currentUrl.toString();
+            updateURL({ sort: sortBy });
         }
 
         // Add to Cart
@@ -371,10 +412,22 @@
         // Initialize wishlist buttons based on server data
         async function initializeWishlistButtons() {
             try {
+                // Check authentication first
+                const authResponse = await fetch('/check-auth');
+                const authData = await authResponse.json();
+                
+                if (!authData.authenticated) {
+                    // If not authenticated, don't try to fetch wishlist
+                    return;
+                }
+
                 // Fetch user's wishlist items
                 const response = await fetch('/wishlist/items');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch wishlist items');
+                }
+
                 const data = await response.json();
-                
                 if (data.success) {
                     const wishlistItems = data.items;
                     
@@ -400,87 +453,91 @@
                 }
             } catch (error) {
                 console.error('Error initializing wishlist:', error);
+                // Don't show error to user, just fail silently
+            }
+        }
+
+        // Toggle wishlist item
+        async function toggleWishlist(productId) {
+            try {
+                // Check authentication first
+                const authResponse = await fetch('/check-auth');
+                const authData = await authResponse.json();
+                
+                if (!authData.authenticated) {
+                    Swal.fire({
+                        title: 'Please Login',
+                        text: 'You need to login to add items to wishlist',
+                        icon: 'info',
+                        showCancelButton: true,
+                        confirmButtonText: 'Login',
+                        cancelButtonText: 'Cancel'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = '/login';
+                        }
+                    });
+                    return;
+                }
+
+                const productCard = document.querySelector(`.product-card[data-product-id="${productId}"]`);
+                const wishlistBtn = productCard.querySelector('.wishlist-btn');
+                const isInWishlist = wishlistBtn.classList.contains('wishlist-active');
+
+                const endpoint = isInWishlist ? `/wishlist/remove/${productId}` : '/wishlist/add';
+                const method = isInWishlist ? 'DELETE' : 'POST';
+
+                const response = await fetch(endpoint, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: method === 'POST' ? JSON.stringify({ productId }) : undefined
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to update wishlist');
+                }
+
+                const data = await response.json();
+                if (data.success) {
+                    wishlistBtn.classList.toggle('wishlist-active');
+                    
+                    // Update wishlist count in header
+                    const wishlistCount = document.querySelector('.wishlist-count');
+                    if (wishlistCount) {
+                        const currentCount = parseInt(wishlistCount.textContent || '0');
+                        const newCount = isInWishlist ? currentCount - 1 : currentCount + 1;
+                        wishlistCount.textContent = newCount;
+                        wishlistCount.style.display = newCount > 0 ? 'flex' : 'none';
+                    }
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: isInWishlist ? 'Removed from Wishlist!' : 'Added to Wishlist!',
+                        text: isInWishlist ? 
+                            'Product has been removed from your wishlist' : 
+                            'Product has been added to your wishlist',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                } else {
+                    throw new Error(data.message || 'Error updating wishlist');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to update wishlist. Please try again.'
+                });
             }
         }
 
         // Call initialization on page load
-        document.addEventListener('DOMContentLoaded', initializeWishlistButtons);
-
-        // Update toggleWishlist function
-        function toggleWishlist(productId) {
-            // Check if user is logged in first
-            fetch('/check-auth')
-                .then(response => response.json())
-                .then(data => {
-                    if (!data.authenticated) {
-                        Swal.fire({
-                            title: 'Please Login',
-                            text: 'You need to login to add items to wishlist',
-                            icon: 'info',
-                            showCancelButton: true,
-                            confirmButtonText: 'Login',
-                            cancelButtonText: 'Cancel'
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                window.location.href = '/login';
-                            }
-                        });
-                        return;
-                    }
-
-                    const productCard = document.querySelector(`.product-card[data-product-id="${productId}"]`);
-                    const wishlistBtn = productCard.querySelector('.wishlist-btn');
-                    const isInWishlist = wishlistBtn.classList.contains('wishlist-active');
-
-                    const endpoint = isInWishlist ? `/wishlist/remove/${productId}` : '/wishlist/add';
-                    const method = isInWishlist ? 'DELETE' : 'POST';
-
-                    fetch(endpoint, {
-                        method: method,
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: method === 'POST' ? JSON.stringify({ productId }) : undefined
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            wishlistBtn.classList.toggle('wishlist-active');
-                            
-                            // Update wishlist count in header
-                            const wishlistCount = document.querySelector('.wishlist-count');
-                            if (wishlistCount) {
-                                const currentCount = parseInt(wishlistCount.textContent || '0');
-                                wishlistCount.textContent = isInWishlist ? currentCount - 1 : currentCount + 1;
-                                wishlistCount.style.display = currentCount > 0 ? 'flex' : 'none';
-                            }
-                            
-                            Swal.fire({
-                                icon: 'success',
-                                title: isInWishlist ? 'Removed from Wishlist!' : 'Added to Wishlist!',
-                                text: isInWishlist ? 
-                                    'Product has been removed from your wishlist' : 
-                                    'Product has been added to your wishlist',
-                                showConfirmButton: false,
-                                timer: 1500
-                            });
-                        } else {
-                            throw new Error(data.message || 'Error updating wishlist');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: error.message || 'An error occurred. Please try again.'
-                        });
-                    });
-                })
-                .catch(error => {
-                    console.error('Auth check error:', error);
-                });
-        }
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeWishlistButtons();
+        });
     </script>
 </body>
 </html> 

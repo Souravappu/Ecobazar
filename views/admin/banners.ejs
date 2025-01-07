@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecobazar - Banner Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827;
+            color: #e5e7eb;
+        }
+        .banner-card {
+            transition: all 0.3s ease;
+        }
+        .banner-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        .status-badge {
+            transition: all 0.3s ease;
+        }
+        .status-badge:hover {
+            transform: scale(1.05);
+        }
+        .action-button {
+            transition: all 0.2s ease;
+        }
+        .action-button:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-[#111827]">
+    <%- include('../layouts/side.ejs') %>
+    <%- include('../layouts/head.ejs') %>
+
+    <div class="flex-1 px-28 py-12 ml-64 bg-gradient-to-br from-[#111827] to-[#1f2937]">
+        <!-- Header Section -->
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-pink-600">
+                Banner Management
+            </h1>
+            <a href="/admin/add-banner" 
+               class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-all duration-300 shadow-lg hover:shadow-xl">
+                <i class="fas fa-plus"></i>
+                <span>Add New Banner</span>
+            </a>
+        </div>
+
+        <!-- Banners Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <% banners.forEach(banner => { %>
+                <div class="banner-card bg-gray-800 rounded-xl overflow-hidden shadow-lg">
+                    <!-- Banner Image -->
+                    <div class="relative h-48">
+                        <img src="<%= banner.image %>" 
+                             alt="<%= banner.title %>" 
+                             class="w-full h-full object-cover">
+                        <div class="absolute top-2 right-2 flex gap-2">
+                            <button onclick="toggleBannerStatus('<%= banner._id %>')"
+                                    class="status-badge px-3 py-1 rounded-full text-sm font-semibold <%= banner.isActive ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600' %> text-white">
+                                <%= banner.isActive ? 'Active' : 'Inactive' %>
+                            </button>
+                            <button onclick="toggleDefaultBanner('<%= banner._id %>')"
+                                    class="status-badge px-3 py-1 rounded-full text-sm font-semibold <%= banner.isDefault ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-gray-500 hover:bg-gray-600' %> text-white">
+                                <%= banner.isDefault ? 'Default' : 'Set Default' %>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Banner Details -->
+                    <div class="p-4 space-y-3">
+                        <h3 class="text-xl font-semibold text-white truncate">
+                            <%= banner.title %>
+                        </h3>
+                        <p class="text-gray-400 text-sm line-clamp-2">
+                            <%= banner.description %>
+                        </p>
+                        <% if (banner.link) { %>
+                            <a href="<%= banner.link %>" 
+                               target="_blank"
+                               class="text-blue-400 hover:text-blue-300 text-sm flex items-center gap-1">
+                                <i class="fas fa-link"></i>
+                                <span>View Link</span>
+                            </a>
+                        <% } %>
+
+                        <!-- Action Buttons -->
+                        <div class="flex justify-end gap-3 mt-4 pt-3 border-t border-gray-700">
+                            <a href="/admin/edit-banner/<%= banner._id %>" 
+                               class="action-button text-blue-400 hover:text-blue-300">
+                                <i class="fas fa-edit text-lg"></i>
+                            </a>
+                            <button onclick="confirmDelete('<%= banner._id %>')"
+                                    class="action-button text-red-400 hover:text-red-300">
+                                <i class="fas fa-trash-alt text-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
+        </div>
+
+        <% if (banners.length === 0) { %>
+            <div class="text-center py-12">
+                <div class="text-6xl mb-4 text-gray-600">
+                    <i class="fas fa-images"></i>
+                </div>
+                <h2 class="text-2xl font-semibold text-gray-400 mb-2">No Banners Found</h2>
+                <p class="text-gray-500">Start by adding your first banner</p>
+            </div>
+        <% } %>
+    </div>
+
+    <script>
+        function toggleBannerStatus(bannerId) {
+            fetch(`/admin/toggle-banner/${bannerId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: data.message,
+                        showConfirmButton: false,
+                        timer: 1500
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    throw new Error(data.message);
+                }
+            })
+            .catch(error => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: error.message || 'Something went wrong'
+                });
+            });
+        }
+
+        function confirmDelete(bannerId) {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "This action cannot be undone!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Yes, delete it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = `/admin/delete-banner/${bannerId}`;
+                }
+            });
+        }
+
+        function toggleDefaultBanner(bannerId) {
+            fetch(`/admin/toggle-banner-default/${bannerId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: data.message,
+                        showConfirmButton: false,
+                        timer: 1500
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    throw new Error(data.message);
+                }
+            })
+            .catch(error => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: error.message || 'Something went wrong'
+                });
+            });
+        }
+
+        // Show success/error messages using SweetAlert2
+        <% if (messages.success_msg && messages.success_msg.length > 0) { %>
+            Swal.fire({
+                icon: 'success',
+                title: 'Success!',
+                text: '<%= messages.success_msg %>',
+                showConfirmButton: false,
+                timer: 1500
+            });
+        <% } %>
+
+        <% if (messages.error_msg && messages.error_msg.length > 0) { %>
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: '<%= messages.error_msg %>'
+            });
+        <% } %>
+    </script>
+</body>
+</html> 

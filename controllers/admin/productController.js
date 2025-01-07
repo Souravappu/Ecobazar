@@ -97,11 +97,13 @@ const getAddProduct = async (req, res, next) => {
         const oldValue = req.session.oldValue || {};
         const categories = await Category.find({});
         const error_msg = req.flash('error_msg');
+        const success_msg = req.flash('success_msg');
         req.session.oldValue = null;
         return res.render('admin/add-product', { 
             categories, 
             oldValue,
-            error_msg  
+            error_msg,
+            success_msg
         });
     } catch (error) {
         console.log(error.message);
@@ -233,6 +235,9 @@ const getEditProduct = async (req, res, next) => {
         const product = await Product.findById({ _id: id });
         const category = await Category.findById({ _id: product.category });
         const categories = await Category.find({});
+        const error_msg = req.flash('error_msg');
+        const success_msg = req.flash('success_msg');
+
         if (!product) {
             req.flash('error_msg', 'Product is Not found');
             return res.redirect('/admin/products')
@@ -246,7 +251,13 @@ const getEditProduct = async (req, res, next) => {
             discount
         };
 
-        return res.render('admin/edit-product', { product: productWithDiscount, category, categories });
+        return res.render('admin/edit-product', { 
+            product: productWithDiscount, 
+            category, 
+            categories,
+            error_msg,
+            success_msg
+        });
     } catch (error) {
         console.log(error.message)
         next(error)
@@ -275,6 +286,17 @@ const editProduct = async (req, res, next) => {
         const categoryDoc = await Category.findOne({ name: category });
         if (!categoryDoc) {
             req.flash('error_msg', 'Invalid category');
+            return res.redirect(`/admin/editProduct/${id}`);
+        }
+
+        // Check for existing product with same name (case-insensitive) excluding current product
+        const existingProduct = await Product.findOne({
+            _id: { $ne: id },
+            name: { $regex: new RegExp(`^${name}$`, 'i') }
+        });
+
+        if (existingProduct) {
+            req.flash('error_msg', `Cannot update product name to "${name}". Another product "${existingProduct.name}" is using this name. Product names must be unique regardless of letter case.`);
             return res.redirect(`/admin/editProduct/${id}`);
         }
 

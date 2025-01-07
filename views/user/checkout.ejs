@@ -323,8 +323,11 @@
                         },
                         body: JSON.stringify({ 
                             useWallet: useWallet && walletAmount > 0,
-                            walletAmount,
-                            coupon: couponData
+                            walletAmount: Number(walletAmount) || 0,
+                            coupon: appliedCoupon ? {
+                                couponId: appliedCoupon._id,
+                                discountAmount: appliedCoupon.calculatedDiscount
+                            } : null
                         })
                     });
                     
@@ -354,8 +357,11 @@
                                         razorpay_order_id: response.razorpay_order_id,
                                         razorpay_signature: response.razorpay_signature,
                                         useWallet: useWallet && walletAmount > 0,
-                                        walletAmount,
-                                        coupon: couponData
+                                        walletAmount: Number(walletAmount) || 0,
+                                        coupon: appliedCoupon ? {
+                                            couponId: appliedCoupon._id,
+                                            discountAmount: appliedCoupon.calculatedDiscount
+                                        } : null
                                     })
                                 });
                                 

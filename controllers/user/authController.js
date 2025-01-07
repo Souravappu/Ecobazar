@@ -7,6 +7,7 @@ const Product = require("../../models/Products");
 const Cart = require('../../models/Cart');
 const Wishlist = require('../../models/Wishlist');
 const Wallet = require('../../models/Wallet');
+const Banner = require('../../models/Banner');
 require("dotenv").config();
 
 const OTP_EXPIRY_TIME = 30; 
@@ -34,22 +35,30 @@ const pageNotFound = async (req, res) => {
 //Home Page Controller
 const getHome = async (req, res) => {
   try {
-    const categories = await Category.find({ 
-      isListed: true,
-      isBlocked: false,
-      isDeleted: false 
-    });
-
-    const products = await Product.find({
-      isDeleted: false,
-      isBlocked: false,
-    }).populate({
-      path: 'category',
-      match: { 
-        isBlocked: false, 
+    const [categories, products, banners] = await Promise.all([
+      Category.find({ 
+        isListed: true,
+        isBlocked: false,
         isDeleted: false 
-      }
-    }).sort({createdAt:-1});
+      }),
+      Product.find({
+        isDeleted: false,
+        isBlocked: false,
+      }).populate({
+        path: 'category',
+        match: { 
+          isBlocked: false, 
+          isDeleted: false 
+        }
+      }).sort({createdAt:-1}),
+      Banner.find({ 
+        isActive: true,
+        $or: [
+          { isDefault: true },
+          { isDefault: { $exists: false } }
+        ]
+      }).sort({ isDefault: -1, createdAt: -1 }).limit(1)
+    ]);
 
     const filteredProducts = products.filter(product => product.category !== null);
 
@@ -64,8 +73,6 @@ const getHome = async (req, res) => {
       .sort((a, b) => b.discountPercentage - a.discountPercentage)
       .slice(0, 4); 
 
-
-
     const user = req.session.user;
     if (user) {
       const userData = await User.findOne({ _id: user });
@@ -74,7 +81,8 @@ const getHome = async (req, res) => {
         user: userData || null,
         categories,
         products: filteredProducts.slice(0, 10),
-        hotDeals 
+        hotDeals,
+        banners: banners.length > 0 ? banners : null
       });
     } else {
       console.log("no user");
@@ -82,7 +90,8 @@ const getHome = async (req, res) => {
         user: null,
         categories,
         products: filteredProducts.slice(0, 10),
-        hotDeals 
+        hotDeals,
+        banners: banners.length > 0 ? banners : null
       });
     }
   } catch (error) {
@@ -111,6 +120,7 @@ const generateOtp = () => {
 
 const sendVerificationEmail = async (email, otp) => {
   try {
+    console.log("Sending verification email to:", email);
     const transporter = nodemailer.createTransport({
       service: "gmail",
       port: 587,
@@ -995,109 +1005,10 @@ const getShopProducts = async (req, res) => {
     let query = {
       isDeleted: false,
       isBlocked: false,
-      quantity: { $exists: true },
     };
 
-    if (priceRange && req.query.price !== "any") {
-      query.salePrice = { $lte: priceRange };
-    }
-
-    let sortOptions = {};
-    switch (sort) {
-      case "price-asc":
-        sortOptions.salePrice = 1;
-        break;
-      case "price-desc":
-        sortOptions.salePrice = -1;
-        break;
-      case "newest":
-        sortOptions.createdAt = -1;
-        break;
-      default:
-        sortOptions.createdAt = -1;
-    }
-
-    const productsWithCategories = await Product.find(query)
-      .populate({
-        path: 'category',
-        match: { 
-          isBlocked: false, 
-          isDeleted: false 
-        }
-      });
-
-    const filteredProducts = productsWithCategories.filter(product => product.category !== null);
-    const total = filteredProducts.length;
-    const totalPages = Math.ceil(total / limit);
-
-    const products = await Product.find(query)
-      .sort(sortOptions)
-      .populate({
-        path: 'category',
-        match: { 
-          isBlocked: false, 
-          isDeleted: false 
-        }
-      });
-
-    const paginatedProducts = products
-      .filter(product => product.category !== null)
-      .slice((page - 1) * limit, page * limit);
-
-    const categories = await Category.find({ 
-      isListed: true,
-      isBlocked: false,
-      isDeleted: false 
-    });
-
-    const userData = req.session.user ? 
-      await User.findById(req.session.user) : 
-      null;
-
-    res.render("user/product-listing", {
-      title: "Shop",
-      products: paginatedProducts,
-      categories,
-      currentCategory: null,
-      currentPage: page,
-      totalPages,
-      sort,
-      priceRange: priceRange || "any",
-      user: userData,
-    });
-  } catch (error) {
-    console.error("Error getting shop products:", error);
-    res.status(500).render("user/error", {
-      message: "Error loading products",
-      categories: [],
-    });
-  }
-};
-
-const getCategoryProducts = async (req, res) => {
-  try {
-    const categoryId = req.params.categoryId;
-    const page = parseInt(req.query.page) || 1;
-    const limit = 12;
-    const sort = req.query.sort || "default";
-    const priceRange = req.query.price ? parseInt(req.query.price) : null;
-
-    const currentCategory = await Category.findById(categoryId);
-    if (!currentCategory) {
-      return res.status(404).render("user/error", {
-        message: "Category not found",
-        categories: [],
-      });
-    }
-
-    let query = {
-      category: categoryId,
-      isDeleted: false,
-      isBlocked: false,
-      quantity: { $exists: true },
-    };
-
-    if (priceRange && req.query.price !== "any") {
+    // Apply price filter if specified
+    if (priceRange && priceRange !== 1000) {
       query.salePrice = { $lte: priceRange };
     }
 
@@ -1123,20 +1034,137 @@ const getCategoryProducts = async (req, res) => {
       .sort(sortOptions)
       .skip((page - 1) * limit)
       .limit(limit)
-      .populate("category");
+      .populate({
+        path: 'category',
+        match: { 
+          isBlocked: false, 
+          isDeleted: false 
+        }
+      });
 
-    const categories = await Category.find({ isListed: true });
+    const filteredProducts = products.filter(product => product.category !== null);
+
+    const categories = await Category.find({ 
+      isListed: true,
+      isBlocked: false,
+      isDeleted: false 
+    });
+
+    const userData = req.session.user ? 
+      await User.findById(req.session.user) : 
+      null;
+
+    res.render("user/product-listing", {
+      title: "Shop",
+      products: filteredProducts,
+      categories,
+      currentCategory: null,
+      currentPage: page,
+      totalPages,
+      sort,
+      priceRange: priceRange || "any",
+      user: userData,
+    });
+  } catch (error) {
+    console.error("Error getting shop products:", error);
+    res.status(500).render("user/error", {
+      message: "Error loading products",
+      categories: [],
+    });
+  }
+};
+
+const getCategoryProducts = async (req, res) => {
+  try {
+    const categoryId = req.params.categoryId;
+    const page = parseInt(req.query.page) || 1;
+    const limit = 12;
+    const sort = req.query.sort || "default";
+    const priceRange = req.query.price ? parseInt(req.query.price) : null;
+
+    // First verify if the category exists and is valid
+    const currentCategory = await Category.findOne({
+      _id: categoryId,
+      isListed: true,
+      isBlocked: false,
+      isDeleted: false
+    });
+
+    if (!currentCategory) {
+      return res.status(404).render("user/error", {
+        message: "Category not found or unavailable",
+        categories: [],
+      });
+    }
+
+    // Build the query with category filter
+    let query = {
+      category: categoryId,  // This ensures only products from this category are returned
+      isDeleted: false,
+      isBlocked: false,
+    };
+
+    // Apply price filter if specified
+    if (priceRange && priceRange !== 1000) {
+      query.salePrice = { $lte: priceRange };
+    }
+
+    let sortOptions = {};
+    switch (sort) {
+      case "price-asc":
+        sortOptions.salePrice = 1;
+        break;
+      case "price-desc":
+        sortOptions.salePrice = -1;
+        break;
+      case "newest":
+        sortOptions.createdAt = -1;
+        break;
+      default:
+        sortOptions.createdAt = -1;
+    }
+
+    // Get total count for pagination
+    const total = await Product.countDocuments(query);
+    const totalPages = Math.ceil(total / limit);
+
+    // Get products with pagination
+    const products = await Product.find(query)
+      .sort(sortOptions)
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .populate({
+        path: 'category',
+        match: { 
+          isBlocked: false, 
+          isDeleted: false 
+        }
+      });
+
+    // Filter out products with null categories (should not happen in this case, but keeping as safety)
+    const filteredProducts = products.filter(product => product.category !== null);
+
+    // Get all active categories for the sidebar
+    const categories = await Category.find({ 
+      isListed: true,
+      isBlocked: false,
+      isDeleted: false 
+    });
+
+    const userData = req.session.user ? 
+      await User.findById(req.session.user) : 
+      null;
 
     res.render("user/product-listing", {
       title: currentCategory.name,
-      products,
+      products: filteredProducts,
       categories,
       currentCategory,
       currentPage: page,
       totalPages,
       sort,
       priceRange: priceRange || "any",
-      user: req.session.user,
+      user: userData,
     });
   } catch (error) {
     console.error("Error getting category products:", error);

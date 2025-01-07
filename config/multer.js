@@ -6,10 +6,17 @@ const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const baseUploadPath = path.join(__dirname, "../public/uploads");
 
-    const uploadPath =
-      file.fieldname === "categoryImage"
-        ? path.join(baseUploadPath, "categories")
-        : path.join(baseUploadPath, "products");
+    let uploadPath;
+    switch (file.fieldname) {
+      case "categoryImage":
+        uploadPath = path.join(baseUploadPath, "categories");
+        break;
+      case "bannerImage":
+        uploadPath = path.join(baseUploadPath, "banners");
+        break;
+      default:
+        uploadPath = path.join(baseUploadPath, "products");
+    }
 
     fs.mkdirSync(uploadPath, { recursive: true });
 

@@ -120,8 +120,6 @@ const cartController = {
             );
 
             await cart.save();
-            res.locals.cartCount = cart.items.length;
-            res.locals.cartTotal = cart.total.toFixed(2);
 
             res.status(200).json({
                 success: true,

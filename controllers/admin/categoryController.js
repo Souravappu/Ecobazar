@@ -134,6 +134,7 @@ const getEditCategory = async (req, res, next) => {
         next(error);
     }
 };
+
 const editCategory = async (req, res) => {
     try {
         const id = req.params.id;
@@ -142,6 +143,21 @@ const editCategory = async (req, res) => {
         if (!name || !description) {
             return res.render('admin/edit-category', {
                 errorMessage: 'Name and description are required',
+                successMessage: null,
+                category: req.body,
+            });
+        }
+
+        // Check for existing category with same name (case-insensitive) excluding current category
+        const existingCategory = await Category.findOne({
+            _id: { $ne: id },
+            name: { $regex: new RegExp(`^${name}$`, 'i') }
+        });
+
+        if (existingCategory) {
+            return res.render('admin/edit-category', {
+                errorMessage: `Cannot update category name to "${name}". Another category "${existingCategory.name}" is using this name. Category names must be unique regardless of letter case.`,
+                successMessage: null,
                 category: req.body,
             });
         }
@@ -177,20 +193,29 @@ const editCategory = async (req, res) => {
         );
 
         if (!category) {
-            return res.redirect("/admin/category?error=Category not found");
+            return res.render('admin/edit-category', {
+                errorMessage: 'Category not found',
+                successMessage: null,
+                category: req.body,
+            });
         }
 
-        return res.redirect("/admin/category?success=Category updated successfully");
+        // Instead of redirecting, render with success message
+        return res.render('admin/edit-category', {
+            category: category,
+            errorMessage: null,
+            successMessage: 'Category updated successfully'
+        });
 
     } catch (error) {
         console.error("Error in editCategory:", error);
         return res.render('admin/edit-category', {
             errorMessage: 'Error updating category: ' + error.message,
+            successMessage: null,
             category: req.body,
         });
     }
 };
-
 
 const deleteCategory = async (req, res) => {
     try {

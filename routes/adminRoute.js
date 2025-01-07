@@ -6,6 +6,7 @@ const Controller = require("../controllers/admin/categoryController");
 const productController = require("../controllers/admin/productController");
 const orderController = require("../controllers/admin/orderController");
 const couponController = require("../controllers/admin/couponController");
+const bannerController = require("../controllers/admin/bannerController");
 const { adminAuth, adminAuthentication } = require('../middlewares/auth');
 
 // Admin login 
@@ -83,6 +84,16 @@ adminRouter.post("/edit-coupon/:id", adminAuthentication, couponController.editC
 adminRouter.post("/toggle-coupon/:id", adminAuthentication, couponController.toggleCouponStatus);
 adminRouter.delete("/delete-coupon/:id", adminAuthentication, couponController.deleteCoupon);
 adminRouter.get("/sales-report", adminAuthentication, adminController.getSalesReport);
+
+// Banner Management Routes
+adminRouter.get("/banners", adminAuthentication, bannerController.listBanners);
+adminRouter.get("/add-banner", adminAuthentication, bannerController.getAddBanner);
+adminRouter.post("/add-banner", adminAuthentication, upload.single("bannerImage"), bannerController.addBanner);
+adminRouter.get("/edit-banner/:id", adminAuthentication, bannerController.getEditBanner);
+adminRouter.post("/edit-banner/:id", adminAuthentication, upload.single("bannerImage"), bannerController.updateBanner);
+adminRouter.post("/toggle-banner/:id", adminAuthentication, bannerController.toggleBannerStatus);
+adminRouter.post("/toggle-banner-default/:id", adminAuthentication, bannerController.setDefaultBanner);
+adminRouter.get("/delete-banner/:id", adminAuthentication, bannerController.deleteBanner);
 
 module.exports = adminRouter;
 

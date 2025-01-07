@@ -476,11 +476,12 @@ const orderController = {
     createRazorpayOrder: async (req, res) => {
         try {
             const userId = req.session.user;
-            const { useWallet, walletAmount } = req.body;
+            const { useWallet, walletAmount, coupon } = req.body;
             
-            const [cart, wallet] = await Promise.all([
+            const [cart, wallet, user] = await Promise.all([
                 Cart.findOne({ user: userId }).populate('items.product'),
-                Wallet.findOne({ user: userId })
+                Wallet.findOne({ user: userId }),
+                User.findById(userId).populate('appliedCoupons.coupon')
             ]);
 
             if (!cart || cart.items.length === 0) {
@@ -490,9 +491,15 @@ const orderController = {
                 });
             }
 
-            const total = cart.total + 35; 
+            const total = cart.total + 35; // Add shipping charge
             let finalAmount = total;
 
+            // Apply coupon discount if available
+            if (coupon && coupon.discountAmount) {
+                finalAmount -= Number(coupon.discountAmount);
+            }
+
+            // Apply wallet amount if using wallet
             if (useWallet && walletAmount > 0) {
                 if (!wallet || wallet.balance < walletAmount) {
                     return res.status(400).json({
@@ -500,11 +507,12 @@ const orderController = {
                         message: 'Insufficient wallet balance'
                     });
                 }
-                finalAmount = total - walletAmount;
+                finalAmount -= Number(walletAmount);
             }
 
+            // Ensure minimum amount is 1 rupee (100 paise)
             const options = {
-                amount: Math.max(finalAmount * 100, 100), 
+                amount: Math.max(Math.round(finalAmount * 100), 100),
                 currency: "INR",
                 receipt: `order_${Date.now()}`
             };
@@ -663,19 +671,18 @@ const orderController = {
                 await Promise.all([
                     Coupon.findByIdAndUpdate(coupon.couponId, { $inc: { usedCount: 1 } }),
                     User.findByIdAndUpdate(userId, {
-                        $push: { couponUsed: coupon.couponId }
+                        $push: { 
+                            couponUsed: coupon.couponId,
+                            appliedCoupons: {
+                                coupon: coupon.couponId,
+                                discountAmount: coupon.discountAmount,
+                                status: 'used',
+                                orderId: order._id
+                            }
+                        }
                     })
                 ]);
             }
-            await User.findByIdAndUpdate(userId, {
-                $push: {
-                    appliedCoupons: {
-                        coupon: coupon,
-                        discountAmount:  coupon?.discountAmount,
-                        status: 'applied'
-                    }
-                }
-            });
 
             await Cart.findOneAndDelete({ user: userId });
 

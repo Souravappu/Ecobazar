@@ -222,6 +222,22 @@
       </h1>
     </div>
 
+    <!-- Error Message Section -->
+    <% if (error_msg && error_msg.length > 0) { %>
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6 fade-in-up" role="alert">
+            <strong class="font-bold">Error!</strong>
+            <span class="block sm:inline"><%= error_msg %></span>
+        </div>
+    <% } %>
+
+    <!-- Success Message Section -->
+    <% if (success_msg && success_msg.length > 0) { %>
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-6 fade-in-up" role="alert">
+            <strong class="font-bold">Success!</strong>
+            <span class="block sm:inline"><%= success_msg %></span>
+        </div>
+    <% } %>
+
     <form action="/admin/add-product" method="post" enctype="multipart/form-data">
       <!-- General Information Section -->
       <div class="form-section p-6 mb-6 fade-in-up">
@@ -871,12 +887,12 @@
             const qty = parseFloat(unitQuantity.value);
             if (unit.value === 'kg') {
                 if (qty < 0.01 || qty > 25) {
-                    showInputError(unitQuantity, 'Weight must be between 0.01 and 25 kg');
+                    showInputError(unitQuantity, 'Weight per unit must be between 0.01 and 25 kg');
                     isValid = false;
                 }
             } else if (unit.value === 'nos') {
                 if (!Number.isInteger(qty) || qty < 1 || qty > 100) {
-                    showInputError(unitQuantity, 'Pieces must be between 1 and 100');
+                    showInputError(unitQuantity, 'Pieces per unit must be between 1 and 100');
                     isValid = false;
                 }
             }
