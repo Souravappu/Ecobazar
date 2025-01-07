@@ -306,7 +306,7 @@
             <p class="text-gray-400">Drop your images here or click to browse</p>
             <p class="text-sm text-gray-500 mt-2">Maximum 5 images allowed</p>
           </label>
-          <p id="imageError" class="text-red-500 mt-2 text-sm hidden"></p>
+          <div id="imageValidationErrors" class="mt-2"></div>
         </div>
         <div id="imagePreview" class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4"></div>
       </div>
@@ -340,7 +340,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         const imageInput = document.getElementById('imageInput');
         const imagePreview = document.getElementById('imagePreview');
-        const imageError = document.getElementById('imageError');
+        const imageValidationErrors = document.getElementById('imageValidationErrors');
         const modal = document.getElementById('cropperModal');
         const cropperImage = document.getElementById('cropperImage');
         const cropButton = document.getElementById('cropButton');
@@ -350,35 +350,47 @@
         let croppedImages = [];
         let selectedFiles = [];
 
+        function showImageError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'text-red-500 text-sm mt-1 font-medium';
+            errorDiv.innerHTML = `<i class="fas fa-exclamation-circle mr-1"></i>${message}`;
+            imageValidationErrors.appendChild(errorDiv);
+        }
+
+        function clearImageErrors() {
+            imageValidationErrors.innerHTML = '';
+        }
+
         imageInput.addEventListener('change', function(e) {
+            clearImageErrors();
             const files = Array.from(e.target.files);
+            let hasErrors = false;
             
+            // Validate number of files
             if (files.length > 5) {
-                showError('You can only upload a maximum of 5 images');
-                imageInput.value = '';
-                return;
+                showImageError('You can only upload a maximum of 5 images');
+                hasErrors = true;
             }
 
-            // Validate file types and sizes
-            const invalidFiles = files.filter(file => {
+            // Validate each file
+            files.forEach(file => {
                 const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
                 const maxSize = 5 * 1024 * 1024; // 5MB
                 
                 if (!validTypes.includes(file.type)) {
-                    showError(`${file.name} is not a valid image type. Only JPG, JPEG, and PNG are allowed.`);
-                    return true;
+                    showImageError(`${file.name} is not a valid image type. Only JPG, JPEG, and PNG are allowed.`);
+                    hasErrors = true;
                 }
                 
                 if (file.size > maxSize) {
-                    showError(`${file.name} is too large. Maximum file size is 5MB.`);
-                    return true;
+                    showImageError(`${file.name} is too large. Maximum file size is 5MB.`);
+                    hasErrors = true;
                 }
-                
-                return false;
             });
 
-            if (invalidFiles.length > 0) {
+            if (hasErrors) {
                 imageInput.value = '';
+                imagePreview.innerHTML = '';
                 return;
             }
 
@@ -386,7 +398,6 @@
             currentImageIndex = 0;
             croppedImages = [];
             imagePreview.innerHTML = '';
-            hideError();
 
             // Start with the first image
             showCropper(files[0]);
@@ -512,7 +523,51 @@
             imageInput.files = dataTransfer.files;
             
             container.remove();
+
+            // Show error if no images remain
+            if (croppedImages.length === 0) {
+                showImageError('At least one product image is required');
+            }
         };
+
+        // Update form validation
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(e) {
+            clearImageErrors();
+            
+            if (!imageInput.files.length) {
+                showImageError('At least one product image is required');
+                e.preventDefault();
+                return;
+            }
+
+            if (imageInput.files.length > 5) {
+                showImageError('Maximum 5 images allowed');
+                e.preventDefault();
+                return;
+            }
+
+            // Validate file types and sizes again before submission
+            let hasErrors = false;
+            Array.from(imageInput.files).forEach(file => {
+                const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+                const maxSize = 5 * 1024 * 1024;
+
+                if (!validTypes.includes(file.type)) {
+                    showImageError(`${file.name} is not a valid image type`);
+                    hasErrors = true;
+                }
+
+                if (file.size > maxSize) {
+                    showImageError(`${file.name} exceeds maximum size of 5MB`);
+                    hasErrors = true;
+                }
+            });
+
+            if (hasErrors) {
+                e.preventDefault();
+            }
+        });
     });
   </script>
 
@@ -690,8 +745,8 @@
             }
 
             // Validate images
-            if (!imageInput.files.length) {
-                showError('Please upload at least one product image');
+            if (!document.querySelector('.selected-image') && !images.files.length) {
+                showInputError(images, 'At least one product image is required');
                 hasError = true;
             }
 
