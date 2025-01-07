@@ -938,6 +938,55 @@
             });
         });
 
+        // Function to validate field against rules
+        function validateField(field, value, type = null) {
+            const rules = validationRules[field];
+            let errors = [];
+
+            if (!rules) return errors;
+
+            // Skip validation if field is optional and empty
+            if (value === '' && field === 'discount') return errors;
+
+            // Required validation
+            if (!value && rules.message.required) {
+                errors.push(rules.message.required);
+                return errors;
+            }
+
+            // Type-specific validation for unitQuantity
+            if (field === 'unitQuantity' && type) {
+                const typeRules = rules[type];
+                if (!typeRules) return errors;
+
+                const numValue = parseFloat(value);
+                if (isNaN(numValue) || numValue < typeRules.min) errors.push(typeRules.message.min);
+                if (numValue > typeRules.max) errors.push(typeRules.message.max);
+                if (!typeRules.pattern.test(value)) errors.push(typeRules.message.pattern);
+                return errors;
+            }
+
+            // Standard validations
+            if (typeof value === 'string') {
+                if (rules.min && value.length < rules.min) errors.push(rules.message.min);
+                if (rules.max && value.length > rules.max) errors.push(rules.message.max);
+                if (rules.pattern && !rules.pattern.test(value)) errors.push(rules.message.pattern);
+            }
+
+            // Numeric validations
+            if (['price', 'stock', 'discount'].includes(field)) {
+                const num = parseFloat(value);
+                if (isNaN(num)) {
+                    errors.push(rules.message.pattern);
+                } else {
+                    if (rules.min !== undefined && num < rules.min) errors.push(rules.message.min);
+                    if (rules.max !== undefined && num > rules.max) errors.push(rules.message.max);
+                }
+            }
+
+            return errors;
+        }
+
         // Function to validate a single input
         function validateInput(input) {
             clearInlineError(input);
