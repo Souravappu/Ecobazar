@@ -757,6 +757,302 @@
             }
         }
 
+        // Add image input event listener
+        imageInput.addEventListener('change', function(e) {
+            const files = Array.from(e.target.files);
+            const totalImages = existingImagesCount + files.length;
+            
+            if (totalImages > 5) {
+                showError('Maximum 5 images allowed in total');
+                imageInput.value = '';
+                return;
+            }
+
+            // Validate file types and sizes
+            const invalidFiles = files.filter(file => {
+                const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+                const maxSize = 5 * 1024 * 1024; // 5MB
+                
+                if (!validTypes.includes(file.type)) {
+                    showError(`${file.name} is not a valid image type. Only JPG, JPEG, and PNG are allowed.`);
+                    return true;
+                }
+                
+                if (file.size > maxSize) {
+                    showError(`${file.name} is too large. Maximum file size is 5MB.`);
+                    return true;
+                }
+                
+                return false;
+            });
+
+            if (invalidFiles.length > 0) {
+                imageInput.value = '';
+                return;
+            }
+
+            selectedFiles = files;
+            currentImageIndex = 0;
+            croppedImages = [];
+            imagePreview.innerHTML = '';
+            hideError();
+
+            // Start with the first image
+            showCropper(files[0]);
+        });
+
+        function showCropper(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                cropperImage.src = e.target.result;
+                modal.style.display = 'block';
+                
+                if (cropper) {
+                    cropper.destroy();
+                }
+                
+                cropper = new Cropper(cropperImage, {
+                    aspectRatio: 1,
+                    viewMode: 2,
+                    dragMode: 'move',
+                    autoCropArea: 1,
+                    restore: false,
+                    guides: true,
+                    center: true,
+                    highlight: false,
+                    cropBoxMovable: true,
+                    cropBoxResizable: true,
+                    toggleDragModeOnDblclick: false,
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+
+        cropButton.addEventListener('click', function() {
+            const croppedCanvas = cropper.getCroppedCanvas({
+                width: 600,
+                height: 600
+            });
+
+            croppedCanvas.toBlob(function(blob) {
+                const croppedFile = new File([blob], selectedFiles[currentImageIndex].name, {
+                    type: 'image/jpeg',
+                    lastModified: new Date().getTime()
+                });
+                
+                croppedImages.push(croppedFile);
+                
+                // Add preview
+                const previewContainer = document.createElement('div');
+                previewContainer.className = 'image-preview-container';
+                previewContainer.innerHTML = `
+                    <div class="image-container relative group">
+                        <img src="${croppedCanvas.toDataURL()}" class="w-full h-32 object-cover rounded-lg shadow-md" />
+                        <div class="image-overlay">
+                            <button type="button" class="remove-image-btn" onclick="removePreviewImage(this)">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                imagePreview.appendChild(previewContainer);
+
+                currentImageIndex++;
+                if (currentImageIndex < selectedFiles.length) {
+                    showCropper(selectedFiles[currentImageIndex]);
+                } else {
+                    modal.style.display = 'none';
+                    cropper.destroy();
+                    cropper = null;
+                    
+                    // Update the input files with cropped images
+                    const dataTransfer = new DataTransfer();
+                    croppedImages.forEach(file => {
+                        dataTransfer.items.add(file);
+                    });
+                    imageInput.files = dataTransfer.files;
+                }
+            }, 'image/jpeg', 0.9);
+        });
+
+        closeModal.addEventListener('click', function() {
+            modal.style.display = 'none';
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+            // Reset everything if user closes modal
+            imageInput.value = '';
+            imagePreview.innerHTML = '';
+            currentImageIndex = 0;
+            croppedImages = [];
+            selectedFiles = [];
+        });
+
+        // Close modal if clicking outside
+        window.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeModal.click();
+            }
+        });
+
+        // Function to show inline error message
+        function showInlineError(input, message) {
+            clearInlineError(input);
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'text-red-500 text-sm mt-1 inline-error';
+            errorDiv.textContent = message;
+            input.classList.add('border-red-500');
+            input.parentElement.appendChild(errorDiv);
+        }
+
+        // Function to clear inline error message
+        function clearInlineError(input) {
+            const errorDiv = input.parentElement.querySelector('.inline-error');
+            if (errorDiv) {
+                errorDiv.remove();
+            }
+            input.classList.remove('border-red-500');
+        }
+
+        // Function to clear all inline errors
+        function clearAllInlineErrors() {
+            document.querySelectorAll('.inline-error').forEach(error => error.remove());
+            document.querySelectorAll('.border-red-500').forEach(input => 
+                input.classList.remove('border-red-500')
+            );
+        }
+
+        // Real-time validation for all inputs
+        const inputs = form.querySelectorAll('input, textarea, select');
+        inputs.forEach(input => {
+            input.addEventListener('input', function() {
+                validateInput(this);
+                if (this.name === 'price' || this.name === 'discount') {
+                    updateSalePrice();
+                }
+            });
+
+            input.addEventListener('blur', function() {
+                validateInput(this);
+            });
+        });
+
+        // Function to validate a single input
+        function validateInput(input) {
+            clearInlineError(input);
+            let errors = [];
+
+            if (input.name === 'unitQuantity') {
+                const unitType = document.querySelector('select[name="unit"]').value;
+                errors = validateField('unitQuantity', input.value, unitType);
+            } else {
+                errors = validateField(input.name, input.value);
+            }
+
+            if (errors.length > 0) {
+                showInlineError(input, errors[0]);
+                return false;
+            }
+            return true;
+        }
+
+        // Function to validate the entire form
+        function validateForm() {
+            clearAllInlineErrors();
+            let isValid = true;
+            const requiredFields = ['name', 'description', 'price', 'stock', 'unit', 'unitQuantity', 'category'];
+
+            requiredFields.forEach(field => {
+                const input = form.querySelector(`[name="${field}"]`);
+                if (!validateInput(input)) {
+                    isValid = false;
+                }
+            });
+
+            // Special validation for price and discount relationship
+            const price = parseFloat(form.elements.price.value);
+            const discount = parseFloat(form.elements.discount.value);
+            if (price && discount) {
+                if (discount >= 100) {
+                    showInlineError(form.elements.discount, 'Discount cannot be 100% or more');
+                    isValid = false;
+                }
+                const salePrice = price - (price * (discount / 100));
+                if (salePrice <= 0) {
+                    showInlineError(form.elements.discount, 'Discount makes the sale price zero or negative');
+                    isValid = false;
+                }
+            }
+
+            // Validate images
+            const totalImages = existingImagesCount + (imageInput.files ? imageInput.files.length : 0);
+            if (totalImages === 0) {
+                showInlineError(imageInput, 'At least one product image is required');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        // Update form submission handler
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            clearAllInlineErrors();
+            
+            if (validateForm()) {
+                const loadingOverlay = document.getElementById('loadingOverlay');
+                if (loadingOverlay) {
+                    loadingOverlay.classList.remove('hidden');
+                    loadingOverlay.classList.add('flex');
+                }
+                this.submit();
+            }
+        });
+
+        // Special handling for unit type change
+        const unitSelect = form.querySelector('select[name="unit"]');
+        const unitQuantityInput = form.querySelector('input[name="unitQuantity"]');
+
+        unitSelect.addEventListener('change', function() {
+            const unitType = this.value;
+            updateUnitQuantityValidation(unitType, unitQuantityInput);
+            validateInput(unitQuantityInput);
+        });
+
+        // Function to update sale price display
+        function updateSalePrice() {
+            const price = parseFloat(form.elements.price.value) || 0;
+            const discount = parseFloat(form.elements.discount.value) || 0;
+            const salePrice = price - (price * (discount / 100));
+            
+            const salePriceDisplay = document.getElementById('salePriceDisplay') || createSalePriceDisplay();
+            
+            if (salePrice <= 0) {
+                salePriceDisplay.textContent = 'Invalid price after discount';
+                salePriceDisplay.classList.add('text-red-500');
+                salePriceDisplay.classList.remove('text-green-500');
+            } else {
+                salePriceDisplay.textContent = `Sale Price: ₹${salePrice.toFixed(2)}`;
+                salePriceDisplay.classList.add('text-green-500');
+                salePriceDisplay.classList.remove('text-red-500');
+            }
+        }
+
+        function createSalePriceDisplay() {
+            const div = document.createElement('div');
+            div.id = 'salePriceDisplay';
+            div.className = 'text-lg font-semibold mt-2';
+            form.elements.price.parentElement.appendChild(div);
+            return div;
+        }
+
+        // Initialize validation on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            inputs.forEach(input => validateInput(input));
+            updateSalePrice();
+        });
+
         // Product Validation Rules
         const validationRules = {
             name: {
@@ -859,135 +1155,6 @@
             }
         };
 
-        // Validation Functions
-        function validateField(field, value, type = null) {
-            const rules = validationRules[field];
-            let errors = [];
-
-            // Skip validation if field is optional and empty
-            if (value === '' && field === 'discount') return errors;
-
-            // Required validation
-            if (!value && rules.message.required) {
-                errors.push(rules.message.required);
-                return errors;
-            }
-
-            // Type-specific validation for unitQuantity
-            if (field === 'unitQuantity' && type) {
-                const typeRules = rules[type];
-                if (value < typeRules.min) errors.push(typeRules.message.min);
-                if (value > typeRules.max) errors.push(typeRules.message.max);
-                if (!typeRules.pattern.test(value)) errors.push(typeRules.message.pattern);
-                return errors;
-            }
-
-            // Standard validations
-            if (rules.min && value.length < rules.min) errors.push(rules.message.min);
-            if (rules.max && value.length > rules.max) errors.push(rules.message.max);
-            if (rules.pattern && !rules.pattern.test(value)) errors.push(rules.message.pattern);
-
-            // Numeric validations
-            if (['price', 'stock', 'discount'].includes(field)) {
-                const num = parseFloat(value);
-                if (rules.min && num < rules.min) errors.push(rules.message.min);
-                if (rules.max && num > rules.max) errors.push(rules.message.max);
-            }
-
-            return errors;
-        }
-
-        function showError(input, message) {
-            clearError(input);
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'text-red-500 text-sm mt-1';
-            errorDiv.textContent = message;
-            input.classList.add('border-red-500');
-            input.parentElement.appendChild(errorDiv);
-        }
-
-        function clearError(input) {
-            const errorDiv = input.parentElement.querySelector('.text-red-500');
-            if (errorDiv) errorDiv.remove();
-            input.classList.remove('border-red-500');
-        }
-
-        function clearAllErrors() {
-            document.querySelectorAll('.text-red-500').forEach(error => error.remove());
-            document.querySelectorAll('.border-red-500').forEach(input => 
-                input.classList.remove('border-red-500')
-            );
-        }
-
-        // Real-time validation
-        document.addEventListener('DOMContentLoaded', function() {
-            const form = document.querySelector('form');
-            const inputs = form.querySelectorAll('input, textarea, select');
-
-            inputs.forEach(input => {
-                input.addEventListener('input', function() {
-                    validateInput(this);
-                    if (this.name === 'price' || this.name === 'discount') {
-                        updateSalePrice();
-                    }
-                });
-
-                input.addEventListener('blur', function() {
-                    validateInput(this);
-                });
-            });
-
-            // Special handling for unit type change
-            const unitSelect = form.querySelector('select[name="unit"]');
-            const unitQuantityInput = form.querySelector('input[name="unitQuantity"]');
-
-            unitSelect.addEventListener('change', function() {
-                const unitType = this.value;
-                updateUnitQuantityValidation(unitType, unitQuantityInput);
-                validateInput(unitQuantityInput);
-            });
-
-            // Form submission
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                if (validateForm()) {
-                    // Check if at least one image will remain
-                    const existingImages = document.querySelectorAll('.existing-image-wrapper').length;
-                    const newImages = document.getElementById('imageInput').files.length;
-                    
-                    if (existingImages + newImages === 0) {
-                        showError(document.getElementById('imageInput'), validationRules.images.message.required);
-                        return;
-                    }
-
-                    const loadingOverlay = document.getElementById('loadingOverlay');
-                    if (loadingOverlay) {
-                        loadingOverlay.classList.remove('hidden');
-                        loadingOverlay.classList.add('flex');
-                    }
-                    this.submit();
-                }
-            });
-        });
-
-        function validateInput(input) {
-            clearError(input);
-            let errors = [];
-
-            if (input.name === 'unitQuantity') {
-                const unitType = document.querySelector('select[name="unit"]').value;
-                errors = validateField('unitQuantity', input.value, unitType);
-            } else {
-                errors = validateField(input.name, input.value);
-            }
-
-            if (errors.length > 0) {
-                showError(input, errors[0]);
-                return false;
-            }
-            return true;
-        }
-
         function updateUnitQuantityValidation(unitType, input) {
             if (unitType === 'kg') {
                 input.setAttribute('step', '0.001');
@@ -998,71 +1165,6 @@
                 input.setAttribute('min', '1');
                 input.setAttribute('max', '100');
             }
-        }
-
-        function validateForm() {
-            clearAllErrors();
-            let isValid = true;
-            const form = document.querySelector('form');
-            const requiredFields = ['name', 'description', 'price', 'stock', 'unit', 'unitQuantity', 'category'];
-
-            requiredFields.forEach(field => {
-                const input = form.querySelector(`[name="${field}"]`);
-                if (!validateInput(input)) {
-                    isValid = false;
-                }
-            });
-
-            // Validate new images if any are being added
-            const imageInput = document.getElementById('imageInput');
-            if (imageInput.files.length > 0) {
-                const totalImages = imageInput.files.length + document.querySelectorAll('.existing-image-wrapper').length;
-                
-                if (totalImages > validationRules.images.max) {
-                    showError(imageInput, validationRules.images.message.max);
-                    isValid = false;
-                }
-
-                // Validate each new image
-                for (let i = 0; i < imageInput.files.length; i++) {
-                    const file = imageInput.files[i];
-                    if (!validationRules.images.types.includes(file.type)) {
-                        showError(imageInput, validationRules.images.message.type);
-                        isValid = false;
-                        break;
-                    }
-                    if (file.size > validationRules.images.maxSize) {
-                        showError(imageInput, validationRules.images.message.size);
-                        isValid = false;
-                        break;
-                    }
-                }
-            }
-
-            return isValid;
-        }
-
-        function updateSalePrice() {
-            const price = parseFloat(document.querySelector('input[name="price"]').value) || 0;
-            const discount = parseFloat(document.querySelector('input[name="discount"]').value) || 0;
-            const salePrice = price - (price * (discount / 100));
-            
-            const salePriceDisplay = document.getElementById('salePriceDisplay') || createSalePriceDisplay();
-            salePriceDisplay.textContent = `Sale Price: ₹${salePrice.toFixed(2)}`;
-            
-            if (salePrice < price) {
-                salePriceDisplay.classList.add('text-green-500');
-            } else {
-                salePriceDisplay.classList.remove('text-green-500');
-            }
-        }
-
-        function createSalePriceDisplay() {
-            const div = document.createElement('div');
-            div.id = 'salePriceDisplay';
-            div.className = 'text-lg font-semibold mt-2';
-            document.querySelector('input[name="price"]').parentElement.appendChild(div);
-            return div;
         }
     });
   </script>
