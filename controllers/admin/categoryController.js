@@ -70,7 +70,9 @@ const addCategory = async (req, res, next) => {
             });
         }
 
-        const existingCategory = await Category.findOne({ name: categoryName });
+        const existingCategory = await Category.findOne({ 
+            name: { $regex: new RegExp(`^${categoryName}$`, 'i') }
+        });
         if (existingCategory) {
             return res.render('admin/add-category', {
                 errorMessage: 'This category already exists.',

@@ -7,9 +7,9 @@ const userAuth = async (req, res, next) => {
             if (!user || user.isBlocked || user.isDeleted) {
                 req.session.destroy();
                 return res.status(403).render('user/login', {
-                    message: user?.isBlocked ? 
-                        "Your account has been blocked. Please contact support." : 
-                        "Account not found or deactivated.",
+                    error: user?.isBlocked ? 
+                        "Your account has been temporarily suspended. Please contact support for assistance." : 
+                        "Invalid email or password",
                     categories: []
                 });
             }
@@ -34,9 +34,9 @@ const checkUserSession = async (req, res, next) => {
             req.session.destroy((err) => {
                 if (err) console.error("Session destruction error:", err);
                 return res.status(403).render('user/login', {
-                    message: user?.isBlocked ? 
-                        "Your account has been blocked. Please contact support." : 
-                        "Account not found or deactivated.",
+                    error: user?.isBlocked ? 
+                        "Your account has been temporarily suspended. Please contact support for assistance." : 
+                        "Invalid email or password",
                     categories: []
                 });
             });

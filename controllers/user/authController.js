@@ -368,15 +368,14 @@ const checkUser = async (req, res) => {
     if (user.isDeleted) {
       return res.status(403).json({
         success: false,
-        message:
-          "This account has been deleted by admin. Please contact support.",
+        message: "Invalid email or password",
       });
     }
 
     if (user.isBlocked) {
       return res.status(403).json({
         success: false,
-        message: "Your account has been blocked. Please contact support.",
+        message: "Your account has been temporarily suspended. Please contact support for assistance.",
       });
     }
 

@@ -171,11 +171,13 @@ const addProduct = async (req, res, next) => {
             return res.redirect('/admin/add-product');
         }
 
-        const existingProduct = await Product.findOne({ name });
+        const existingProduct = await Product.findOne({ 
+            name: { $regex: new RegExp(`^${name}$`, 'i') }
+        });
         if (existingProduct) {
             const oldValue = { name, description, category, quantity, discount, price };
             req.session.oldValue = oldValue;
-            req.flash('error_msg', 'Product Already Exists');
+            req.flash('error_msg', 'Product Already Exists (case-insensitive check)');
             return res.redirect('/admin/add-product');
         }
 
