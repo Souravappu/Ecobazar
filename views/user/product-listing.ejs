@@ -360,7 +360,8 @@
             fetch('/cart/add', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: JSON.stringify({
                     productId,
@@ -401,11 +402,26 @@
             })
             .catch(error => {
                 console.error('Error:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Oops...',
-                    text: error.message || 'An error occurred. Please try again.'
-                });
+                if (error.message === 'Please login to continue') {
+                    Swal.fire({
+                        title: 'Please Login',
+                        text: 'You need to login to add items to cart',
+                        icon: 'info',
+                        showCancelButton: true,
+                        confirmButtonText: 'Login',
+                        cancelButtonText: 'Cancel'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = '/login';
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: error.message || 'An error occurred. Please try again.'
+                    });
+                }
             });
         }
 
@@ -413,7 +429,11 @@
         async function initializeWishlistButtons() {
             try {
                 // Check authentication first
-                const authResponse = await fetch('/check-auth');
+                const authResponse = await fetch('/check-auth', {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
                 const authData = await authResponse.json();
                 
                 if (!authData.authenticated) {
@@ -422,7 +442,11 @@
                 }
 
                 // Fetch user's wishlist items
-                const response = await fetch('/wishlist/items');
+                const response = await fetch('/wishlist/items', {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
                 if (!response.ok) {
                     throw new Error('Failed to fetch wishlist items');
                 }
@@ -461,7 +485,11 @@
         async function toggleWishlist(productId) {
             try {
                 // Check authentication first
-                const authResponse = await fetch('/check-auth');
+                const authResponse = await fetch('/check-auth', {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
                 const authData = await authResponse.json();
                 
                 if (!authData.authenticated) {
@@ -490,7 +518,8 @@
                 const response = await fetch(endpoint, {
                     method: method,
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
                     },
                     body: method === 'POST' ? JSON.stringify({ productId }) : undefined
                 });
