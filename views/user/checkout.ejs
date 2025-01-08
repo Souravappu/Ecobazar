@@ -289,7 +289,7 @@
                 }
 
                 // If using only wallet for full payment
-                if (useWallet && walletAmount === <%= cart.total + 35 %>) {
+                if (useWallet && walletAmount === `<%= cart.total + 35 %>`) {
                     const response = await fetch('/order/create', {
                         method: 'POST',
                         headers: {
@@ -481,8 +481,8 @@
 
         const useWalletCheckbox = document.getElementById('useWallet');
         const walletAmountInput = document.getElementById('walletAmount');
-        const walletBalance = <%= walletBalance %>;
-        const orderTotal = <%= cart.total + 35 %>;
+        const walletBalance = `<%= walletBalance %>`;
+        const orderTotal = `<%= cart.total + 35 %>`;
 
         useWalletCheckbox.addEventListener('change', function() {
             if (appliedCoupon && this.checked) {
@@ -648,7 +648,7 @@
                     
                     // Re-enable COD if eligible
                     const codRadio = document.querySelector('input[value="COD"]');
-                    const total = <%= cart.total + 35 %>;
+                    const total = `<%= cart.total + 35 %>`;
                     const walletAmount = Number(walletAmountInput.value) || 0;
                     const remainingAmount = total - walletAmount;
                     
@@ -750,7 +750,7 @@
             try {
                 const walletCheckbox = document.getElementById('useWallet');
                 const walletAmount = Number(document.getElementById('walletAmount').value) || 0;
-                const subtotal = <%= cart.total %>;
+                const subtotal = `<%= cart.total %>`;
                 const shipping = 35;
                 const cartTotal = subtotal + shipping;
 
@@ -894,7 +894,7 @@
         }
 
         function updateTotals() {
-            const subtotal = <%= cart.total %>;
+            const subtotal = `<%= cart.total %>`;
             const shipping = 35;
             let discount = 0;
             let walletDeduction = Number(document.getElementById('walletAmount').value) || 0;
