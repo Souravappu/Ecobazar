@@ -98,7 +98,7 @@
                         </div>
                         <% } %>
 
-                        <form action="/profile/add-address" method="POST" class="space-y-6">                        <!-- Address Type -->
+                        <form action="/profile/add-address" method="POST" class="space-y-6">                       
                             <div class="flex space-x-4">
                                 <label class="flex-1">
                                     <input type="radio" name="addressType" value="Home" class="sr-only peer" checked>
@@ -180,7 +180,6 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Add animation class to form fields sequentially
             const formFields = document.querySelectorAll('input, select');
             formFields.forEach((field, index) => {
                 setTimeout(() => {
