@@ -435,11 +435,7 @@ const getLogout = async (req, res) => {
       }
 
       res.clearCookie("connect.sid");
-
-      return res.status(200).json({
-        success: true,
-        message: "Logged out successfully",
-      });
+      return res.redirect("/login");
     });
   } catch (error) {
     console.error("Logout Error:", error);

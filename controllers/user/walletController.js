@@ -9,18 +9,20 @@ const walletController = {
             const page = parseInt(req.query.page) || 1;
             const limit = 5; 
 
-            const [wallet, categories, user] = await Promise.all([
-                Wallet.findOne({ user: userId }),
+            const [categories, user] = await Promise.all([
                 Category.find({ isListed: true }),
                 User.findById(userId)
             ]);
 
+            // Find wallet or create new one if it doesn't exist
+            let wallet = await Wallet.findOne({ user: userId });
             if (!wallet) {
-                return res.status(404).render('error', {
-                    message: 'Wallet not found',
-                    categories: categories || [],
-                    error: null
+                wallet = new Wallet({
+                    user: userId,
+                    balance: 0,
+                    transactions: []
                 });
+                await wallet.save();
             }
 
             const totalTransactions = wallet.transactions.length;
