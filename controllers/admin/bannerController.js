@@ -3,7 +3,6 @@ const Category = require('../../models/Category');
 const fs = require('fs').promises;
 const path = require('path');
 
-// List all banners
 const listBanners = async (req, res) => {
     try {
         const banners = await Banner.find().sort({ createdAt: -1 });
@@ -24,7 +23,6 @@ const listBanners = async (req, res) => {
     }
 };
 
-// Show add banner form
 const getAddBanner = async (req, res) => {
     try {
         const categories = await Category.find({ isListed: true });
@@ -45,12 +43,10 @@ const getAddBanner = async (req, res) => {
     }
 };
 
-// Add new banner
 const addBanner = async (req, res) => {
     try {
         const { title, description, link, isDefault } = req.body;
         
-        // Create banner object with required fields
         const bannerData = {
             title,
             description,
@@ -58,7 +54,6 @@ const addBanner = async (req, res) => {
             isDefault: isDefault === 'true'
         };
 
-        // Add image only if file is uploaded
         if (req.file) {
             bannerData.image = `/uploads/banners/${req.file.filename}`;
         }
@@ -75,7 +70,6 @@ const addBanner = async (req, res) => {
     }
 };
 
-// Show edit banner form
 const getEditBanner = async (req, res) => {
     try {
         const banner = await Banner.findById(req.params.id);
@@ -106,7 +100,6 @@ const getEditBanner = async (req, res) => {
     }
 };
 
-// Update banner
 const updateBanner = async (req, res) => {
     try {
         const { title, description, link, isDefault } = req.body;
@@ -121,7 +114,6 @@ const updateBanner = async (req, res) => {
         };
 
         if (req.file) {
-            // Delete old image if exists
             const oldBanner = await Banner.findById(bannerId);
             if (oldBanner && oldBanner.image) {
                 const oldImagePath = path.join(__dirname, '../../public', oldBanner.image);
@@ -145,7 +137,6 @@ const updateBanner = async (req, res) => {
     }
 };
 
-// Toggle banner status
 const toggleBannerStatus = async (req, res) => {
     try {
         const banner = await Banner.findById(req.params.id);
@@ -173,7 +164,6 @@ const toggleBannerStatus = async (req, res) => {
     }
 };
 
-// Set banner as default
 const setDefaultBanner = async (req, res) => {
     try {
         const banner = await Banner.findById(req.params.id);
@@ -201,7 +191,6 @@ const setDefaultBanner = async (req, res) => {
     }
 };
 
-// Delete banner
 const deleteBanner = async (req, res) => {
     try {
         const banner = await Banner.findById(req.params.id);
@@ -210,7 +199,6 @@ const deleteBanner = async (req, res) => {
             return res.redirect('/admin/banners');
         }
 
-        // Delete banner image
         if (banner.image) {
             const imagePath = path.join(__dirname, '../../public', banner.image);
             try {

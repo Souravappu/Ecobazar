@@ -163,30 +163,42 @@
         <% const defaultBanner = banners.find(banner => banner.isDefault); %>
         <% if (defaultBanner) { %>
             <!-- Hero Section with Banner -->
-            <div class="relative bg-gradient-to-r from-green-500 to-green-700 text-white py-20 overflow-hidden">
+            <div class="relative bg-gradient-to-r from-green-500 to-green-700 text-white py-10 md:py-20 overflow-hidden">
                 <div class="container mx-auto px-4">
-                    <div class="max-w-6xl mx-auto grid md:grid-cols-2 items-center gap-8">
-                        <div class="space-y-6 reveal-animation">
-                            <h1 class="text-5xl font-bold mb-4"><%= defaultBanner.title %></h1>
-                            <p class="text-xl mb-6 opacity-80"><%= defaultBanner.description %></p>
+                    <div class="max-w-6xl mx-auto grid md:grid-cols-2 p-5 mr-4  items-center gap-8">
+                        <!-- Text Section -->
+                        <div class="space-y-6 reveal-animation text-center md:text-left">
+                            <h1 class="text-4xl md:text-5xl font-bold mb-4 leading-tight">
+                                <%= defaultBanner.title %>
+                            </h1>
+                            <p class="text-lg md:text-xl mb-6 opacity-80">
+                                <%= defaultBanner.description %>
+                            </p>
                             <% if (defaultBanner.link) { %>
-                                <a href="<%= defaultBanner.link %>" class="inline-block bg-white text-green-600 px-8 py-3 rounded-full hover:bg-green-50 transition flex items-center w-fit">
+                                <a href="<%= defaultBanner.link %>" 
+                                   class="inline-block bg-white text-green-600 px-6 md:px-8 py-3 rounded-full hover:bg-green-50 transition flex items-center justify-center md:justify-start w-full md:w-fit shadow-md">
                                     <i class="fas fa-shopping-basket mr-2"></i> Shop Now
                                 </a>
                             <% } %>
                         </div>
-                        <div class="relative">
+    
+                        <!-- Image Section -->
+                        <div class="relative flex justify-center md:justify-end">
                             <img src="<%= defaultBanner.image || defaultBanner.link %>" 
                                  alt="<%= defaultBanner.title %>" 
-                                 class="rounded-lg shadow-2xl animate-float w-full h-[400px] object-cover"
+                                 class="rounded-lg shadow-2xl animate-float w-full h-[300px] md:h-[400px] object-cover"
                                  onerror="this.onerror=null; this.src='/images/fallback-banner.jpg'"/>
                         </div>
                     </div>
                 </div>
+    
+                <!-- Decorative Shapes for Mobile Appeal -->
+                <div class="absolute top-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full md:w-40 md:h-40 md:top-[-10%]"></div>
+                <div class="absolute bottom-0 right-0 w-24 h-24 bg-white opacity-10 rounded-full md:w-40 md:h-40 md:bottom-[-10%]"></div>
             </div>
         <% } %>
     <% } %>
-
+    
     <!-- Features Section -->
     <div class="container mx-auto px-4 py-16">
         <div class="grid md:grid-cols-4 gap-6">

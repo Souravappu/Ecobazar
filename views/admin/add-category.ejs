@@ -189,7 +189,7 @@
             <!-- Form Section -->
             <form action="/admin/add-category" method="POST" enctype="multipart/form-data" class="space-y-8">
                 <div class="form-container p-8 fade-in-up">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="grid grid-cols-1 gap-8">
                         <!-- Category Name -->
                         <div class="space-y-2">
                             <label class="text-sm font-medium text-gray-400">Category Name</label>
@@ -203,22 +203,8 @@
                             >
                         </div>
                     
-                        <!-- Category Offer -->
-                        <div class="space-y-2">
-                            <label class="text-sm font-medium text-gray-400">Category Offer</label>
-                            <input 
-                                type="number" 
-                                name="offer" 
-                                value="<%= locals.formData && formData.offer ? formData.offer : '' %>"
-                                class="form-input w-full px-4 py-3 rounded-lg" 
-                                placeholder="Enter category offer"
-                                min="0"
-                                max="90"
-                            >
-                        </div>
-                    
                         <!-- Description -->
-                        <div class="space-y-2 md:col-span-2">
+                        <div class="space-y-2">
                             <label class="text-sm font-medium text-gray-400">Description</label>
                             <textarea 
                                 name="categoryDescription" 
@@ -230,7 +216,7 @@
                         </div>
                     
                         <!-- Category Image -->
-                        <div class="space-y-2 md:col-span-2">
+                        <div class="space-y-2">
                             <label class="text-sm font-medium text-gray-400">Category Image</label>
                             <div class="image-upload-container">
                                 <input type="file" 
@@ -253,25 +239,27 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
                     
-                    <!-- Status Toggle -->
-                    <div class="flex items-center space-x-4 pt-6">
-                        <label class="toggle-switch">
-                            <input 
-                                type="checkbox" 
-                                name="isActive" 
-                                <%= locals.formData && formData.isActive ? 'checked' : '' %>
-                            >
-                            <span class="toggle-slider"></span>
-                        </label>
-                        <span class="text-sm font-medium text-gray-400">Active Status</span>
-                    </div>
+                        <!-- Status Toggle -->
+                        <div class="flex items-center space-x-4">
+                            <label class="toggle-switch">
+                                <input 
+                                    type="checkbox" 
+                                    name="isActive" 
+                                    <%= locals.formData && formData.isActive ? 'checked' : '' %>
+                                >
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span class="text-sm font-medium text-gray-400">Active Status</span>
+                        </div>
 
-                    <!-- Submit Button -->
-                    <button type="submit" class="submit-button w-full px-6 py-4 text-white rounded-lg shadow-lg mt-8 font-medium">
-                        Create Category
-                    </button>
+                        <!-- Submit Button -->
+                        <div>
+                            <button type="submit" class="submit-button w-full px-6 py-4 text-white rounded-lg shadow-lg font-medium">
+                                Create Category
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </form>
         </div>
@@ -306,7 +294,6 @@
       // Form validation setup
       const form = document.querySelector('form');
       const nameInput = document.querySelector('input[name="categoryName"]');
-      const offerInput = document.querySelector('input[name="offer"]');
       const descriptionInput = document.querySelector('textarea[name="categoryDescription"]');
       const imageInput = document.getElementById('imageInput');
       
@@ -319,12 +306,10 @@
 
       // Add error elements after each input
       const nameError = createErrorElement();
-      const offerError = createErrorElement();
       const descriptionError = createErrorElement();
       const imageError = createErrorElement();
 
       nameInput.parentNode.appendChild(nameError);
-      offerInput.parentNode.appendChild(offerError);
       descriptionInput.parentNode.appendChild(descriptionError);
       document.querySelector('.image-upload-container').appendChild(imageError);
 
@@ -347,16 +332,6 @@
         return true;
       };
 
-      const validateOffer = () => {
-        const value = offerInput.value;
-        if (value && (isNaN(value) || value < 0 || value > 90)) {
-          showError(offerError, 'Offer must be between 0 and 90');
-          return false;
-        }
-        hideError(offerError);
-        return true;
-      };
-
       const validateDescription = () => {
         const value = descriptionInput.value.trim();
         if (!value) {
@@ -368,25 +343,6 @@
           return false;
         }
         hideError(descriptionError);
-        return true;
-      };
-
-      const validateImage = () => {
-        if (!imageInput.files || !imageInput.files[0]) {
-          showError(imageError, 'Category image is required');
-          return false;
-        }
-        const file = imageInput.files[0];
-        const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
-        if (!validTypes.includes(file.type)) {
-          showError(imageError, 'Please upload a valid image file (JPEG, PNG, or WebP)');
-          return false;
-        }
-        if (file.size > 5 * 1024 * 1024) { // 5MB limit
-          showError(imageError, 'Image size should be less than 5MB');
-          return false;
-        }
-        hideError(imageError);
         return true;
       };
 
@@ -405,13 +361,6 @@
         validateName();
         // Sanitize input
         nameInput.value = nameInput.value.replace(/[^a-zA-Z0-9\s-]/g, '');
-      });
-
-      offerInput.addEventListener('input', () => {
-        validateOffer();
-        // Sanitize input
-        offerInput.value = offerInput.value.replace(/[^0-9]/g, '');
-        if (offerInput.value > 90) offerInput.value = 90;
       });
 
       descriptionInput.addEventListener('input', validateDescription);
@@ -441,7 +390,6 @@
         
         // Validate all fields
         const isNameValid = validateName();
-        const isOfferValid = validateOffer();
         const isDescriptionValid = validateDescription();
 
         // Image validation
@@ -464,7 +412,7 @@
         }
 
         // If there are any errors, don't submit
-        if (!isNameValid || !isOfferValid || !isDescriptionValid || hasErrors) {
+        if (!isNameValid || !isDescriptionValid || hasErrors) {
           // Find the first error and scroll to it
           const firstError = document.querySelector('.text-red-500:not(.hidden), .image-error');
           if (firstError) {

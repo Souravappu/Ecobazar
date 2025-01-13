@@ -2,12 +2,19 @@
 <%
 function updateQueryString(key, value) {
     const currentQuery = {};
-    // Copy existing query parameters
-    for (const [k, v] of Object.entries(query || {})) {
-        if (k !== key && k !== 'page') {
+    // Copy existing query parameters from the template's query object
+    const queryParams = query ? { q: query } : {};
+    if (selectedCategory) queryParams.category = selectedCategory;
+    if (sortBy) queryParams.sort = sortBy;
+    if (pagination && pagination.current) queryParams.page = pagination.current;
+    
+    // Copy all existing parameters except the one being updated
+    for (const [k, v] of Object.entries(queryParams)) {
+        if (k !== key) {
             currentQuery[k] = v;
         }
     }
+    
     // Add or update the new key-value pair
     if (value !== null && value !== undefined && value !== '') {
         currentQuery[key] = value;
@@ -46,7 +53,7 @@ function updateQueryString(key, value) {
                 </p>
             </div>
             <% if (query) { %>
-                <a href="/search" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg flex items-center gap-2">
+                <a href="/shop" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg flex items-center gap-2">
                     <i class="fas fa-times"></i>
                     Clear Search
                 </a>
@@ -93,28 +100,11 @@ function updateQueryString(key, value) {
         <div class="flex flex-col md:flex-row gap-8">
             <!-- Filters Sidebar -->
             <div class="w-full md:w-64 space-y-6">
-                <!-- Categories Filter -->
-                <div class="bg-white p-4 rounded-lg shadow">
-                    <h3 class="font-semibold mb-4">Categories</h3>
-                    <div class="space-y-2">
-                        <a href="/search<%= query ? '?q=' + query : '' %>" 
-                           class="block px-2 py-1 rounded <%= !selectedCategory ? 'bg-green-50 text-green-600' : 'hover:bg-gray-50' %>">
-                            All Categories
-                        </a>
-                        <% categories.forEach(category => { %>
-                            <a href="/search<%= updateQueryString('category', category._id) %>" 
-                               class="block px-2 py-1 rounded <%= selectedCategory === category._id.toString() ? 'bg-green-50 text-green-600' : 'hover:bg-gray-50' %>">
-                                <%= category.name %>
-                            </a>
-                        <% }) %>
-                    </div>
-                </div>
-
                 <!-- Sort Options -->
                 <div class="bg-white p-4 rounded-lg shadow">
                     <h3 class="font-semibold mb-4">Sort By</h3>
                     <select id="sortSelect" class="w-full border rounded p-2" 
-                            onchange="window.location.href=updateQueryString('sort', this.value)">
+                            onchange="handleSort(this.value)">
                         <option value="name" <%= sortBy === 'name' ? 'selected' : '' %>>Name (A-Z)</option>
                         <option value="price_asc" <%= sortBy === 'price_asc' ? 'selected' : '' %>>Price (Low to High)</option>
                         <option value="price_desc" <%= sortBy === 'price_desc' ? 'selected' : '' %>>Price (High to Low)</option>
@@ -175,21 +165,21 @@ function updateQueryString(key, value) {
                 <% if (pagination.total > 1) { %>
                     <div class="flex justify-center mt-8 gap-2">
                         <% if (pagination.hasPrev) { %>
-                            <a href="<%= updateQueryString('page', pagination.current - 1) %>" 
+                            <a href="/search<%= updateQueryString('page', pagination.current - 1) %>" 
                                class="px-4 py-2 bg-white rounded border hover:bg-gray-50">
                                 Previous
                             </a>
                         <% } %>
                         
                         <% for(let i = 1; i <= pagination.total; i++) { %>
-                            <a href="<%= updateQueryString('page', i) %>" 
+                            <a href="/search<%= updateQueryString('page', i) %>" 
                                class="px-4 py-2 rounded <%= pagination.current === i ? 'bg-green-500 text-white' : 'bg-white border hover:bg-gray-50' %>">
                                 <%= i %>
                             </a>
                         <% } %>
                         
                         <% if (pagination.hasNext) { %>
-                            <a href="<%= updateQueryString('page', pagination.current + 1) %>" 
+                            <a href="/search<%= updateQueryString('page', pagination.current + 1) %>" 
                                class="px-4 py-2 bg-white rounded border hover:bg-gray-50">
                                 Next
                             </a>
@@ -212,7 +202,16 @@ function updateQueryString(key, value) {
             } else {
                 urlParams.set(key, value);
             }
+            // Remove page parameter when sorting
+            if (key === 'sort') {
+                urlParams.delete('page');
+            }
             return `${window.location.pathname}${urlParams.toString() ? '?' + urlParams.toString() : ''}`;
+        }
+
+        // Function to handle sort changes
+        function handleSort(value) {
+            window.location.href = updateQueryString('sort', value);
         }
 
         // Initialize wishlist buttons

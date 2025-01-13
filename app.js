@@ -19,18 +19,15 @@ require('./models/Cart');
 require('./models/Wishlist'); 
 require('./models/User');  
 
-// Initialize the app
 const app = express();
 
-// Define the PORT
 const PORT = process.env.PORT || 4000;
 connectDB();
 
-// Middleware to parse JSON and URL-encoded data
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-// Initialize session middleware
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET,
@@ -48,22 +45,17 @@ app.use(nocache());
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Set  view engine
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-// Serve static files
 app.use(express.static(path.join(__dirname, "public")));
 
-// Add the counts middleware 
 app.use(getCounts);
 
-// Define routes
 app.use("/", userRouter);
 app.use("/admin", adminRouter);
 connectDB();
 
-// Error handling middleware 
 app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(err.status || 500).render('user/error', {

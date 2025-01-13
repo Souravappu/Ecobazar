@@ -59,32 +59,32 @@
 <body>
     <%- include('../layouts/headerWithoutUser.ejs') %>
 
-    <main class="container mx-auto grid grid-cols-12 gap-20 animate__animated animate__fadeIn p-6">
+    <main class="container mx-auto grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-20 animate__animated animate__fadeIn p-4 md:p-6">
         <!-- Navigation Sidebar -->
         <%- include('../layouts/profileSidebar.ejs', { currentPage: 'address' }) %>
-
+    
         <!-- Address Content -->
-        <div class="col-span-9 space-y-6">
+        <div class="col-span-1 md:col-span-9 space-y-6">
             <!-- Address Card -->
             <div class="card bg-white rounded-2xl shadow-2xl p-6">
-                <div class="flex justify-between items-center mb-6 border-b pb-3">
-                    <h3 class="text-xl font-semibold flex items-center">
+                <div class="flex flex-wrap justify-between items-center mb-6 border-b pb-3">
+                    <h3 class="text-lg md:text-xl font-semibold flex items-center">
                         <i class="fas fa-map-marker-alt mr-2 text-green-500"></i>
                         Address Book
                     </h3>
                     <a href="/profile/add-address">
-                        <button class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-all duration-300 flex items-center space-x-2">
+                        <button class="bg-green-500 text-white text-sm md:text-base px-3 md:px-4 py-2 rounded-lg hover:bg-green-600 transition-all duration-300 flex items-center space-x-2">
                             <i class="fas fa-plus"></i>
                             <span>Add New Address</span>
                         </button>
                     </a>
                 </div>
-
+    
                 <!-- Address List -->
-                <div class="grid md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                     <% if (addresses && addresses.length > 0) { %>
                         <% addresses.forEach((address) => { %>
-                            <div class="address-card bg-white rounded-2xl shadow-lg p-6 relative" data-address-id="<%= address._id %>">
+                            <div class="address-card bg-white rounded-2xl shadow-lg p-4 sm:p-6 relative" data-address-id="<%= address._id %>">
                                 <% if (address.isDefault) { %>
                                     <span class="default-badge">Default</span>
                                 <% } %>
@@ -101,15 +101,15 @@
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
                                 </div>
-                                <h4 class="text-lg font-semibold text-gray-900 mb-2"><%= address.addressType %> Address</h4>
+                                <h4 class="text-base md:text-lg font-semibold text-gray-900 mb-2"><%= address.addressType %> Address</h4>
                                 <div class="space-y-1">
-                                    <p class="text-gray-600"><%= address.name %></p>
+                                    <p class="text-gray-600 text-sm"><%= address.name %></p>
                                     <% if (address.apartment) { %>
-                                        <p class="text-gray-600"><%= address.apartment %></p>
+                                        <p class="text-gray-600 text-sm"><%= address.apartment %></p>
                                     <% } %>
-                                    <p class="text-gray-600"><%= address.streetAddress %></p>
-                                    <p class="text-gray-600"><%= address.city %>, <%= address.state %> <%= address.postalCode %></p>
-                                    <p class="text-gray-600">Phone: <%= address.phone %></p>
+                                    <p class="text-gray-600 text-sm"><%= address.streetAddress %></p>
+                                    <p class="text-gray-600 text-sm"><%= address.city %>, <%= address.state %> <%= address.postalCode %></p>
+                                    <p class="text-gray-600 text-sm">Phone: <%= address.phone %></p>
                                 </div>
                                 <div class="mt-4 flex justify-between items-center">
                                     <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
@@ -125,34 +125,34 @@
                             </div>
                         <% }) %> 
                     <% } else { %>
-                        <div class="col-span-full text-center py-10 bg-gray-100 rounded-lg">
-                            <p class="text-gray-600 text-lg">No addresses found. Add a new address to get started.</p>
+                        <div class="col-span-full text-center py-6 md:py-10 bg-gray-100 rounded-lg">
+                            <p class="text-gray-600 text-sm md:text-lg">No addresses found. Add a new address to get started.</p>
                         </div>
                     <% } %>     
                 </div>
-
+    
                 <% if (addresses && addresses.length > 0) { %>
-                    <div class="mt-8 flex justify-center items-center space-x-4">
+                    <div class="mt-8 flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-4">
                         <% if (pagination.hasPrev) { %>
                             <a href="/address?page=<%= pagination.page - 1 %>" 
-                               class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                               class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm md:text-base">
                                 <i class="fas fa-chevron-left mr-2"></i>
                                 Previous
                             </a>
                         <% } %>
-
-                        <div class="flex items-center space-x-2">
+    
+                        <div class="flex flex-wrap items-center justify-center space-x-2">
                             <% for(let i = 1; i <= pagination.totalPages; i++) { %>
                                 <a href="/address?page=<%= i %>"
-                                   class="px-4 py-2 rounded-lg <%= pagination.page === i ? 'bg-green-600 text-white' : 'bg-white border border-gray-300 hover:bg-gray-50' %> transition-colors">
+                                   class="px-3 py-1 md:px-4 md:py-2 rounded-lg text-sm md:text-base <%= pagination.page === i ? 'bg-green-600 text-white' : 'bg-white border border-gray-300 hover:bg-gray-50' %> transition-colors">
                                     <%= i %>
                                 </a>
                             <% } %>
                         </div>
-
+    
                         <% if (pagination.hasNext) { %>
                             <a href="/address?page=<%= pagination.page + 1 %>"
-                               class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                               class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm md:text-base">
                                 Next
                                 <i class="fas fa-chevron-right ml-2"></i>
                             </a>
@@ -162,6 +162,7 @@
             </div>
         </div>
     </main>
+    
 
     <script>
        document.addEventListener('DOMContentLoaded', () => {

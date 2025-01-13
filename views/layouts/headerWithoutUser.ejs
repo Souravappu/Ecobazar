@@ -18,6 +18,51 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <style>
+
+
+.mobile-bottom-nav {
+        display: none;
+    }
+
+    .mobile-search-overlay,
+    .mobile-menu-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: white;
+        z-index: 200;
+        transform: translateY(100%);
+        transition: transform 0.3s ease;
+    }
+
+    .mobile-search-overlay.active,
+    .mobile-menu-overlay.active {
+        transform: translateY(0);
+    }
+
+    /* Add padding to main content to prevent overlap with bottom nav */
+    @media (max-width: 767px) {
+        body {
+            padding-bottom: 140px; /* Height of bottom nav + some spacing */
+        }
+
+        .mobile-bottom-nav {
+            display: block;
+        }
+
+        .mobile-bottom-nav i, .mobile-bottom-nav span{
+            color: black;
+        }
+        
+        /* Hide desktop header on mobile */
+        .desktop-header {
+            display: none;
+        }
+    }
+
         body {
             font-family: 'Inter', sans-serif;
         }
@@ -58,6 +103,10 @@
                 transform: translateX(-100%);
                 transition: transform 0.3s ease;
             }
+
+            .valiya-header{
+                display: none;
+            }
             
             .mobile-menu.active {
                 display: block;
@@ -75,30 +124,8 @@
     </style>
 </head>
 <body>
-    <!-- Top Bar -->
-    <div class="bg-white py-2 border-b">
-        <div class="container mx-auto px-4 flex flex-col sm:flex-row justify-between items-center">
-            <div class="flex items-center gap-2 mb-2 sm:mb-0">
-                <i class="fas fa-location-dot text-gray-600"></i>
-                <span class="text-sm text-gray-600"><%= locals.storeLocation || 'Lincoln- 344, Illinois, Chicago, USA' %></span>
-            </div>
-            <div class="flex items-center gap-4">
-                <select class="text-sm border-none bg-transparent" id="languageSelect">
-                    <option value="en">English</option>
-                    <option value="es">Español</option>
-                    <option value="fr">Français</option>
-                </select>
-                <select class="text-sm border-none bg-transparent" id="currencySelect">
-                    <option value="USD">USD ($)</option>
-                    <option value="EUR">EUR (€)</option>
-                    <option value="GBP">GBP (£)</option>
-                </select>
-            </div>
-        </div>
-    </div>
-
     <!-- Main Header -->
-    <header class="bg-white py-4 shadow-sm " >
+    <header class="bg-white py-4 shadow-sm valiya-header " >
         <div class="container mx-auto px-4">
             <div class="flex flex-col md:flex-row items-center justify-between gap-4">
                 <!-- Logo -->
@@ -114,6 +141,7 @@
                             type="text" 
                             name="q" 
                             id="searchInput"
+                            value="<%= typeof query !== 'undefined' ? query : '' %>"
                             placeholder="Search products..." 
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500"
                         >
@@ -217,6 +245,7 @@
 
     <!-- Navigation -->
     <nav class="bg-black text-white mb-20" >
+
         <div class="container mx-auto px-4">
             <div class="flex items-center justify-between py-4">
                 <!-- Mobile Menu Button -->
@@ -286,7 +315,174 @@
                     </ul>
                 </div>
             </div>
+
+
+        <!-- Small Top Bar for Essential Info -->
+<div class="fixed top-0 left-0 w-full bg-black text-white py-4 px-8 text-xs flex justify-between items-center z-40 md:hidden">
+    <a href="/" class="flex items-center gap-1">
+        <i class="fas fa-leaf text-green-500 text-xl"></i>
+        <span class="text-lg font-bold">Ecobazar</span>
+    </a>
+    <div class="flex gap-6 mr-4">
+        <a href="/cart">
+            <button class="flex flex-col items-center gap-1" >
+                <i class="fas fa-shopping-cart text-xl"></i> 
+                </button>
+        </a>
+    
+            <button class="flex flex-col items-center gap-1" id="menuBtn">
+                <i class="fas fa-user text-xl"></i>
+            </button>
+    </div>
+    
+</div>
+
+<!-- Bottom Navigation -->
+<div class="mobile-bottom-nav fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 z-50">
+    <!-- Main Navigation -->
+    <div class="grid grid-cols-4 gap-1 px-2 py-4">
+        <button class="flex flex-col items-center gap-1" id="homeBtn">
+            <i class="fas fa-home text-xl"></i>
+            <span class="text-xs">Home</span>
+        </button>
+        
+        <button class="flex flex-col items-center gap-1" id="categoryBtn">
+            <i class="fas fa-th-large text-xl"></i>
+            <span class="text-xs">Categories</span>
+        </button>
+
+        <button class="flex flex-col items-center gap-1" id="searchBtn">
+            <i class="fas fa-search text-xl"></i>
+            <span class="text-xs">Search</span>
+        </button>
+
+        <a href="/wishlist" class="flex flex-col items-center gap-1">
+            <div class="relative">
+                <i class="far fa-heart text-xl"></i>
+                <% if (locals.wishlistCount > 0) { %>
+                    <span class="absolute -top-2 -right-2 bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                        <%= wishlistCount %>
+                    </span>
+                <% } %>
+            </div>
+            <span class="text-xs">Wishlist</span>
+        </a>
+
+       
+    </div>
+</div>
+
+<!-- Search Overlay -->
+<div class="mobile-search-overlay">
+    <div class="p-4">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg text-black font-semibold">Search Products</h3>
+            <button class="close-overlay p-2">
+                <i class="fas text-black fa-times text-xl"></i>
+            </button>
         </div>
+        <form action="/search" method="GET" class="relative" id="mobileSearchForm">
+            <input 
+    type="text" 
+    name="q"
+    <%= typeof query !== 'undefined' && query ? `value="${query.replace(/"/g, '&quot;')}"` : '' %> 
+    placeholder="Search products..." 
+    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none text-black focus:border-green-500"
+/>
+
+        
+            <button type="submit" class="absolute right-0 top-0 h-full px-6 bg-green-500 text-white rounded-r-lg">
+                <i class="fas fa-search"></i>
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Categories Overlay -->
+<div class="mobile-menu-overlay" id="categoryOverlay">
+    <div class="h-full flex flex-col">
+        <div class="flex items-center justify-between p-4 border-b">
+            <h3 class="text-lg text-black font-semibold">Categories</h3>
+            <button class="close-overlay p-2">
+                <i class="fas text-black fa-times text-xl"></i>
+            </button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4">
+            <ul class="space-y-4">
+                <% if(categories) { %>
+                    <% categories.forEach((category) => { %>
+                        <li>
+                            <a href="/category/<%= category._id %>" class="flex text-black items-center justify-between p-2 hover:bg-gray-50 rounded-lg">
+                                <span><%= category.name %></span>
+                                <i class="fas text-black fa-chevron-right text-gray-400"></i>
+                            </a>
+                        </li>
+                    <% }) %>
+                <%}%>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Account Menu Overlay -->
+<div class="mobile-menu-overlay" id="accountOverlay">
+    <div class="h-full flex flex-col">
+        <div class="flex items-center justify-between p-4 border-b">
+            <h3 class="text-lg text-black font-semibold">Account</h3>
+            <button class="close-overlay p-2">
+                <i class="fas text-black fa-times text-xl"></i>
+            </button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4">
+            <% if (typeof user !== 'undefined' && user !== null) { %>
+                <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-lg mb-4">
+                    <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white">
+                        <% if (user.profileImage) { %>
+                            <img src="<%= user.profileImage %>" alt="Profile" class="w-full h-full rounded-full object-cover">
+                        <% } else { %>
+                            <i class="fas fa-user text-xl"></i>
+                        <% } %>
+                    </div>
+                    <div>
+                        <div class="font-medium text-black"><%= user.fname || user.displayName %></div>
+                        <div class="text-sm text-gray-600 text-black"><%= user.email %></div>
+                    </div>
+                </div>
+                <nav>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="/profile" class="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg">
+                                <i class="fas fa-user-circle text-gray-500"></i>
+                                <span class="text-black">My Profile</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/orders" class="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg">
+                                <i class="fas fa-shopping-bag text-gray-500"></i>
+                                <span class="text-black">My Orders</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" onclick="handleLogout(event)" class="flex bg-red-50 items-center gap-3 p-3 text-red-600 hover:bg-red-50 rounded-lg">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span>Logout</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            <% } else { %>
+                <div class="space-y-3 p-4">
+                    <a href="/login" class="block w-full py-3 text-center bg-green-500 text-white rounded-lg hover:bg-green-600">
+                        Login
+                    </a>
+                    <a href="/signup" class="block w-full py-3 text-center border border-green-500 text-green-500 rounded-lg hover:bg-green-50">
+                        Sign Up
+                    </a>
+                </div>
+            <% } %>
+        </div>
+    </div>
+</div>
     </nav>
         
             <script>
@@ -479,6 +675,91 @@ function validateSearch(event) {
                         alert('An error occurred during logout.');
                     });
                 }
+
+
+
+
+
+
+
+
+
+                document.addEventListener('DOMContentLoaded', function() {
+    // Initialize buttons
+    const searchBtn = document.getElementById('searchBtn');
+    const categoryBtn = document.getElementById('categoryBtn');
+    const menuBtn = document.getElementById('menuBtn');
+    const homeBtn = document.getElementById('homeBtn');
+    
+    // Initialize overlays
+    const searchOverlay = document.querySelector('.mobile-search-overlay');
+    const categoryOverlay = document.getElementById('categoryOverlay');
+    const accountOverlay = document.getElementById('accountOverlay');
+    
+    // Close buttons
+    const closeButtons = document.querySelectorAll('.close-overlay');
+
+    // Home button
+    homeBtn.addEventListener('click', () => {
+        window.location.href = '/';
+    });
+
+    // Function to show overlay
+    function showOverlay(overlay) {
+        overlay.style.display = 'block';
+        setTimeout(() => overlay.classList.add('active'), 10);
+        document.body.style.overflow = 'hidden';
+    }
+
+    // Function to hide overlay
+    function hideOverlay(overlay) {
+        overlay.classList.remove('active');
+        setTimeout(() => {
+            overlay.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }, 300);
+    }
+
+    // Event listeners for main buttons
+    searchBtn.addEventListener('click', () => showOverlay(searchOverlay));
+    categoryBtn.addEventListener('click', () => showOverlay(categoryOverlay));
+    menuBtn.addEventListener('click', () => showOverlay(accountOverlay));
+
+    // Event listeners for close buttons
+    closeButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const overlay = button.closest('.mobile-menu-overlay, .mobile-search-overlay');
+            hideOverlay(overlay);
+        });
+    });
+
+    // Language selector functionality
+    const mobileLangSelect = document.getElementById('mobileLangSelect');
+    const savedLanguage = localStorage.getItem('selectedLanguage') || 'en';
+    mobileLangSelect.value = savedLanguage;
+
+    mobileLangSelect.addEventListener('change', (e) => {
+        const selectedLanguage = e.target.value;
+        localStorage.setItem('selectedLanguage', selectedLanguage);
+        
+        fetch('/change-language', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ language: selectedLanguage })
+        })
+        .then(response => {
+            if (response.ok) location.reload();
+        })
+        .catch(error => console.error('Language change error:', error));
+    });
+
+    // Prevent interaction with background when overlay is open
+    document.addEventListener('touchmove', function(e) {
+        if (document.querySelector('.mobile-menu-overlay.active, .mobile-search-overlay.active')) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+});
             </script>
         </body>
         </html>

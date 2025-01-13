@@ -217,10 +217,14 @@ const cartController = {
                         availableStock: item.product.quantity,
                         maxAllowed: Math.min(5, item.product.quantity)
                     };
+
+                    if (!item.stockStatus.hasEnoughStock && item.stockStatus.inStock) {
+                        item.quantity = item.product.quantity;
+                    }
                 });
 
                 cart.total = cart.items.reduce((sum, item) => {
-                    if (item.stockStatus.hasEnoughStock) {
+                    if (item.stockStatus.inStock) {
                         return sum + (item.product.salePrice * item.quantity);
                     }
                     return sum;

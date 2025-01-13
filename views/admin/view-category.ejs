@@ -36,20 +36,12 @@
 
                     <!-- Category Info -->
                     <div class="p-6 space-y-4">
-                        <div class="grid grid-cols-2 gap-6">
+                        <div class="grid grid-cols-3 gap-6">
                             <!-- Status -->
                             <div class="space-y-2">
                                 <label class="text-gray-400 text-sm">Status</label>
                                 <div class="<%= category.isListed ? 'text-green-500' : 'text-red-500' %> font-semibold">
                                     <%= category.isListed ? 'Active' : 'Not Listed' %>
-                                </div>
-                            </div>
-
-                            <!-- Offer -->
-                            <div class="space-y-2">
-                                <label class="text-gray-400 text-sm">Category Offer</label>
-                                <div class="text-yellow-500 font-semibold">
-                                    <%= category.categoryOffer %>% OFF
                                 </div>
                             </div>
 

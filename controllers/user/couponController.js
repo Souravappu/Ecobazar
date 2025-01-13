@@ -65,16 +65,31 @@ const couponController = {
             const { code, cartTotal, subtotal } = req.body; 
             const userId = req.session.user;
             
-            const user = await User.findById(userId);
-            const existingAppliedCoupon = user.appliedCoupons.find(ac => ac.status === 'applied');
-            
-            if (existingAppliedCoupon) {
+            // First, find the user and update any stale 'applied' coupons to 'cancelled'
+            const user = await User.findByIdAndUpdate(
+                userId,
+                {
+                    $set: {
+                        'appliedCoupons.$[elem].status': 'cancelled'
+                    }
+                },
+                {
+                    arrayFilters: [{ 
+                        'elem.status': 'applied',
+                        'elem.orderId': { $exists: false }
+                    }],
+                    new: true
+                }
+            );
+
+            if (!user) {
                 return res.json({
                     success: false,
-                    message: 'Please remove the currently applied coupon first'
+                    message: 'User not found'
                 });
             }
-            
+
+            // Now check for the coupon
             const coupon = await Coupon.findOne({ 
                 code: code.toUpperCase(),
                 isActive: true,
@@ -89,6 +104,7 @@ const couponController = {
                 });
             }
             
+            // Check if user has already used this coupon
             if (user.couponUsed.includes(coupon._id)) {
                 return res.json({
                     success: false,
@@ -120,6 +136,16 @@ const couponController = {
 
             calculatedDiscount = Math.min(calculatedDiscount, subtotal);
 
+            // Add the new coupon application
+            await User.findByIdAndUpdate(userId, {
+                $push: {
+                    appliedCoupons: {
+                        coupon: coupon._id,
+                        status: 'applied',
+                        discountAmount: calculatedDiscount
+                    }
+                }
+            });
             
             res.json({
                 success: true,

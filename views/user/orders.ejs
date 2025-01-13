@@ -45,20 +45,22 @@
 <body>
     <%- include('../layouts/headerWithoutUser.ejs') %>
 
-    <main class="container mx-auto grid grid-cols-12 gap-6 animate__animated animate__fadeIn p-6">
+    <main class="container mx-auto px-4 md:grid md:grid-cols-12 md:gap-6 animate__animated animate__fadeIn py-6">
         <!-- Navigation Sidebar -->
-        <%- include('../layouts/profileSidebar.ejs', { currentPage: 'orders' }) %>
+        <div class="mb-6 md:mb-0 md:col-span-3">
+            <%- include('../layouts/profileSidebar.ejs', { currentPage: 'orders' }) %>
+        </div>
 
         <!-- Orders Content -->
         <div class="col-span-9 space-y-6">
-            <div class="card bg-white rounded-2xl shadow-2xl p-8">
-                <h2 class="text-2xl font-bold mb-6 border-b pb-4">My Orders</h2>
+            <div class="card bg-white rounded-2xl shadow-2xl p-6 md:p-8">
+                <h2 class="text-xl md:text-2xl font-bold mb-6 border-b pb-4">My Orders</h2>
 
                 <% if (orders && orders.length > 0) { %>
                     <div class="space-y-6">
                         <% orders.forEach(order => { %>
-                            <div class="card bg-white rounded-xl border p-6 hover:shadow-xl">
-                                <div class="flex justify-between items-start mb-4">
+                            <div class="card bg-white rounded-xl border p-4 md:p-6 hover:shadow-xl">
+                                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 space-y-4 md:space-y-0">
                                     <div>
                                         <h3 class="font-semibold text-lg">Order #<%= order.orderId %></h3>
                                         <p class="text-sm text-gray-500">
@@ -96,12 +98,6 @@
                                                 <%= order.orderStatus %>
                                             </span>
                                         <% } %>
-                                        <% if (order.orderStatus === 'Cancelled') { %>
-                                            <button onclick="showCancelReason(`<%= order.cancelReason %>`)"
-                                                    class="ml-2 text-gray-500 hover:text-gray-700">
-                                                <i class="fas fa-info-circle"></i>
-                                            </button>
-                                        <% } %>
                                         <p class="mt-2 font-bold text-lg">₹<%= order.total %></p>
                                     </div>
                                 </div>
@@ -109,11 +105,11 @@
                                 <div class="border-t pt-4">
                                     <div class="space-y-4">
                                         <% order.items.forEach(item => { %>
-                                            <div class="flex items-center gap-4">
+                                            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                                                 <img src="/uploads/products/<%= item.product.images[0].split('/').pop() %>"
                                                      alt="<%= item.product.name %>"
                                                      class="w-20 h-20 object-cover rounded-lg">
-                                                <div class="flex-1">
+                                                <div>
                                                     <h4 class="font-medium"><%= item.product.name %></h4>
                                                     <p class="text-sm text-gray-500">
                                                         Qty: <%= item.quantity %> × ₹<%= item.price %>
@@ -124,7 +120,7 @@
                                     </div>
                                 </div>
 
-                                <div class="mt-6 flex justify-end">
+                                <div class="mt-4 md:mt-6 flex justify-end">
                                     <a href="/order/<%= order._id %>" 
                                        class="inline-flex items-center text-green-600 hover:text-green-700 transition-colors">
                                         <span class="mr-2">View Details</span>
@@ -176,6 +172,7 @@
             </div>
         </div>
     </main>
+
 
     <%- include('../layouts/footer.ejs') %>
 

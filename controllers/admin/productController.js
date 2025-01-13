@@ -289,7 +289,6 @@ const editProduct = async (req, res, next) => {
             return res.redirect(`/admin/editProduct/${id}`);
         }
 
-        // Check for existing product with same name (case-insensitive) excluding current product
         const existingProduct = await Product.findOne({
             _id: { $ne: id },
             name: { $regex: new RegExp(`^${name}$`, 'i') }

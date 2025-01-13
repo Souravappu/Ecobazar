@@ -22,12 +22,10 @@ const adminController = {
 
             const { email, password } = req.body;
 
-            // Input validation
             const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
             const trimmedEmail = email ? email.trim() : '';
             const trimmedPassword = password ? password.trim() : '';
 
-            // Validate email
             if (!trimmedEmail) {
                 return res.render('admin/admin-login', { 
                     message: 'Email is required' 
@@ -40,7 +38,6 @@ const adminController = {
                 });
             }
 
-            // Validate password
             if (!trimmedPassword) {
                 return res.render('admin/admin-login', { 
                     message: 'Password is required' 
@@ -53,7 +50,6 @@ const adminController = {
                 });
             }
 
-            // Find admin user
             const admin = await User.findOne({ 
                 email: trimmedEmail
             });
@@ -75,7 +71,6 @@ const adminController = {
                 });
             }
 
-            // Check password
             const passwordMatch = await bcrypt.compare(trimmedPassword, admin.password);
 
             if (!passwordMatch) {
@@ -84,7 +79,6 @@ const adminController = {
                 });
             }
 
-            // Success - create session and redirect
             req.session.admin = admin._id;
             console.log("Login successful, redirecting to admin page");
             return res.redirect("/admin");

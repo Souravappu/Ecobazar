@@ -102,7 +102,7 @@ const orderController = {
                         message: 'Cash on Delivery is not available when using wallet payment'
                     });
                 }
-                if (couponDiscount > 0) {
+                if (appliedCouponData && appliedCouponData.status === 'applied') {
                     return res.status(400).json({
                         success: false,
                         message: 'Cash on Delivery is not available when using coupons'

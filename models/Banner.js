@@ -37,13 +37,10 @@ const bannerSchema = new mongoose.Schema({
     }
 });
 
-// Pre-save middleware to ensure only one default banner
 bannerSchema.pre('save', async function(next) {
     this.updatedAt = Date.now();
     
-    // If this banner is being set as default
     if (this.isDefault) {
-        // Remove default flag from all other banners
         await this.constructor.updateMany(
             { _id: { $ne: this._id } },
             { $set: { isDefault: false } }
