@@ -1332,6 +1332,65 @@ const getContact = async (req, res) => {
     }
 };
 
+const getSearchSuggestions = async (req, res) => {
+    try {
+        const query = req.query.q;
+        if (!query || query.length < 2) {
+            return res.json({ suggestions: [] });
+        }
+
+        const [products, categories] = await Promise.all([
+            Product.find({
+                name: { $regex: query, $options: 'i' },
+                isDeleted: false,
+                isBlocked: false
+            })
+            .select('name category images salePrice')
+            .populate({
+                path: 'category',
+                match: { isBlocked: false, isDeleted: false },
+                select: 'name'
+            })
+            .limit(5),
+            
+            Category.find({
+                name: { $regex: query, $options: 'i' },
+                isListed: true,
+                isBlocked: false,
+                isDeleted: false
+            })
+            .select('name image')
+            .limit(3)
+        ]);
+
+        const filteredProducts = products.filter(product => product.category !== null);
+        
+        const suggestions = {
+            products: filteredProducts.map(product => ({
+                id: product._id,
+                name: product.name,
+                category: product.category.name,
+                price: product.salePrice,
+                image: product.images[0].startsWith('/uploads') ? 
+                    product.images[0] : 
+                    `/uploads/products/${product.images[0].split('/').pop()}`
+            })),
+            categories: categories.map(category => ({
+                id: category._id,
+                name: category.name,
+                image: category.image.startsWith('/uploads') ? 
+                    category.image : 
+                    `/uploads/categories/${category.image.split('/').pop()}`
+            }))
+        };
+
+        res.json({ suggestions });
+    } catch (error) {
+        console.error('Search suggestions error:', error);
+        res.status(500).json({ error: 'Failed to get search suggestions' });
+    }
+};
+
 module.exports = {
   getHome,
   pageNotFound,
@@ -1357,5 +1416,6 @@ module.exports = {
   postForgotPasswordChange,
   createUserCollections,
   getAbout,
-  getContact
+  getContact,
+  getSearchSuggestions
 };

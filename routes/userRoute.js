@@ -24,6 +24,7 @@ userRouter.get('/homeWithoutUser', checkUserSession, authController.getHome);
 userRouter.get('/product/:id', authController.getProduct);
 userRouter.get('/category/:categoryId', authController.getProductsByCategory);
 userRouter.get('/search', authController.searchProducts);
+userRouter.get('/search/suggestions', authController.getSearchSuggestions);
 
 userRouter.get('/forgot-password',authController.getForgotPassPage);
 userRouter.post('/forgot-email-valid',authController.forgotEmailValid);

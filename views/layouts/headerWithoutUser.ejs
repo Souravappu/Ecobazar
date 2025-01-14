@@ -121,6 +121,116 @@
                 cursor: pointer;
             }
         }
+
+        .search-suggestion-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-radius: 0.5rem;
+            margin: 0.25rem 0;
+        }
+        
+        .search-suggestion-item:hover {
+            background-color: #f3f4f6;
+            transform: translateX(4px);
+        }
+        
+        .search-suggestion-item img {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 0.5rem;
+            margin-right: 1rem;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .suggestion-content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .suggestion-name {
+            font-weight: 500;
+            color: #1f2937;
+            margin-bottom: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .suggestion-category {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        
+        .suggestion-price {
+            font-weight: 600;
+            color: #059669;
+            font-size: 0.875rem;
+        }
+        
+        .category-suggestion {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-radius: 0.5rem;
+            margin: 0.25rem 0;
+        }
+        
+        .category-suggestion:hover {
+            background-color: #f3f4f6;
+            transform: translateX(4px);
+        }
+        
+        .category-suggestion img {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 0.5rem;
+            margin-right: 0.75rem;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .category-suggestion i {
+            margin-right: 0.75rem;
+            color: #6b7280;
+            font-size: 1.25rem;
+        }
+
+        #searchSuggestions {
+            max-height: 500px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            padding: 0.5rem;
+        }
+
+        #searchSuggestions::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #searchSuggestions::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        #searchSuggestions::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+
+        #searchSuggestions::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .search-suggestion-item mark,
+        .category-suggestion mark {
+            background-color: rgba(252, 211, 77, 0.4);
+            padding: 0.1em 0;
+            border-radius: 2px;
+        }
     </style>
 </head>
 <body>
@@ -137,17 +247,37 @@
                 <!-- Search Bar -->
                 <div class="flex-1 max-w-2xl w-full">
                     <form action="/search" method="GET" class="relative" id="searchForm" onsubmit="return validateSearch(event)">
-                        <input 
-                            type="text" 
-                            name="q" 
-                            id="searchInput"
-                            value="<%= typeof query !== 'undefined' ? query : '' %>"
-                            placeholder="Search products..." 
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500"
-                        >
-                        <button type="submit" class="absolute right-0 top-0 h-full px-6 bg-green-500 text-white rounded-r-lg hover:bg-green-600 transition-colors">
-                            Search
-                        </button>
+                        <div class="relative">
+                            <input 
+                                type="text" 
+                                name="q" 
+                                id="searchInput"
+                                value="<%= typeof query !== 'undefined' ? query : '' %>"
+                                placeholder="Search products..." 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500"
+                                autocomplete="off"
+                            >
+                            <button type="submit" class="absolute right-0 top-0 h-full px-6 bg-green-500 text-white rounded-r-lg hover:bg-green-600 transition-colors">
+                                Search
+                            </button>
+                            
+                            <!-- Search Suggestions Dropdown -->
+                            <div id="searchSuggestions" class="absolute left-0 right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 z-50 hidden">
+                                <div class="p-2">
+                                    <!-- Products Section -->
+                                    <div id="productSuggestions" class="mb-2">
+                                        <h4 class="text-xs font-semibold text-gray-500 mb-2 px-2">PRODUCTS</h4>
+                                        <div class="suggestions-products"></div>
+                                    </div>
+                                    
+                                    <!-- Categories Section -->
+                                    <div id="categorySuggestions">
+                                        <h4 class="text-xs font-semibold text-gray-500 mb-2 px-2">CATEGORIES</h4>
+                                        <div class="suggestions-categories"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <p id="searchError" class="text-red-500 text-sm mt-1 hidden"></p>
                     </form>
                 </div>
@@ -760,6 +890,210 @@ function validateSearch(event) {
         }
     }, { passive: false });
 });
+            </script>
+            <script>
+                let searchTimeout;
+                const searchInput = document.getElementById('searchInput');
+                const searchSuggestions = document.getElementById('searchSuggestions');
+                const productSuggestionsContainer = document.querySelector('.suggestions-products');
+                const categorySuggestionsContainer = document.querySelector('.suggestions-categories');
+
+                searchInput.addEventListener('input', function(e) {
+                    clearTimeout(searchTimeout);
+                    const query = e.target.value.trim();
+                    
+                    if (query.length < 2) {
+                        searchSuggestions.classList.add('hidden');
+                        return;
+                    }
+                    
+                    searchTimeout = setTimeout(() => {
+                        fetchSearchSuggestions(query);
+                    }, 300);
+                });
+
+                // Hide suggestions when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!searchInput.contains(e.target) && !searchSuggestions.contains(e.target)) {
+                        searchSuggestions.classList.add('hidden');
+                    }
+                });
+
+                searchInput.addEventListener('focus', function() {
+                    if (this.value.trim().length >= 2) {
+                        searchSuggestions.classList.remove('hidden');
+                    }
+                });
+
+                // Handle keyboard navigation
+                searchInput.addEventListener('keydown', function(e) {
+                    if (!searchSuggestions.classList.contains('hidden')) {
+                        const suggestions = searchSuggestions.querySelectorAll('a');
+                        const currentIndex = Array.from(suggestions).findIndex(el => el === document.activeElement);
+                        
+                        switch(e.key) {
+                            case 'ArrowDown':
+                                e.preventDefault();
+                                if (currentIndex < suggestions.length - 1) {
+                                    suggestions[currentIndex + 1].focus();
+                                } else {
+                                    suggestions[0].focus();
+                                }
+                                break;
+                            case 'ArrowUp':
+                                e.preventDefault();
+                                if (currentIndex > 0) {
+                                    suggestions[currentIndex - 1].focus();
+                                } else {
+                                    suggestions[suggestions.length - 1].focus();
+                                }
+                                break;
+                            case 'Escape':
+                                searchSuggestions.classList.add('hidden');
+                                searchInput.blur();
+                                break;
+                        }
+                    }
+                });
+
+                async function fetchSearchSuggestions(query) {
+                    try {
+                        const response = await fetch(`/search/suggestions?q=${encodeURIComponent(query)}`);
+                        const data = await response.json();
+                        
+                        if (data.suggestions) {
+                            updateSuggestions(data.suggestions);
+                            if (data.suggestions.products.length > 0 || data.suggestions.categories.length > 0) {
+                                searchSuggestions.classList.remove('hidden');
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error fetching suggestions:', error);
+                    }
+                }
+
+                function updateSuggestions(suggestions) {
+                    // Update product suggestions
+                    productSuggestionsContainer.innerHTML = suggestions.products.length ? 
+                        suggestions.products.map(product => `
+                            <a href="/product/${product.id}" class="search-suggestion-item block">
+                                <img src="${product.image}" 
+                                     alt="${product.name}" 
+                                     onerror="this.onerror=null; this.src='/images/placeholder.jpg'">
+                                <div class="suggestion-content">
+                                    <div class="suggestion-name">${highlightMatch(product.name, searchInput.value)}</div>
+                                    <div class="flex items-center justify-between">
+                                        <div class="suggestion-category">${product.category}</div>
+                                        <div class="suggestion-price">₹${product.price.toFixed(2)}</div>
+                                    </div>
+                                </div>
+                            </a>
+                        `).join('') :
+                        '<div class="px-3 py-2 text-gray-500">No products found</div>';
+
+                    // Update category suggestions
+                    categorySuggestionsContainer.innerHTML = suggestions.categories.length ?
+                        suggestions.categories.map(category => `
+                            <a href="/category/${category.id}" class="category-suggestion block">
+                                <img src="${category.image}" 
+                                     alt="${category.name}"
+                                     onerror="this.onerror=null; this.src='/images/placeholder.jpg'">
+                                <span class="font-medium">${highlightMatch(category.name, searchInput.value)}</span>
+                            </a>
+                        `).join('') :
+                        '<div class="px-3 py-2 text-gray-500">No categories found</div>';
+                }
+
+                function highlightMatch(text, query) {
+                    if (!query) return text;
+                    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const regex = new RegExp(`(${escapedQuery})`, 'gi');
+                    return text.replace(regex, '<mark>$1</mark>');
+                }
+
+                // Update mobile search functionality
+                const mobileSearchInput = document.querySelector('.mobile-search-overlay input[name="q"]');
+                if (mobileSearchInput) {
+                    const mobileSuggestionsContainer = document.createElement('div');
+                    mobileSuggestionsContainer.id = 'mobileSuggestions';
+                    mobileSuggestionsContainer.className = 'mt-2 bg-white rounded-lg shadow-lg hidden';
+                    mobileSearchInput.parentElement.appendChild(mobileSuggestionsContainer);
+
+                    let mobileSearchTimeout;
+                    mobileSearchInput.addEventListener('input', function(e) {
+                        clearTimeout(mobileSearchTimeout);
+                        const query = e.target.value.trim();
+                        
+                        if (query.length < 2) {
+                            mobileSuggestionsContainer.classList.add('hidden');
+                            return;
+                        }
+                        
+                        mobileSearchTimeout = setTimeout(() => {
+                            fetchMobileSearchSuggestions(query);
+                        }, 300);
+                    });
+
+                    async function fetchMobileSearchSuggestions(query) {
+                        try {
+                            const response = await fetch(`/search/suggestions?q=${encodeURIComponent(query)}`);
+                            const data = await response.json();
+                            
+                            if (data.suggestions) {
+                                updateMobileSuggestions(data.suggestions);
+                            }
+                        } catch (error) {
+                            console.error('Error fetching mobile suggestions:', error);
+                        }
+                    }
+
+                    function updateMobileSuggestions(suggestions) {
+                        if (suggestions.products.length === 0 && suggestions.categories.length === 0) {
+                            mobileSuggestionsContainer.classList.add('hidden');
+                            return;
+                        }
+
+                        mobileSuggestionsContainer.innerHTML = `
+                            <div class="p-2">
+                                ${suggestions.products.length ? `
+                                    <div class="mb-2">
+                                        <h4 class="text-xs font-semibold text-gray-500 mb-2 px-2">PRODUCTS</h4>
+                                        ${suggestions.products.map(product => `
+                                            <a href="/product/${product.id}" class="search-suggestion-item block">
+                                                <img src="${product.image}" 
+                                                     alt="${product.name}"
+                                                     onerror="this.onerror=null; this.src='/images/placeholder.jpg'">
+                                                <div class="suggestion-content">
+                                                    <div class="suggestion-name">${highlightMatch(product.name, mobileSearchInput.value)}</div>
+                                                    <div class="flex items-center justify-between">
+                                                        <div class="suggestion-category">${product.category}</div>
+                                                        <div class="suggestion-price">₹${product.price.toFixed(2)}</div>
+                                                    </div>
+                                                </div>
+                                            </a>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+                                
+                                ${suggestions.categories.length ? `
+                                    <div>
+                                        <h4 class="text-xs font-semibold text-gray-500 mb-2 px-2">CATEGORIES</h4>
+                                        ${suggestions.categories.map(category => `
+                                            <a href="/category/${category.id}" class="category-suggestion block">
+                                                <img src="${category.image}" 
+                                                     alt="${category.name}"
+                                                     onerror="this.onerror=null; this.src='/images/placeholder.jpg'">
+                                                <span class="font-medium">${highlightMatch(category.name, mobileSearchInput.value)}</span>
+                                            </a>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `;
+                        
+                        mobileSuggestionsContainer.classList.remove('hidden');
+                    }
+                }
             </script>
         </body>
         </html>
