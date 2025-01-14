@@ -52,12 +52,19 @@ const getAddCategory = (req, res) => {
 const addCategory = async (req, res, next) => {
     try {
         const { categoryName, categoryDescription, offer, isActive } = req.body;
+        const formData = {
+            categoryName,
+            categoryDescription,
+            offer,
+            isActive,
+            categoryImage: req.file ? `/uploads/categories/${req.file.filename}` : (req.body.categoryImage || null)
+        };
 
-        if (!categoryName || !categoryDescription || !req.file) {
+        if (!categoryName || !categoryDescription || (!req.file && !req.body.categoryImage)) {
             return res.render('admin/add-category', {
                 errorMessage: 'All fields including image are required.',
                 successMessage: null,
-                formData: req.body
+                formData
             });
         }
 
@@ -66,7 +73,7 @@ const addCategory = async (req, res, next) => {
             return res.render('admin/add-category', {
                 errorMessage: 'Offer must be less than 90%.',
                 successMessage: null,
-                formData: req.body
+                formData
             });
         }
 
@@ -77,14 +84,14 @@ const addCategory = async (req, res, next) => {
             return res.render('admin/add-category', {
                 errorMessage: 'This category already exists.',
                 successMessage: null,
-                formData: req.body
+                formData
             });
         }
 
         const createdCategory = new Category({
             name: categoryName,
             description: categoryDescription,
-            image: `/uploads/categories/${req.file.filename}`,
+            image: formData.categoryImage,
             categoryOffer: offerValue,
             isListed: isActive === 'on'
         });
@@ -139,12 +146,22 @@ const editCategory = async (req, res) => {
     try {
         const id = req.params.id;
         const { name, description, offer, isActive } = req.body;
+        const category = await Category.findById(id);
+        
+        const formData = {
+            name,
+            description,
+            offer,
+            isActive,
+            categoryImage: req.file ? `/uploads/categories/${req.file.filename}` : category.image
+        };
         
         if (!name || !description) {
             return res.render('admin/edit-category', {
                 errorMessage: 'Name and description are required',
                 successMessage: null,
-                category: req.body,
+                category: { ...category.toObject(), ...formData },
+                formData
             });
         }
 
@@ -158,7 +175,8 @@ const editCategory = async (req, res) => {
             return res.render('admin/edit-category', {
                 errorMessage: `Cannot update category name to "${name}". Another category "${existingCategory.name}" is using this name. Category names must be unique regardless of letter case.`,
                 successMessage: null,
-                category: req.body,
+                category: { ...category.toObject(), ...formData },
+                formData
             });
         }
 
@@ -172,9 +190,8 @@ const editCategory = async (req, res) => {
         if (req.file) {
             updatedCategory.image = `/uploads/categories/${req.file.filename}`;
 
-            const oldCategory = await Category.findById(id);
-            if (oldCategory.image) {
-                const oldImagePath = path.join(__dirname, '../../public', oldCategory.image);
+            if (category.image) {
+                const oldImagePath = path.join(__dirname, '../../public', category.image);
                 try {
                     await fs.promises.unlink(oldImagePath);
                 } catch (err) {
@@ -183,7 +200,7 @@ const editCategory = async (req, res) => {
             }
         }
 
-        const category = await Category.findByIdAndUpdate(
+        const updatedCategoryDoc = await Category.findByIdAndUpdate(
             id, 
             updatedCategory, 
             { 
@@ -192,19 +209,20 @@ const editCategory = async (req, res) => {
             }
         );
 
-        if (!category) {
+        if (!updatedCategoryDoc) {
             return res.render('admin/edit-category', {
                 errorMessage: 'Category not found',
                 successMessage: null,
-                category: req.body,
+                category: { ...category.toObject(), ...formData },
+                formData
             });
         }
 
-        // Instead of redirecting, render with success message
         return res.render('admin/edit-category', {
-            category: category,
+            category: updatedCategoryDoc,
             errorMessage: null,
-            successMessage: 'Category updated successfully'
+            successMessage: 'Category updated successfully',
+            formData: null
         });
 
     } catch (error) {
@@ -212,7 +230,8 @@ const editCategory = async (req, res) => {
         return res.render('admin/edit-category', {
             errorMessage: 'Error updating category: ' + error.message,
             successMessage: null,
-            category: req.body,
+            category: { ...category.toObject(), ...formData },
+            formData
         });
     }
 };

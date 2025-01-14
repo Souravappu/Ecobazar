@@ -220,10 +220,14 @@
 
                             <div id="uploadArea"
                               class="border-2 border-dashed border-gray-600 rounded-lg p-4 text-center cursor-pointer hover:border-blue-500 transition-colors">
-                              <div id="previewContainer" class="<%= category.image ? '' : 'hidden' %>">
-                                <img id="imagePreview" src="<%= category.image %>" class="max-h-[300px] mx-auto">
+                              <div id="previewContainer" class="<%= (locals.formData && formData.categoryImage) || category.image ? '' : 'hidden' %>">
+                                <% if (locals.formData && formData.categoryImage) { %>
+                                  <img id="imagePreview" src="<%= formData.categoryImage %>" class="max-h-[300px] mx-auto">
+                                <% } else { %>
+                                  <img id="imagePreview" src="<%= category.image %>" class="max-h-[300px] mx-auto">
+                                <% } %>
                               </div>
-                              <div id="uploadPrompt" class="<%= category.image ? 'hidden' : '' %>">
+                              <div id="uploadPrompt" class="<%= (locals.formData && formData.categoryImage) || category.image ? 'hidden' : '' %>">
                                 <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
                                 <p class="text-gray-400">Click or drag image here to upload</p>
                               </div>
@@ -278,56 +282,37 @@
         const form = document.querySelector('form');
         const nameInput = document.querySelector('input[name="name"]');
         const descriptionInput = document.querySelector('textarea[name="description"]');
+        const uploadArea = document.getElementById('uploadArea');
         const imageInput = document.getElementById('imageInput');
+        const previewContainer = document.getElementById('previewContainer');
+        const uploadPrompt = document.getElementById('uploadPrompt');
+        const imagePreview = document.getElementById('imagePreview');
 
-        // Create error message elements
-        const createErrorElement = (message) => {
-          const div = document.createElement('div');
-          div.className = 'text-red-500 text-sm mt-1 opacity-0 transition-opacity duration-200';
-          div.textContent = message;
-          return div;
-        };
-
-        // Add error elements after each input
-        const nameError = createErrorElement('');
-        const descriptionError = createErrorElement('');
-        const imageError = createErrorElement('');
-
-        nameInput.parentNode.appendChild(nameError);
-        descriptionInput.parentNode.appendChild(descriptionError);
-        document.querySelector('.image-upload-container').appendChild(imageError);
-
-        // Validation functions with specific error messages
+        // Form validation functions
         const validateName = () => {
           const value = nameInput.value.trim();
           
           if (!value) {
             showError(nameError, 'Category name is required');
-            nameInput.classList.add('border-red-500');
             return false;
           }
           
           if (value.length < 3) {
             showError(nameError, 'Category name must be at least 3 characters');
-            nameInput.classList.add('border-red-500');
             return false;
           }
           
           if (value.length > 50) {
             showError(nameError, 'Category name cannot exceed 50 characters');
-            nameInput.classList.add('border-red-500');
             return false;
           }
           
           if (!/^[a-zA-Z0-9\s-]+$/.test(value)) {
             showError(nameError, 'Only letters, numbers, spaces and hyphens are allowed');
-            nameInput.classList.add('border-red-500');
             return false;
           }
 
           hideError(nameError);
-          nameInput.classList.remove('border-red-500');
-          nameInput.classList.add('border-green-500');
           return true;
         };
 
@@ -336,135 +321,165 @@
           
           if (!value) {
             showError(descriptionError, 'Description is required');
-            descriptionInput.classList.add('border-red-500');
             return false;
           }
           
           if (value.length < 10) {
             showError(descriptionError, 'Description must be at least 10 characters');
-            descriptionInput.classList.add('border-red-500');
             return false;
           }
           
           if (value.length > 500) {
             showError(descriptionError, 'Description cannot exceed 500 characters');
-            descriptionInput.classList.add('border-red-500');
             return false;
           }
 
           hideError(descriptionError);
-          descriptionInput.classList.remove('border-red-500');
-          descriptionInput.classList.add('border-green-500');
+          return true;
+        };
+
+        const validateOffer = () => {
+          const offerInput = document.querySelector('input[name="offer"]');
+          if (!offerInput) return true; // If offer field doesn't exist, skip validation
+          
+          const value = offerInput.value.trim();
+          if (value === '') return true; // Empty offer is valid (will default to 0)
+          
+          const offerValue = parseInt(value);
+          if (isNaN(offerValue)) {
+            showError(offerError, 'Offer must be a valid number');
+            return false;
+          }
+          
+          if (offerValue < 0) {
+            showError(offerError, 'Offer cannot be negative');
+            return false;
+          }
+          
+          if (offerValue > 90) {
+            showError(offerError, 'Offer cannot exceed 90%');
+            return false;
+          }
+
+          hideError(offerError);
           return true;
         };
 
         const validateImage = () => {
-          const previewContainer = document.getElementById('previewContainer');
-          const imagePreview = document.getElementById('imagePreview');
+          const imageInput = document.getElementById('imageInput');
+          const existingImage = document.getElementById('imagePreview').src;
           
-          // If there's no new file and no existing image
-          if ((!imageInput.files || !imageInput.files[0]) && 
-              (previewContainer.classList.contains('hidden') || !imagePreview.src)) {
-            showError(imageError, 'Category image is required');
-            return false;
+          // If there's no new image but there's an existing image, that's valid
+          if (!imageInput.files.length && existingImage && !existingImage.includes('undefined')) {
+            hideError(imageError);
+            return true;
           }
           
-          // If there's a new file, validate it
-          if (imageInput.files && imageInput.files[0]) {
+          // If there's a new image, validate it
+          if (imageInput.files.length) {
             const file = imageInput.files[0];
-            const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+            const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+            const maxSize = 5 * 1024 * 1024; // 5MB
             
             if (!validTypes.includes(file.type)) {
-              showError(imageError, 'Please upload a valid image file (JPEG, PNG, or WebP)');
+              showError(imageError, 'Only JPG, PNG and WebP images are allowed');
               return false;
             }
             
-            if (file.size > 5 * 1024 * 1024) {
-              showError(imageError, 'Image size should be less than 5MB');
+            if (file.size > maxSize) {
+              showError(imageError, 'Image size should not exceed 5MB');
               return false;
             }
+            
+            hideError(imageError);
+            return true;
           }
-
-          hideError(imageError);
-          return true;
+          
+          showError(imageError, 'Please select an image');
+          return false;
         };
 
-        // Helper functions with animations
+        // Helper functions for showing/hiding errors with animation
         const showError = (element, message) => {
           element.textContent = message;
+          element.style.display = 'block';
+          element.style.animation = 'fadeIn 0.3s ease-in-out';
           element.classList.remove('opacity-0');
-          element.classList.add('opacity-100');
+          element.classList.add('opacity-100', 'text-red-500');
           
-          // Shake animation for error
-          element.parentElement.classList.add('animate-shake');
-          setTimeout(() => {
-            element.parentElement.classList.remove('animate-shake');
-          }, 500);
+          // Add shake animation to the input
+          const inputElement = element.previousElementSibling;
+          if (inputElement) {
+            inputElement.classList.add('border-red-500');
+            inputElement.classList.add('animate-shake');
+            setTimeout(() => {
+              inputElement.classList.remove('animate-shake');
+            }, 500);
+          }
         };
 
         const hideError = (element) => {
-          element.classList.remove('opacity-100');
-          element.classList.add('opacity-0');
-        };
-
-        // Real-time validation
-        nameInput.addEventListener('input', () => {
-          validateName();
-          // Sanitize input in real-time
-          nameInput.value = nameInput.value.replace(/[^a-zA-Z0-9\s-]/g, '');
-        });
-
-        nameInput.addEventListener('blur', validateName);
-
-        descriptionInput.addEventListener('input', () => {
-          validateDescription();
-          updateCharacterCount();
-        });
-
-        descriptionInput.addEventListener('blur', validateDescription);
-
-        imageInput.addEventListener('change', validateImage);
-
-        // Character counter with dynamic styling
-        const updateCharacterCount = () => {
-          const maxLength = 500;
-          const currentLength = descriptionInput.value.length;
-          const remaining = maxLength - currentLength;
+          element.style.animation = 'fadeOut 0.3s ease-in-out';
+          setTimeout(() => {
+            element.style.display = 'none';
+            element.classList.remove('opacity-100');
+            element.classList.add('opacity-0');
+          }, 300);
           
-          const counter = document.querySelector('.character-counter');
-          if (!counter) {
-            const counterDiv = document.createElement('div');
-            counterDiv.className = 'character-counter text-sm mt-1 transition-colors duration-200';
-            descriptionInput.parentNode.appendChild(counterDiv);
-          }
-          
-          const counterElement = counter || counterDiv;
-          counterElement.textContent = `${remaining} characters remaining`;
-          
-          // Update counter color based on remaining characters
-          if (remaining <= 50) {
-            counterElement.className = 'character-counter text-sm mt-1 text-red-400';
-          } else if (remaining <= 100) {
-            counterElement.className = 'character-counter text-sm mt-1 text-yellow-400';
-          } else {
-            counterElement.className = 'character-counter text-sm mt-1 text-gray-400';
+          // Remove red border from input
+          const inputElement = element.previousElementSibling;
+          if (inputElement) {
+            inputElement.classList.remove('border-red-500');
           }
         };
 
-        // Initialize character counter
-        updateCharacterCount();
+        // Add real-time validation
+        nameInput.addEventListener('input', validateName);
+        descriptionInput.addEventListener('input', validateDescription);
+        if (document.querySelector('input[name="offer"]')) {
+          document.querySelector('input[name="offer"]').addEventListener('input', validateOffer);
+        }
 
-        // Form submission with enhanced validation
+        // Create error elements
+        const nameError = document.createElement('div');
+        nameError.className = 'error-message mt-1 text-sm opacity-0 transition-opacity duration-300';
+        nameInput.parentNode.appendChild(nameError);
+
+        const descriptionError = document.createElement('div');
+        descriptionError.className = 'error-message mt-1 text-sm opacity-0 transition-opacity duration-300';
+        descriptionInput.parentNode.appendChild(descriptionError);
+
+        const offerError = document.createElement('div');
+        offerError.className = 'error-message mt-1 text-sm opacity-0 transition-opacity duration-300';
+        if (document.querySelector('input[name="offer"]')) {
+          document.querySelector('input[name="offer"]').parentNode.appendChild(offerError);
+        }
+
+        const imageError = document.createElement('div');
+        imageError.className = 'error-message mt-1 text-sm opacity-0 transition-opacity duration-300';
+        document.querySelector('.image-upload-container').appendChild(imageError);
+
+        // Add keypress validation for offer input to allow only numbers
+        if (document.querySelector('input[name="offer"]')) {
+          document.querySelector('input[name="offer"]').addEventListener('keypress', (e) => {
+            if (!/[\d.]/.test(e.key)) {
+              e.preventDefault();
+            }
+          });
+        }
+
+        // Form submission with validation
         form.addEventListener('submit', function(e) {
           e.preventDefault();
 
           const isNameValid = validateName();
           const isDescriptionValid = validateDescription();
+          const isOfferValid = validateOffer();
           const isImageValid = validateImage();
 
-          if (!isNameValid || !isDescriptionValid || !isImageValid) {
-            // Find first error and scroll to it smoothly
-            const firstError = document.querySelector('.text-red-500:not(.opacity-0)');
+          if (!isNameValid || !isDescriptionValid || !isOfferValid || !isImageValid) {
+            // Find first error and scroll to it
+            const firstError = form.querySelector('.error-message:not(.opacity-0)');
             if (firstError) {
               firstError.scrollIntoView({ 
                 behavior: 'smooth', 
@@ -478,28 +493,148 @@
           this.submit();
         });
 
-        // Add keydown event for form submission
-        form.addEventListener('keydown', function(e) {
-          if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
-            e.preventDefault();
-            form.dispatchEvent(new Event('submit'));
+        // Add styles for animations
+        const style = document.createElement('style');
+        style.textContent = `
+          @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          
+          @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-10px); }
+          }
+          
+          @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+          }
+          
+          .animate-shake {
+            animation: shake 0.5s ease-in-out;
+          }
+          
+          .error-message {
+            color: #ef4444;
+            margin-top: 0.25rem;
+          }
+        `;
+        document.head.appendChild(style);
+
+        // File upload handling
+        uploadArea.addEventListener('click', () => {
+          imageInput.click();
+        });
+
+        uploadArea.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          uploadArea.classList.add('border-blue-500');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+          uploadArea.classList.remove('border-blue-500');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+          e.preventDefault();
+          uploadArea.classList.remove('border-blue-500');
+          
+          if (e.dataTransfer.files.length) {
+            imageInput.files = e.dataTransfer.files;
+            previewImage({ target: imageInput });
           }
         });
-      });
 
-      // Add this style to your head section
-      const style = document.createElement('style');
-      style.textContent = `
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          25% { transform: translateX(-5px); }
-          75% { transform: translateX(5px); }
-        }
-        .animate-shake {
-          animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
-        }
-      `;
-      document.head.appendChild(style);
+        window.previewImage = (event) => {
+          const file = event.target.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              // Show the crop modal instead of direct preview
+              const cropModal = document.getElementById('cropModal');
+              const cropperImage = document.getElementById('cropperImage');
+              cropperImage.src = e.target.result;
+              cropModal.classList.remove('hidden');
+              cropModal.classList.add('flex');
+              
+              // Initialize cropper
+              if (window.cropper) {
+                window.cropper.destroy();
+              }
+              window.cropper = new Cropper(cropperImage, {
+                aspectRatio: 1,
+                viewMode: 2,
+                dragMode: 'move',
+                autoCropArea: 1,
+                restore: false,
+                guides: true,
+                center: true,
+                highlight: false,
+                cropBoxMovable: true,
+                cropBoxResizable: true,
+                toggleDragModeOnDblclick: false,
+              });
+            };
+            reader.readAsDataURL(file);
+          }
+        };
+
+        // Add crop functionality
+        window.cropImage = () => {
+          const canvas = window.cropper.getCroppedCanvas({
+            width: 600,
+            height: 600,
+          });
+          
+          const croppedImageUrl = canvas.toDataURL('image/jpeg');
+          
+          // Update preview
+          const imagePreview = document.getElementById('imagePreview');
+          const previewContainer = document.getElementById('previewContainer');
+          const uploadPrompt = document.getElementById('uploadPrompt');
+          
+          imagePreview.src = croppedImageUrl;
+          previewContainer.classList.remove('hidden');
+          uploadPrompt.classList.add('hidden');
+          
+          // Close modal
+          const cropModal = document.getElementById('cropModal');
+          cropModal.classList.add('hidden');
+          cropModal.classList.remove('flex');
+          
+          // Convert base64 to blob and create a new file
+          fetch(croppedImageUrl)
+            .then(res => res.blob())
+            .then(blob => {
+              const file = new File([blob], 'cropped-image.jpg', { type: 'image/jpeg' });
+              
+              // Create a new FileList containing the cropped image
+              const dataTransfer = new DataTransfer();
+              dataTransfer.items.add(file);
+              document.getElementById('imageInput').files = dataTransfer.files;
+            });
+          
+          // Destroy cropper instance
+          window.cropper.destroy();
+        };
+
+        // Add cancel crop functionality
+        window.cancelCrop = () => {
+          const cropModal = document.getElementById('cropModal');
+          cropModal.classList.add('hidden');
+          cropModal.classList.remove('flex');
+          
+          // Clear the file input
+          document.getElementById('imageInput').value = '';
+          
+          // Destroy cropper instance
+          if (window.cropper) {
+            window.cropper.destroy();
+          }
+        };
+      });
     </script>
 </body>
 

@@ -224,15 +224,23 @@
                                        name="categoryImage"
                                        accept="image/*" 
                                        class="hidden" 
-                                       required
                                        onchange="previewImage(event)">
+                                
+                                <input type="hidden" 
+                                       id="persistedImage" 
+                                       name="categoryImage" 
+                                       value="<%= locals.formData && formData.categoryImage ? formData.categoryImage : '' %>">
                                 
                                 <div id="uploadArea" 
                                      class="border-2 border-dashed border-gray-600 rounded-lg p-4 text-center cursor-pointer hover:border-blue-500 transition-colors">
-                                    <div id="previewContainer" class="hidden">
-                                        <img id="imagePreview" class="max-h-[300px] mx-auto">
+                                    <div id="previewContainer" class="<%= locals.formData && formData.categoryImage ? '' : 'hidden' %>">
+                                        <% if (locals.formData && formData.categoryImage) { %>
+                                            <img id="imagePreview" src="<%= formData.categoryImage %>" class="max-h-[300px] mx-auto">
+                                        <% } else { %>
+                                            <img id="imagePreview" class="max-h-[300px] mx-auto">
+                                        <% } %>
                                     </div>
-                                    <div id="uploadPrompt">
+                                    <div id="uploadPrompt" class="<%= locals.formData && formData.categoryImage ? 'hidden' : '' %>">
                                         <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
                                         <p class="text-gray-400">Click or drag image here to upload</p>
                                     </div>
@@ -291,6 +299,15 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+      // Check if there's a previously uploaded image in formData
+      const formDataStr = '<%- locals.formData ? encodeURIComponent(JSON.stringify(formData)) : "null" %>';
+      const formData = JSON.parse(decodeURIComponent(formDataStr));
+      if (formData && formData.categoryImage) {
+          document.getElementById('previewContainer').classList.remove('hidden');
+          document.getElementById('uploadPrompt').classList.add('hidden');
+          document.getElementById('imagePreview').src = formData.categoryImage;
+      }
+
       // Form validation setup
       const form = document.querySelector('form');
       const nameInput = document.querySelector('input[name="categoryName"]');
@@ -395,6 +412,7 @@
         // Image validation
         const imageInput = document.getElementById('imageInput');
         const imageContainer = document.querySelector('.image-upload-container');
+        const previewImage = document.getElementById('imagePreview');
         
         // Remove any existing error message
         const existingImageError = document.querySelector('.image-error');
@@ -402,8 +420,8 @@
           existingImageError.remove();
         }
 
-        // Check for empty image
-        if (!imageInput.files || !imageInput.files[0]) {
+        // Check for image - either new upload or persisted image
+        if (!imageInput.files[0] && !previewImage.src) {
           const imageError = document.createElement('div');
           imageError.className = 'image-error text-red-500 text-sm mt-1';
           imageError.textContent = 'Category image is required';
@@ -605,6 +623,7 @@
                 document.getElementById('imagePreview').src = url;
                 document.getElementById('previewContainer').classList.remove('hidden');
                 document.getElementById('uploadPrompt').classList.add('hidden');
+                document.getElementById('persistedImage').value = ''; // Clear persisted image when new image is cropped
 
                 // Create a new File object from the blob
                 const croppedFile = new File([blob], 'cropped_image.png', { type: 'image/png' });
