@@ -165,12 +165,6 @@
             color: #6b7280;
         }
         
-        .suggestion-price {
-            font-weight: 600;
-            color: #059669;
-            font-size: 0.875rem;
-        }
-        
         .category-suggestion {
             display: flex;
             align-items: center;
@@ -982,10 +976,7 @@ function validateSearch(event) {
                                      onerror="this.onerror=null; this.src='/images/placeholder.jpg'">
                                 <div class="suggestion-content">
                                     <div class="suggestion-name">${highlightMatch(product.name, searchInput.value)}</div>
-                                    <div class="flex items-center justify-between">
-                                        <div class="suggestion-category">${product.category}</div>
-                                        <div class="suggestion-price">₹${product.price.toFixed(2)}</div>
-                                    </div>
+                                    <div class="suggestion-category">${product.category}</div>
                                 </div>
                             </a>
                         `).join('') :
@@ -1065,10 +1056,7 @@ function validateSearch(event) {
                                                      onerror="this.onerror=null; this.src='/images/placeholder.jpg'">
                                                 <div class="suggestion-content">
                                                     <div class="suggestion-name">${highlightMatch(product.name, mobileSearchInput.value)}</div>
-                                                    <div class="flex items-center justify-between">
-                                                        <div class="suggestion-category">${product.category}</div>
-                                                        <div class="suggestion-price">₹${product.price.toFixed(2)}</div>
-                                                    </div>
+                                                    <div class="suggestion-category">${product.category}</div>
                                                 </div>
                                             </a>
                                         `).join('')}
@@ -1095,5 +1083,3 @@ function validateSearch(event) {
                     }
                 }
             </script>
-        </body>
-        </html>

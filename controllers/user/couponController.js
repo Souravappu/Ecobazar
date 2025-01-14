@@ -65,7 +65,6 @@ const couponController = {
             const { code, cartTotal, subtotal } = req.body; 
             const userId = req.session.user;
             
-            // First, find the user and update any stale 'applied' coupons to 'cancelled'
             const user = await User.findByIdAndUpdate(
                 userId,
                 {
@@ -89,7 +88,6 @@ const couponController = {
                 });
             }
 
-            // Now check for the coupon
             const coupon = await Coupon.findOne({ 
                 code: code.toUpperCase(),
                 isActive: true,
@@ -104,7 +102,6 @@ const couponController = {
                 });
             }
             
-            // Check if user has already used this coupon
             if (user.couponUsed.includes(coupon._id)) {
                 return res.json({
                     success: false,
@@ -136,7 +133,6 @@ const couponController = {
 
             calculatedDiscount = Math.min(calculatedDiscount, subtotal);
 
-            // Add the new coupon application
             await User.findByIdAndUpdate(userId, {
                 $push: {
                     appliedCoupons: {

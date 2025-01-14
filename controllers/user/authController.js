@@ -32,7 +32,7 @@ const pageNotFound = async (req, res) => {
   }
 };
 
-//Home Page Controller
+//Home Page 
 const getHome = async (req, res) => {
   try {
     const [categories, products, banners] = await Promise.all([
@@ -246,7 +246,6 @@ const verifyOtp = async (req, res) => {
     const userData = req.session.userData;
     const hashedPassword = await bcrypt.hash(userData.password, 10);
 
-    // Create new user
     const newUser = new User({
       fname: userData.fname,
       lname: userData.lname,
@@ -1003,7 +1002,6 @@ const getShopProducts = async (req, res) => {
       isBlocked: false,
     };
 
-    // Apply price filter if specified
     if (priceRange && priceRange !== 1000) {
       query.salePrice = { $lte: priceRange };
     }
@@ -1078,7 +1076,6 @@ const getCategoryProducts = async (req, res) => {
     const sort = req.query.sort || "default";
     const priceRange = req.query.price ? parseInt(req.query.price) : null;
 
-    // First verify if the category exists and is valid
     const currentCategory = await Category.findOne({
       _id: categoryId,
       isListed: true,
@@ -1093,14 +1090,13 @@ const getCategoryProducts = async (req, res) => {
       });
     }
 
-    // Build the query with category filter
     let query = {
-      category: categoryId,  // This ensures only products from this category are returned
+      category: categoryId,  
+
       isDeleted: false,
       isBlocked: false,
     };
 
-    // Apply price filter if specified
     if (priceRange && priceRange !== 1000) {
       query.salePrice = { $lte: priceRange };
     }
@@ -1120,11 +1116,9 @@ const getCategoryProducts = async (req, res) => {
         sortOptions.createdAt = -1;
     }
 
-    // Get total count for pagination
     const total = await Product.countDocuments(query);
     const totalPages = Math.ceil(total / limit);
 
-    // Get products with pagination
     const products = await Product.find(query)
       .sort(sortOptions)
       .skip((page - 1) * limit)
@@ -1137,10 +1131,8 @@ const getCategoryProducts = async (req, res) => {
         }
       });
 
-    // Filter out products with null categories (should not happen in this case, but keeping as safety)
     const filteredProducts = products.filter(product => product.category !== null);
 
-    // Get all active categories for the sidebar
     const categories = await Category.find({ 
       isListed: true,
       isBlocked: false,
@@ -1345,7 +1337,7 @@ const getSearchSuggestions = async (req, res) => {
                 isDeleted: false,
                 isBlocked: false
             })
-            .select('name category images salePrice')
+            .select('name category images')
             .populate({
                 path: 'category',
                 match: { isBlocked: false, isDeleted: false },
@@ -1370,7 +1362,6 @@ const getSearchSuggestions = async (req, res) => {
                 id: product._id,
                 name: product.name,
                 category: product.category.name,
-                price: product.salePrice,
                 image: product.images[0].startsWith('/uploads') ? 
                     product.images[0] : 
                     `/uploads/products/${product.images[0].split('/').pop()}`
