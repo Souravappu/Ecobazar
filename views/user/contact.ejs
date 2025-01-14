@@ -7,15 +7,122 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <style>
+        .wave {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            overflow: hidden;
+            line-height: 0;
+            transform: rotate(180deg);
+        }
+        .wave svg {
+            position: relative;
+            display: block;
+            width: calc(100% + 1.3px);
+            height: 150px;
+            transform: rotateY(180deg);
+        }
+        .wave .shape-fill {
+            fill: #FFFFFF;
+        }
+        .floating {
+            animation: floating 3s ease-in-out infinite;
+        }
+        @keyframes floating {
+            0% { transform: translate(0, 0px); }
+            50% { transform: translate(0, 15px); }
+            100% { transform: translate(0, -0px); }
+        }
+        .contact-card {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .contact-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.2),
+                transparent
+            );
+            transition: 0.5s;
+        }
+        .contact-card:hover::before {
+            left: 100%;
+        }
+        .contact-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .form-input {
+            transition: all 0.3s ease;
+        }
+        .form-input:focus {
+            transform: scale(1.02);
+        }
+        .social-icon {
+            transition: all 0.3s ease;
+        }
+        .social-icon:hover {
+            transform: translateY(-3px) rotate(8deg);
+        }
+        .hero-bg {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            position: relative;
+        }
+        .hero-bg::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+        @keyframes bounce-subtle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        .bounce-animation {
+            animation: bounce-subtle 2s infinite;
+        }
+        .input-icon {
+            transition: all 0.3s ease;
+        }
+        .form-input:focus + .input-icon {
+            transform: scale(1.1);
+            color: #22c55e;
+        }
+    </style>
 </head>
 <body class="bg-gray-50">
     <%- include('../layouts/headerWithoutUser.ejs') %>
 
-    <!-- Contact Hero -->
-    <div class="bg-green-500 text-white py-16">
-        <div class="container mx-auto px-4 text-center">
-            <h1 class="text-4xl font-bold mb-4">Get in Touch</h1>
-            <p class="text-xl opacity-90">We'd Love to Hear From You</p>
+    <!-- Contact Hero with Wave -->
+    <div class="relative hero-bg text-white py-32">
+        <div class="container mx-auto px-4 text-center relative z-10">
+            <span class="inline-block px-4 py-2 bg-white/10 rounded-full text-sm mb-4 backdrop-blur-sm animate__animated animate__fadeInDown">
+                <i class="fas fa-headset mr-2"></i>24/7 Customer Support
+            </span>
+            <h1 class="text-5xl font-bold mb-6 animate__animated animate__fadeInDown animate__delay-1s">Get in Touch</h1>
+            <p class="text-xl opacity-90 mb-8 animate__animated animate__fadeInUp animate__delay-2s">We're Here to Help You Grow Your Green Journey</p>
+            <div class="floating inline-block">
+                <i class="fas fa-envelope-open-text text-6xl text-white opacity-90"></i>
+            </div>
+        </div>
+        <div class="wave">
+            <svg data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
+                <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z" class="shape-fill"></path>
+            </svg>
         </div>
     </div>
 
@@ -23,86 +130,110 @@
         <div class="grid md:grid-cols-2 gap-12">
             <!-- Contact Information -->
             <div class="space-y-8">
-                <div>
-                    <h2 class="text-2xl font-bold mb-6">Contact Information</h2>
-                    <div class="space-y-4">
-                        <div class="flex items-start space-x-4">
-                            <div class="text-green-500 mt-1">
-                                <i class="fas fa-map-marker-alt text-xl"></i>
+                <div class="grid grid-cols-1 gap-6">
+                    <div class="contact-card bg-white p-6 rounded-xl shadow-lg group">
+                        <div class="flex items-center space-x-4">
+                            <div class="bg-green-100 p-4 rounded-full group-hover:bg-green-500 transition-colors duration-300">
+                                <i class="fas fa-map-marker-alt text-2xl text-green-500 group-hover:text-white"></i>
                             </div>
                             <div>
-                                <h3 class="font-semibold">Our Location</h3>
+                                <h3 class="font-bold text-lg group-hover:text-green-500 transition-colors">Our Location</h3>
                                 <p class="text-gray-600">hsr layout<br>Bangalore, pin-560102</p>
                             </div>
                         </div>
-                        <div class="flex items-start space-x-4">
-                            <div class="text-green-500 mt-1">
-                                <i class="fas fa-phone text-xl"></i>
+                    </div>
+
+                    <div class="contact-card bg-white p-6 rounded-xl shadow-lg group">
+                        <div class="flex items-center space-x-4">
+                            <div class="bg-green-100 p-4 rounded-full group-hover:bg-green-500 transition-colors duration-300">
+                                <i class="fas fa-phone-alt text-2xl text-green-500 group-hover:text-white"></i>
                             </div>
                             <div>
-                                <h3 class="font-semibold">Phone Number</h3>
+                                <h3 class="font-bold text-lg group-hover:text-green-500 transition-colors">Phone Number</h3>
                                 <p class="text-gray-600">+91 9876543210</p>
                             </div>
                         </div>
-                        <div class="flex items-start space-x-4">
-                            <div class="text-green-500 mt-1">
-                                <i class="fas fa-envelope text-xl"></i>
+                    </div>
+
+                    <div class="contact-card bg-white p-6 rounded-xl shadow-lg group">
+                        <div class="flex items-center space-x-4">
+                            <div class="bg-green-100 p-4 rounded-full group-hover:bg-green-500 transition-colors duration-300">
+                                <i class="fas fa-envelope text-2xl text-green-500 group-hover:text-white"></i>
                             </div>
                             <div>
-                                <h3 class="font-semibold">Email Address</h3>
+                                <h3 class="font-bold text-lg group-hover:text-green-500 transition-colors">Email Address</h3>
                                 <p class="text-gray-600">ecobazar57@gmail.com</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Business Hours -->
-                <!-- <div>
-                    <h2 class="text-2xl font-bold mb-6">Business Hours</h2>
-                    <div class="space-y-2">
-                        <p class="flex justify-between">
-                            <span class="font-medium">Monday - Friday:</span>
-                            <span class="text-gray-600">8:00 AM - 8:00 PM</span>
-                        </p>
-                        <p class="flex justify-between">
-                            <span class="font-medium">Saturday:</span>
-                            <span class="text-gray-600">9:00 AM - 7:00 PM</span>
-                        </p>
-                        <p class="flex justify-between">
-                            <span class="font-medium">Sunday:</span>
-                            <span class="text-gray-600">10:00 AM - 6:00 PM</span>
-                        </p>
-                    </div> -->
+                <!-- Social Media Links -->
+                <div class="bg-white p-8 rounded-xl shadow-lg mt-8">
+                    <h3 class="font-bold text-xl mb-6 flex items-center">
+                        <i class="fas fa-share-alt text-green-500 mr-3"></i>
+                        Connect With Us
+                    </h3>
+                    <div class="flex space-x-6 justify-center">
+                        <a href="#" class="social-icon bg-blue-500 text-white p-4 rounded-full hover:bg-blue-600 transition-all">
+                            <i class="fab fa-facebook-f text-xl"></i>
+                        </a>
+                        <a href="#" class="social-icon bg-gradient-to-r from-pink-500 to-purple-500 text-white p-4 rounded-full hover:from-pink-600 hover:to-purple-600 transition-all">
+                            <i class="fab fa-instagram text-xl"></i>
+                        </a>
+                        <a href="#" class="social-icon bg-blue-400 text-white p-4 rounded-full hover:bg-blue-500 transition-all">
+                            <i class="fab fa-twitter text-xl"></i>
+                        </a>
+                        <a href="#" class="social-icon bg-green-500 text-white p-4 rounded-full hover:bg-green-600 transition-all">
+                            <i class="fab fa-whatsapp text-xl"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
 
             <!-- Contact Form -->
-            <div class="bg-white p-8 rounded-lg shadow-md">
-                <h2 class="text-2xl font-bold mb-6">Send Us a Message</h2>
+            <div class="bg-white p-8 rounded-xl shadow-lg transform hover:scale-105 transition-transform duration-300">
+                <h2 class="text-3xl font-bold mb-8 text-gray-800 flex items-center">
+                    <i class="fas fa-paper-plane text-green-500 mr-3 bounce-animation"></i>
+                    Send Us a Message
+                </h2>
                 <form id="contactForm" class="space-y-6">
-                    <div>
-                        <label class="block text-gray-700 mb-2" for="name">Your Name</label>
+                    <div class="relative">
+                        <label class="block text-gray-700 mb-2 flex items-center" for="name">
+                            <i class="fas fa-user text-green-500 mr-2"></i>Your Name
+                        </label>
                         <input type="text" id="name" name="name" required
-                               class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                               class="form-input w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:border-green-500 transition-all pl-10">
+                        <i class="fas fa-user absolute left-3 top-[42px] text-gray-400 input-icon"></i>
                     </div>
-                    <div>
-                        <label class="block text-gray-700 mb-2" for="email">Email Address</label>
+                    <div class="relative">
+                        <label class="block text-gray-700 mb-2 flex items-center" for="email">
+                            <i class="fas fa-envelope text-green-500 mr-2"></i>Email Address
+                        </label>
                         <input type="email" id="email" name="email" required
-                               class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                               class="form-input w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:border-green-500 transition-all pl-10">
+                        <i class="fas fa-envelope absolute left-3 top-[42px] text-gray-400 input-icon"></i>
                     </div>
-                    <div>
-                        <label class="block text-gray-700 mb-2" for="subject">Subject</label>
+                    <div class="relative">
+                        <label class="block text-gray-700 mb-2 flex items-center" for="subject">
+                            <i class="fas fa-tag text-green-500 mr-2"></i>Subject
+                        </label>
                         <input type="text" id="subject" name="subject" required
-                               class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                               class="form-input w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:border-green-500 transition-all pl-10">
+                        <i class="fas fa-tag absolute left-3 top-[42px] text-gray-400 input-icon"></i>
                     </div>
-                    <div>
-                        <label class="block text-gray-700 mb-2" for="message">Message</label>
+                    <div class="relative">
+                        <label class="block text-gray-700 mb-2 flex items-center" for="message">
+                            <i class="fas fa-comment text-green-500 mr-2"></i>Message
+                        </label>
                         <textarea id="message" name="message" rows="4" required
-                                  class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500"></textarea>
+                                  class="form-input w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:border-green-500 transition-all pl-10"></textarea>
+                        <i class="fas fa-comment absolute left-3 top-[42px] text-gray-400 input-icon"></i>
                     </div>
                     <button type="submit" 
-                            class="w-full bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition-colors">
-                        Send Message
+                            class="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 px-6 rounded-lg hover:from-green-600 hover:to-green-700 transition-all transform hover:scale-105 flex items-center justify-center space-x-2 group">
+                        <i class="fas fa-paper-plane group-hover:rotate-45 transition-transform duration-300"></i>
+                        <span>Send Message</span>
                     </button>
                 </form>
             </div>
@@ -110,8 +241,12 @@
 
         <!-- Map Section -->
         <div class="mt-16">
-            <h2 class="text-2xl font-bold mb-6">Our Location</h2>
-            <div class="aspect-w-16 aspect-h-9">
+            <h2 class="text-3xl font-bold mb-6 text-center flex items-center justify-center">
+                <i class="fas fa-map-marked-alt text-green-500 mr-3 bounce-animation"></i>
+                Find Us Here
+            </h2>
+            <div class="rounded-xl overflow-hidden shadow-lg transform hover:scale-105 transition-transform duration-300 relative group">
+                <div class="absolute inset-0 bg-green-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
                 <iframe 
                     src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d604.6544330977063!2d77.65075092781235!3d12.9002696566307!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bae157df869d4b1%3A0x414669f7baf8376c!2sBrototype%20Bengaluru!5e1!3m2!1sen!2sin!4v1735208210260!5m2!1sen!2sin"
                     width="100%" 
@@ -121,6 +256,16 @@
                     loading="lazy">
                 </iframe>
             </div>
+        </div>
+    </div>
+
+    <!-- Floating Contact Button -->
+    <div class="fixed bottom-8 right-8 z-50">
+        <div class="relative group">
+            <div class="absolute -inset-0.5 bg-gradient-to-r from-green-500 to-green-600 rounded-full blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
+            <a href="tel:+919876543210" class="relative bg-green-500 text-white p-4 rounded-full shadow-lg hover:bg-green-600 transition-all transform hover:scale-110 flex items-center justify-center">
+                <i class="fas fa-phone-alt text-2xl animate-pulse"></i>
+            </a>
         </div>
     </div>
 
