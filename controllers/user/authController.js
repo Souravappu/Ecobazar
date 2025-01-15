@@ -805,7 +805,7 @@ const getProductsByCategory = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = 12;
     const sort = req.query.sort || "default";
-    const priceRange = parseInt(req.query.price) || 100000;
+    const priceRange = parseInt(req.query.price) || 1000;
 
     const currentCategory = await Category.findOne({
       _id: categoryId,

@@ -374,45 +374,55 @@
     
     <script>
         $(document).ready(function() {
-            // Initialize date range picker with improved options
+            // Initialize date range picker with fixed year range 2020-2030
             $('#dateRange').daterangepicker({
                 autoUpdateInput: false,
-                showDropdowns: true,
                 opens: 'left',
-                locale: {
-                    cancelLabel: 'Clear',
-                    format: 'YYYY-MM-DD',
-                    applyLabel: 'Apply',
-                    separator: ' - ',
-                    fromLabel: 'From',
-                    toLabel: 'To',
-                    customRangeLabel: 'Custom Range',
-                    daysOfWeek: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
-                    monthNames: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-                },
+                showDropdowns: true,
+                minYear: 2020,
+                maxYear: parseInt(moment().format('YYYY'), 10),
                 ranges: {
                     'Today': [moment(), moment()],
                     'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
                     'Last 7 Days': [moment().subtract(6, 'days'), moment()],
                     'Last 30 Days': [moment().subtract(29, 'days'), moment()],
                     'This Month': [moment().startOf('month'), moment().endOf('month')],
-                    'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
-                }
+                    'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+                    'This Year': [moment().startOf('year'), moment().endOf('year')],
+                    'Last Year': [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')]
+                },
+                locale: {
+                    format: 'DD/MM/YYYY',
+                    separator: ' - ',
+                    applyLabel: 'Apply',
+                    cancelLabel: 'Clear',
+                    fromLabel: 'From',
+                    toLabel: 'To',
+                    customRangeLabel: 'Custom Range',
+                    weekLabel: 'W',
+                    daysOfWeek: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+                    monthNames: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+                    firstDay: 1
+                },
+                alwaysShowCalendars: true,
+                showCustomRangeLabel: true,
+                linkedCalendars: false,
+                showWeekNumbers: true,
+                autoApply: false
             });
 
             // Handle date range selection
             $('#dateRange').on('apply.daterangepicker', function(ev, picker) {
-                $(this).val(picker.startDate.format('YYYY-MM-DD') + ' - ' + picker.endDate.format('YYYY-MM-DD'));
+                // Format for display
+                $(this).val(picker.startDate.format('DD/MM/YYYY') + ' - ' + picker.endDate.format('DD/MM/YYYY'));
                 
-                // Update or create hidden inputs
+                // Format for backend (YYYY-MM-DD)
                 if ($('#startDate').length === 0) {
                     $(this).after('<input type="hidden" name="startDate" id="startDate">');
                     $(this).after('<input type="hidden" name="endDate" id="endDate">');
                 }
                 $('#startDate').val(picker.startDate.format('YYYY-MM-DD'));
                 $('#endDate').val(picker.endDate.format('YYYY-MM-DD'));
-                
-                // Clear period selection when date range is selected
                 $('#periodSelect').val('');
             });
 
@@ -435,14 +445,6 @@
             if ($('#periodSelect').val()) {
                 $('#dateRange').prop('disabled', true);
             }
-
-            // Handle form submission
-            $('#filterForm').submit(function(e) {
-                if ($('#periodSelect').val()) {
-                    $('#dateRange').prop('disabled', true);
-                    $('#startDate, #endDate').remove();
-                }
-            });
         });
 
         // Download report function

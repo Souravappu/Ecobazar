@@ -94,27 +94,6 @@ const orderController = {
             let finalWalletAmount = Number(walletAmount) || 0;
             let total = subtotal + shippingCharge - couponDiscount;
 
-            // Validate COD restrictions
-            if (paymentMethod === 'COD') {
-                if (finalWalletAmount > 0) {
-                    return res.status(400).json({
-                        success: false,
-                        message: 'Cash on Delivery is not available when using wallet payment'
-                    });
-                }
-                if (appliedCouponData && appliedCouponData.status === 'applied') {
-                    return res.status(400).json({
-                        success: false,
-                        message: 'Cash on Delivery is not available when using coupons'
-                    });
-                }
-                if (total > 500) {
-                    return res.status(400).json({
-                        success: false,
-                        message: 'Cash on Delivery is not available for orders above ₹500'
-                    });
-                }
-            }
             
             await User.findByIdAndUpdate(userId, {
                 $push: {
@@ -1078,7 +1057,8 @@ const orderController = {
             }
 
             const doc = new PDFDocument({
-                margin: 50
+                margin: 50,
+                size: 'A4'
             });
             
             res.setHeader('Content-Type', 'application/pdf');
@@ -1086,113 +1066,250 @@ const orderController = {
             
             doc.pipe(res);
 
-            doc.fontSize(20).text('Ecobazar', { align: 'center' });
-            doc.fontSize(14).text('Invoice', { align: 'center' });
+            // Company Logo and Header
+            doc.fontSize(24).font('Helvetica-Bold').text('ECOBAZAR', { align: 'center' });
+            doc.fontSize(10).font('Helvetica').text('Fresh From Farm to Your Table', { align: 'center' });
             doc.moveDown();
 
-            doc.moveTo(50, doc.y)
+            // Company Details
+            doc.fontSize(9).font('Helvetica');
+            doc.text('Ecobazar Organic Store Pvt Ltd', 50, 120);
+            doc.text('Brototype, Hustle Hub ,HSR Layout', 50);
+            doc.text('Bangalore - 560102, Karnataka', 50);
+            doc.text('GSTIN: 29AABCE1234F1Z5', 50);
+            doc.text('Email: ecobazar57@gmail.com', 50);
+            doc.text('Phone: +91 9876543210', 50);
+
+            doc.moveDown(2);
+
+            // Invoice Title and Number
+            doc.fontSize(16).font('Helvetica-Bold').text('TAX INVOICE', { align: 'center' });
+            doc.moveDown();
+
+            // Divider Line
+            doc.strokeColor('#000000')
+               .lineWidth(1)
+               .moveTo(50, doc.y)
                .lineTo(550, doc.y)
                .stroke();
             doc.moveDown();
 
+            // Customer and Invoice Details in Two Columns
             const startY = doc.y;
-            doc.fontSize(10);
-            doc.text('Bill To:', 50, startY);
-            doc.fontSize(12);
-            doc.text(order.shippingAddress.name, 50, startY + 20);
-            doc.fontSize(10);
-            doc.text(order.shippingAddress.streetAddress, 50, startY + 35);
-            if (order.shippingAddress.apartment) {
-                doc.text(order.shippingAddress.apartment, 50, startY + 50);
+            const leftColumnWidth = 250; // Width for the billing address column
+
+            // Left Column - Bill To
+            doc.fontSize(10).font('Helvetica-Bold').text('Bill To:', 50);
+            doc.moveDown(0.5);
+            doc.fontSize(10).font('Helvetica');
+            
+            // Calculate y position for address block
+            let currentY = doc.y;
+            
+            // Name with some padding - wrapped if too long
+            const nameHeight = doc.heightOfString(order.shippingAddress.name, {
+                width: leftColumnWidth,
+                align: 'left'
+            });
+            doc.text(order.shippingAddress.name, 50, currentY, {
+                width: leftColumnWidth,
+                align: 'left'
+            });
+            currentY += nameHeight + 5;
+
+            // Address parts with proper spacing and text wrapping
+            if (order.shippingAddress.streetAddress) {
+                const streetHeight = doc.heightOfString(order.shippingAddress.streetAddress, {
+                    width: leftColumnWidth,
+                    align: 'left'
+                });
+                doc.text(order.shippingAddress.streetAddress, 50, currentY, {
+                    width: leftColumnWidth,
+                    align: 'left'
+                });
+                currentY += streetHeight + 5;
             }
-            doc.text(`${order.shippingAddress.city} - ${order.shippingAddress.postalCode}`, 50, startY + 65);
-            doc.text(`Phone: ${order.shippingAddress.phone}`, 50, startY + 80);
 
-            doc.fontSize(10);
-            doc.text('Invoice Details:', 350, startY);
-            doc.text(`Invoice No: ${order.orderId}`, 350, startY + 20);
-            doc.text(`Order Date: ${new Date(order.createdAt).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            })}`, 350, startY + 35);
-            doc.text(`Payment Status: ${order.paymentStatus}`, 350, startY + 50);
-            doc.text(`Payment Method: ${order.paymentMethod}`, 350, startY + 65);
+            if (order.shippingAddress.apartment) {
+                const aptHeight = doc.heightOfString(order.shippingAddress.apartment, {
+                    width: leftColumnWidth,
+                    align: 'left'
+                });
+                doc.text(order.shippingAddress.apartment, 50, currentY, {
+                    width: leftColumnWidth,
+                    align: 'left'
+                });
+                currentY += aptHeight + 5;
+            }
 
-            doc.moveDown(5);
+            if (order.shippingAddress.landMark) {
+                const landmarkHeight = doc.heightOfString(order.shippingAddress.landMark, {
+                    width: leftColumnWidth,
+                    align: 'left'
+                });
+                doc.text(order.shippingAddress.landMark, 50, currentY, {
+                    width: leftColumnWidth,
+                    align: 'left'
+                });
+                currentY += landmarkHeight + 5;
+            }
 
-            doc.moveTo(50, doc.y)
-               .lineTo(550, doc.y)
-               .stroke();
-            doc.moveDown();
+            if (order.shippingAddress.city || order.shippingAddress.postalCode) {
+                const cityPostalText = `${order.shippingAddress.city} - ${order.shippingAddress.postalCode}`;
+                const cityHeight = doc.heightOfString(cityPostalText, {
+                    width: leftColumnWidth,
+                    align: 'left'
+                });
+                doc.text(cityPostalText, 50, currentY, {
+                    width: leftColumnWidth,
+                    align: 'left'
+                });
+                currentY += cityHeight + 5;
+            }
 
-            const tableTop = doc.y;
-            doc.fillColor('#f3f4f6')
-               .rect(50, tableTop, 500, 20)
-               .fill();
-            doc.fillColor('#000');
+            if (order.shippingAddress.phone) {
+                const phoneHeight = doc.heightOfString(`Phone: ${order.shippingAddress.phone}`, {
+                    width: leftColumnWidth,
+                    align: 'left'
+                });
+                doc.text(`Phone: ${order.shippingAddress.phone}`, 50, currentY, {
+                    width: leftColumnWidth,
+                    align: 'left'
+                });
+                currentY += phoneHeight + 5;
+            }
 
-            doc.fontSize(10);
+            // Right Column - Invoice Details (aligned to the right side, starting from 350)
+            doc.fontSize(10).font('Helvetica-Bold').text('Invoice Details:', 350, startY);
+            doc.moveDown(0.5);
+            doc.fontSize(10).font('Helvetica');
+            
+            let invoiceY = doc.y;
+            
+            // Invoice details with consistent spacing
+            const invoiceDetails = [
+                { label: 'Invoice No:', value: order.orderId },
+                { label: 'Date:', value: new Date(order.createdAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                })},
+                { label: 'Payment Status:', value: order.paymentStatus },
+                { label: 'Payment Method:', value: order.paymentMethod }
+            ];
+
+            invoiceDetails.forEach(detail => {
+                doc.text(`${detail.label} ${detail.value}`, 350, invoiceY, {
+                    width: 200,
+                    align: 'left'
+                });
+                invoiceY += 20;
+            });
+
+            // Ensure we move to the lower of the two sections before continuing
+            doc.y = Math.max(currentY, invoiceY) + 20;
+
+            // Items Table Header
+            const tableTop = doc.y + 10;
+            doc.rect(50, tableTop, 500, 20).fill('#f0f0f0');
+            doc.fillColor('#000000');
+
+            // Table Headers
+            doc.fontSize(10).font('Helvetica-Bold');
             doc.text('Item', 60, tableTop + 5);
-            doc.text('Quantity', 280, tableTop + 5);
+            doc.text('Qty', 300, tableTop + 5);
             doc.text('Price', 380, tableTop + 5);
             doc.text('Total', 480, tableTop + 5);
 
+            // Table Rows
             let tableRow = tableTop + 25;
+            doc.font('Helvetica');
 
             order.items.forEach((item, index) => {
-                doc.text(item.product.name, 60, tableRow);
-                doc.text(item.quantity.toString(), 280, tableRow);
+                // Add page if needed
+                if (tableRow > 700) {
+                    doc.addPage();
+                    tableRow = 50;
+                }
+
+                doc.fontSize(9);
+                doc.text(item.product.name, 60, tableRow, { width: 230 });
+                doc.text(item.quantity.toString(), 300, tableRow);
                 doc.text(`₹${item.price.toFixed(2)}`, 380, tableRow);
                 doc.text(`₹${(item.quantity * item.price).toFixed(2)}`, 480, tableRow);
-                tableRow += 20;
+                
+                tableRow += 25;
 
                 if (index < order.items.length - 1) {
-                    doc.moveTo(50, tableRow - 5)
-                       .lineTo(550, tableRow - 5)
-                       .strokeColor('#e5e7eb')
+                    doc.strokeColor('#e5e7eb')
+                       .moveTo(50, tableRow - 10)
+                       .lineTo(550, tableRow - 10)
                        .stroke();
                 }
             });
 
-            doc.moveTo(50, tableRow + 5)
-               .lineTo(550, tableRow + 5)
-               .strokeColor('#000')
+            // Final Divider
+            doc.strokeColor('#000000')
+               .moveTo(50, tableRow)
+               .lineTo(550, tableRow)
                .stroke();
 
+            // Summary Section
             tableRow += 20;
             doc.fontSize(10);
+            
+            // Subtotal
             doc.text('Subtotal:', 380, tableRow);
             doc.text(`₹${order.subtotal.toFixed(2)}`, 480, tableRow);
 
+            // Shipping
             tableRow += 20;
             doc.text('Shipping:', 380, tableRow);
             doc.text(`₹${order.shippingCharge.toFixed(2)}`, 480, tableRow);
 
+            // Coupon Discount
             if (order.couponDiscount) {
                 tableRow += 20;
                 doc.text('Discount:', 380, tableRow);
                 doc.text(`-₹${order.couponDiscount.toFixed(2)}`, 480, tableRow);
             }
 
+            // Wallet Amount
             if (order.walletAmount) {
                 tableRow += 20;
                 doc.text('Wallet Amount:', 380, tableRow);
                 doc.text(`-₹${order.walletAmount.toFixed(2)}`, 480, tableRow);
             }
 
+            // Total
             tableRow += 25;
-            doc.fillColor('#f3f4f6')
-               .rect(350, tableRow - 5, 200, 25)
-               .fill();
-            doc.fillColor('#000');
-            doc.fontSize(12).font('Helvetica-Bold');
+            doc.rect(350, tableRow - 5, 200, 25).fill('#f0f0f0');
+            doc.fillColor('#000000').fontSize(12).font('Helvetica-Bold');
             doc.text('Total:', 380, tableRow);
             doc.text(`₹${order.total.toFixed(2)}`, 480, tableRow);
 
+            // Add some spacing after the total
+            tableRow += 40;
+
+            // Footer Section
+            // Terms & Conditions
+            doc.fontSize(8).font('Helvetica-Bold');
+            doc.text('Terms & Conditions:', 50, tableRow);
+            doc.fontSize(7).font('Helvetica');
+            doc.moveDown(0.5);
+            doc.text('1. All prices are inclusive of GST', 50);
+            doc.text('2. This is a computer generated invoice and does not require signature', 50);
+            doc.text('3. For any queries, please contact our customer support', 50);
+
+            // Add spacing before thank you note
+            doc.moveDown(2);
+
+            // Thank You Note
             doc.fontSize(10).font('Helvetica');
-            doc.text('Thank you for shopping with Ecobazar!', 50, doc.page.height - 100, {
-                align: 'center'
+            doc.text('Thank you for shopping with Ecobazar!', {
+                width: 500,
+                align: 'center',
+                color: '#2C5F2D'
             });
 
             doc.end();
