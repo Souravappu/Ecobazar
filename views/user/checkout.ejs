@@ -303,18 +303,11 @@
                     return;
                 }
 
-                if (!paymentMethod && !useWallet) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Payment Method Required',
-                        text: 'Please select a payment method',
-                        confirmButtonColor: '#22C55E'
-                    });
-                    return;
-                }
+                // Get current total amount
+                const currentTotal = Number(document.getElementById('finalTotal').textContent);
 
-                // If using only wallet for full payment
-                if (useWallet && walletAmount === `<%= cart.total + 35 %>`) {
+                // If total is 0, proceed with wallet payment directly
+                if (currentTotal <= 0) {
                     const response = await fetch('/order/create', {
                         method: 'POST',
                         headers: {
@@ -322,7 +315,7 @@
                         },
                         body: JSON.stringify({ 
                             paymentMethod: 'WALLET',
-                            useWallet: true,
+                            useWallet,
                             walletAmount,
                             coupon: couponData
                         })
@@ -338,7 +331,18 @@
                     return;
                 }
 
-                // For other payment methods (COD or Online)
+                // For non-zero totals, require payment method
+                if (!paymentMethod && !useWallet) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Payment Method Required',
+                        text: 'Please select a payment method',
+                        confirmButtonColor: '#22C55E'
+                    });
+                    return;
+                }
+
+                // Rest of your existing code for handling payments
                 if (paymentMethod === 'ONLINE') {
                     // Create order for Razorpay
                     const orderResponse = await fetch('/order/create-razorpay-order', {
@@ -349,10 +353,7 @@
                         body: JSON.stringify({ 
                             useWallet: useWallet && walletAmount > 0,
                             walletAmount: Number(walletAmount) || 0,
-                            coupon: appliedCoupon ? {
-                                couponId: appliedCoupon._id,
-                                discountAmount: appliedCoupon.calculatedDiscount
-                            } : null
+                            coupon: couponData
                         })
                     });
                     
@@ -383,10 +384,7 @@
                                         razorpay_signature: response.razorpay_signature,
                                         useWallet: useWallet && walletAmount > 0,
                                         walletAmount: Number(walletAmount) || 0,
-                                        coupon: appliedCoupon ? {
-                                            couponId: appliedCoupon._id,
-                                            discountAmount: appliedCoupon.calculatedDiscount
-                                        } : null
+                                        coupon: couponData
                                     })
                                 });
                                 
@@ -510,19 +508,6 @@
         const orderTotal = `<%= cart.total + 35 %>`;
 
         useWalletCheckbox.addEventListener('change', function() {
-            if (appliedCoupon && this.checked) {
-                // If user tries to use wallet after coupon is applied
-                Swal.fire({
-                    icon: 'info',
-                    title: 'Order of Application',
-                    text: 'To use both wallet and coupon, please remove the coupon first, set your wallet amount, and then reapply the coupon.',
-                    confirmButtonColor: '#22C55E'
-                }).then(() => {
-                    this.checked = false;
-                });
-                return;
-            }
-            
             walletAmountInput.disabled = !this.checked;
             if (this.checked) {
                 walletAmountInput.value = Math.min(walletBalance, orderTotal);
@@ -564,6 +549,7 @@
             
             const codRadio = document.querySelector('input[value="COD"]');
             const onlineRadio = document.querySelector('input[value="ONLINE"]');
+            const submitButton = document.querySelector('button[type="submit"]');
             
             const walletDeductionDiv = document.getElementById('walletDeduction');
             const walletDeductionAmount = document.getElementById('walletDeductionAmount');
@@ -584,53 +570,39 @@
             }
             finalTotalSpan.textContent = finalTotal.toFixed(2);
             
-            // Handle COD availability
+            // Handle payment method availability
             if (codRadio) {
                 const isCODAvailable = finalTotal <= 500 && !appliedCoupon && walletAmount === 0;
                 codRadio.disabled = !isCODAvailable;
-                
-                if (!isCODAvailable && codRadio.checked) {
-                    codRadio.checked = false;
-                    if (walletAmount < orderTotal) {
-                        onlineRadio.checked = true;
-                    }
-                    
-                    let message = [];
-                    if (finalTotal > 500) message.push('order total exceeds ₹500');
-                    if (appliedCoupon) message.push('coupon is applied');
-                    if (walletAmount > 0) message.push('wallet payment is selected');
-                    
-                    Swal.fire({
-                        icon: 'info',
-                        title: 'Cash on Delivery Unavailable',
-                        text: `COD is not available when ${message.join(' or ')}`,
-                        confirmButtonColor: '#22C55E'
-                    });
-                }
             }
             
-            // Handle payment options based on wallet amount
-            if (walletAmount >= orderTotal) {
-                // If wallet amount covers the entire order, disable both COD and online payment
-                if (codRadio) codRadio.disabled = true;
-                if (onlineRadio) {
+            if (onlineRadio) {
+                // Disable online payment if total is 0 (fully covered by wallet/coupon)
+                if (finalTotal <= 0) {
                     onlineRadio.disabled = true;
                     onlineRadio.checked = false;
-                }
-                if (codRadio) codRadio.checked = false;
-                
-                // Show info message only when payment method is being disabled
-                if (onlineRadio && onlineRadio.checked) {
+                    if (codRadio) {
+                        codRadio.disabled = true;
+                        codRadio.checked = false;
+                    }
+                    // Update submit button text for zero total
+                    submitButton.textContent = 'Place Order with Wallet';
+                    // Show info message about zero total
                     Swal.fire({
                         icon: 'info',
-                        title: 'Payment Method Updated',
-                        text: 'Your wallet balance is sufficient for this order. No additional payment method needed.',
+                        title: 'Full Amount Covered',
+                        text: 'Your order amount is fully covered by wallet/coupon. No additional payment needed.',
                         confirmButtonColor: '#22C55E'
                     });
+                } else {
+                    onlineRadio.disabled = false;
+                    // If COD is not available and no payment method is selected, default to online
+                    if ((!codRadio || codRadio.disabled) && !codRadio?.checked) {
+                        onlineRadio.checked = true;
+                    }
+                    // Reset submit button text
+                    submitButton.textContent = 'Place Order';
                 }
-            } else {
-                // Enable online payment if wallet doesn't cover the full amount
-                if (onlineRadio) onlineRadio.disabled = false;
             }
         }
 
@@ -963,13 +935,13 @@
         }
 
         function updateTotals() {
-            const subtotal = `<%= cart.total %>`;
+            const subtotal = Number(`<%= cart.total %>`);
             const shipping = 35;
             let discount = 0;
             let walletDeduction = Number(document.getElementById('walletAmount').value) || 0;
             
+            // Calculate coupon discount first based on subtotal
             if (appliedCoupon) {
-                // Calculate discount based on subtotal only
                 if (appliedCoupon.discountType === 'percentage') {
                     discount = Math.min(
                         (subtotal * appliedCoupon.discountAmount) / 100,
@@ -985,16 +957,27 @@
                 document.getElementById('couponDiscountDiv').classList.add('hidden');
             }
             
+            // Apply wallet deduction after coupon discount
             if (walletDeduction > 0) {
+                // Ensure wallet deduction doesn't exceed remaining amount
+                const remainingAfterDiscount = subtotal - discount + shipping;
+                walletDeduction = Math.min(walletDeduction, remainingAfterDiscount);
+                
                 document.getElementById('walletDeduction').classList.remove('hidden');
                 document.getElementById('walletDeductionAmount').textContent = walletDeduction.toFixed(2);
+                
+                // Update wallet input if amount was adjusted
+                document.getElementById('walletAmount').value = walletDeduction;
             } else {
                 document.getElementById('walletDeduction').classList.add('hidden');
             }
             
-            // Add shipping charge after all discounts
-            const total = subtotal - walletDeduction - discount + shipping;
+            // Calculate final total: subtotal - coupon discount + shipping - wallet
+            const total = Math.max(0, subtotal - discount + shipping - walletDeduction);
             document.getElementById('finalTotal').textContent = total.toFixed(2);
+            
+            // Update payment options based on final total
+            updatePaymentOptions();
         }
     </script>
 </body>

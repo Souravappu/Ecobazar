@@ -91,20 +91,52 @@ const orderController = {
 
             const subtotal = cart.total;
             const shippingCharge = 35;
-            let finalWalletAmount = Number(walletAmount) || 0;
-            let total = subtotal + shippingCharge - couponDiscount;
-
             
-            await User.findByIdAndUpdate(userId, {
-                $push: {
-                    appliedCoupons: {
-                        coupon: coupon,
-                        discountAmount: couponDiscount,
-                        status: 'applied'
-                    }
+            // Calculate coupon discount first
+            if (coupon && subtotal >= coupon.minimumPurchase) {
+                if (coupon.discountType === 'percentage') {
+                    couponDiscount = Math.min(
+                        (subtotal * coupon.discountAmount) / 100,
+                        coupon.maximumDiscount
+                    );
+                } else {
+                    couponDiscount = Math.min(coupon.discountAmount, subtotal);
                 }
-            });
+                couponDiscount = Math.min(couponDiscount, subtotal);
+            }
 
+            // Calculate wallet amount
+            let finalWalletAmount = Number(walletAmount) || 0;
+            if (useWallet && finalWalletAmount > 0) {
+                const remainingAfterDiscount = subtotal - couponDiscount + shippingCharge;
+                finalWalletAmount = Math.min(finalWalletAmount, remainingAfterDiscount);
+                
+                // Verify wallet balance
+                if (!wallet || wallet.balance < finalWalletAmount) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Insufficient wallet balance'
+                    });
+                }
+            }
+
+            // Calculate final total
+            let total = Math.max(0, subtotal - couponDiscount + shippingCharge - finalWalletAmount);
+
+            // Determine payment method
+            let finalPaymentMethod;
+            if (total <= 0) {
+                // If total is 0, it means wallet/coupon covered everything
+                finalPaymentMethod = 'WALLET';
+            } else if (finalWalletAmount > 0) {
+                // If wallet is used but didn't cover everything
+                finalPaymentMethod = 'WALLET_PLUS_ONLINE';
+            } else {
+                // No wallet used, use the selected payment method
+                finalPaymentMethod = paymentMethod;
+            }
+
+            // Create order
             const order = new Order({
                 user: userId,
                 items: cart.items.map(item => ({
@@ -122,8 +154,9 @@ const orderController = {
                     landMark: defaultAddress.landMark,
                     addressType: defaultAddress.addressType
                 },
-                paymentMethod: finalWalletAmount > 0 ? 'WALLET_PLUS_ONLINE' : 'ONLINE',
-                paymentStatus: 'Paid',
+                paymentMethod: finalPaymentMethod,
+                paymentStatus: total <= 0 || finalPaymentMethod === 'WALLET' ? 'Paid' : 'Pending',
+                orderStatus: total <= 0 || finalPaymentMethod === 'WALLET' ? 'Processing' : 'Pending',
                 walletAmount: finalWalletAmount,
                 coupon: coupon?._id,
                 couponDiscount,
@@ -132,6 +165,7 @@ const orderController = {
                 total
             });
 
+            // Handle coupon usage
             if (coupon) {
                 coupon.usedCount += 1;
                 await Promise.all([
@@ -151,6 +185,7 @@ const orderController = {
                 ]);
             }
 
+            // Handle wallet transaction
             if (finalWalletAmount > 0) {
                 const walletTransaction = {
                     type: 'DEBIT',
@@ -167,6 +202,7 @@ const orderController = {
 
             await order.save();
 
+            // Update product quantities and clear cart
             const updatePromises = cart.items.map(item => 
                 Product.findByIdAndUpdate(item.product._id, {
                     $inc: { quantity: -item.quantity }
