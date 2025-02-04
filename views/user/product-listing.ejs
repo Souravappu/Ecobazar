@@ -193,11 +193,11 @@
                             <% } %>
 
                             <!-- Product Image -->
-                            <a href="/product/<%= product._id %>" class="block">
-                                <img src="<%= product.images && product.images[0] ? `/uploads/products/${product.images[0].split('/').pop()}` : '/images/placeholder.jpg' %>"
-                                     alt="<%= product.name %>"
+                                <a href="/product/<%= product._id %>" class="block">
+                                    <img src="<%= product.images && product.images[0] ? `/uploads/products/${product.images[0].split('/').pop()}` : '/images/placeholder.jpg' %>"
+                                         alt="<%= product.name %>"
                                      class="w-full h-48 object-cover rounded-lg mb-4 hover:opacity-90 transition-opacity">
-                            </a>
+                                </a>
 
                             <!-- Product Info -->
                             <div class="space-y-3">
@@ -239,7 +239,7 @@
                                             </button>
                                         <% } else { %>
                                             <span class="text-red-500 text-sm font-medium">Out of Stock</span>
-                                        <% } %>
+                                    <% } %>
                                     </div>
                                 </div>
                             </div>

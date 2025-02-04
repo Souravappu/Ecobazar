@@ -300,7 +300,10 @@ const blockCategory = async (req, res) => {
         const id = req.params.id;
         const category = await Category.findByIdAndUpdate(
             id,
-            { isBlocked: true },
+            { 
+                isBlocked: true,
+                isListed: false  // When blocked, it should not be listed
+            },
             { new: true }
         );
 
@@ -325,7 +328,10 @@ const unblockCategory = async (req, res) => {
         const id = req.params.id;
         const category = await Category.findByIdAndUpdate(
             id,
-            { isBlocked: false },
+            { 
+                isBlocked: false,
+                isListed: true  // When unblocked, it should be listed
+            },
             { new: true }
         );
 

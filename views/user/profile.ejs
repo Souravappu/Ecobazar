@@ -10,6 +10,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- AOS Animation Library -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -19,158 +22,248 @@
             min-height: 100vh;
         }
         .nav-item {
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .nav-item::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #10b981;
+            transition: width 0.3s ease;
+        }
+        .nav-item:hover::after {
+            width: 100%;
         }
         .nav-item:hover {
             transform: translateX(10px);
             background-color: rgba(16, 185, 129, 0.1);
         }
         .nav-item.active {
-            background: linear-gradient(to right, #10b981, #059669);
+            background: linear-gradient(135deg, #10b981, #059669);
             color: white;
-            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
         }
         .card {
-            transition: all 0.4s ease;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
         }
         .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.12);
         }
-        main {
-            flex-grow: 1;
-            padding: 2rem 0;
+        .profile-avatar {
+            position: relative;
+            transition: transform 0.3s ease;
+        }
+        .profile-avatar:hover {
+            transform: scale(1.05);
+        }
+        .input-field {
+            @apply w-full rounded-lg border-2 border-gray-200 focus:border-green-500 transition-all duration-300 px-4 py-2.5;
+            background: rgba(255, 255, 255, 0.8);
+        }
+        .input-field:focus {
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+        }
+        .pulse-button {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        .floating {
+            animation: floating 3s ease-in-out infinite;
+        }
+        @keyframes floating {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
         }
     </style>
 </head>
 <body class="bg-gray-50">
     <%- include('../layouts/headerWithoutUser.ejs') %>
 
-    <main>
+    <!-- Breadcrumb -->
+    <div class="container mx-auto px-4 py-4">
+        <nav class="flex" aria-label="Breadcrumb">
+            <ol class="inline-flex items-center space-x-2 md:space-x-3">
+                <li class="inline-flex items-center">
+                    <a href="/" class="text-gray-700 hover:text-green-600">
+                        <i class="fas fa-home mr-2"></i>
+                        Home
+                    </a>
+                </li>
+                <li aria-current="page">
+                    <div class="flex items-center">
+                        <i class="fas fa-chevron-right text-gray-500 mx-2"></i>
+                        <span class="text-green-600">My Account</span>
+                    </div>
+                </li>
+            </ol>
+        </nav>
+    </div>
+
+    <main class="py-8">
         <div class="container mx-auto px-4">
-            <div class="grid grid-cols-12 gap-6">
+            <div class="grid grid-cols-12 gap-8">
                 <!-- Navigation Sidebar -->
                 <%- include('../layouts/profileSidebar.ejs', { currentPage: 'profile' }) %>
 
                 <!-- Profile Content -->
-                <!-- Profile Content -->
-<div class="col-span-12 lg:col-span-9 space-y-6">
-    <!-- Profile Card -->
-    <div class="card bg-white rounded-2xl shadow-2xl p-6 md:p-8">
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8">
-            <div class="col-span-12 md:col-span-4 flex flex-col items-center justify-center">
-                <div class="w-32 h-32 md:w-40 md:h-40 rounded-full bg-green-500 flex items-center justify-center text-white text-5xl md:text-6xl border-8 border-green-200 shadow-lg mb-4">
-                    <i class="fas fa-user"></i>
-                </div>
-                <h2 class="text-xl md:text-2xl font-bold text-center">
-                    <%= user.fname || 'First Name' %> <%= user.lname || 'Last Name' %>
-                </h2>
-                <p class="text-gray-500 text-center">
-                    <%= user.role || 'User Role' %>
-                </p>
-            </div>
-            <div class="col-span-12 md:col-span-8">
-                <h3 class="text-lg md:text-xl font-semibold mb-4 md:mb-6 border-b pb-2 md:pb-3">
-                    Personal Information
-                </h3>
-                <form id="profileForm" method="POST" action="/profile/editProfile/<%= user._id %>">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                        <!-- First Name -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600 mb-2">First Name</label>
-                            <input type="text" name="fname" value="<%= user.fname || '' %>" 
-                                   class="w-full rounded-lg border-2 border-gray-200 focus:border-green-500 transition-all duration-300">
-                        </div>
-                        <!-- Last Name -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600 mb-2">Last Name</label>
-                            <input type="text" name="lname" value="<%= user.lname || '' %>" 
-                                   class="w-full rounded-lg border-2 border-gray-200 focus:border-green-500 transition-all duration-300">
-                        </div>
-                        <!-- Email Address -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600 mb-2">Email Address</label>
-                            <input type="email" name="email" value="<%= user.email || '' %>" 
-                                   class="w-full rounded-lg border-2 border-gray-200 focus:border-green-500 transition-all duration-300">
-                        </div>
-                        <!-- Phone Number -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600 mb-2">Phone Number</label>
-                            <input type="tel" name="phone" value="<%= user.phone || '' %>" 
-                                   class="w-full rounded-lg border-2 border-gray-200 focus:border-green-500 transition-all duration-300">
-                        </div>
-                        <!-- Save Button -->
-                        <div class="col-span-1 md:col-span-2 mt-4">
-                            <button class="w-full md:w-auto bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-all duration-300 flex items-center justify-center space-x-2">
-                                <i class="fas fa-save"></i>
-                                <span>Save Changes</span>
-                            </button>
+                <div class="col-span-12 lg:col-span-9 space-y-8">
+                    <!-- Profile Card -->
+                    <div class="card rounded-3xl shadow-2xl p-8" data-aos="fade-up">
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+                            <div class="col-span-12 md:col-span-4 flex flex-col items-center justify-center">
+                                <div class="profile-avatar w-40 h-40 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white text-6xl border-8 border-green-100 shadow-lg mb-6 floating">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <h2 class="text-2xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-green-400">
+                                    <%= user.fname || 'First Name' %> <%= user.lname || 'Last Name' %>
+                                </h2>
+                                <p class="text-gray-500 text-center flex items-center gap-2 mt-2">
+                                    <i class="fas fa-crown text-yellow-400"></i>
+                                    <%= user.role || 'User Role' %>
+                                </p>
+                            </div>
+                            <div class="col-span-12 md:col-span-8">
+                                <h3 class="text-xl font-semibold mb-6 flex items-center gap-3">
+                                    <i class="fas fa-user-edit text-green-500"></i>
+                                    Personal Information
+                                </h3>
+                                <form id="profileForm" method="POST" action="/profile/editProfile/<%= user._id %>" class="space-y-6">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <!-- First Name -->
+                                        <div class="group">
+                                            <label class="block text-sm font-medium text-gray-600 mb-2 flex items-center gap-2">
+                                                <i class="fas fa-user-circle text-green-500"></i>
+                                                First Name
+                                            </label>
+                                            <input type="text" name="fname" value="<%= user.fname || '' %>" 
+                                                   class="input-field">
+                                        </div>
+                                        <!-- Last Name -->
+                                        <div class="group">
+                                            <label class="block text-sm font-medium text-gray-600 mb-2 flex items-center gap-2">
+                                                <i class="fas fa-user-circle text-green-500"></i>
+                                                Last Name
+                                            </label>
+                                            <input type="text" name="lname" value="<%= user.lname || '' %>" 
+                                                   class="input-field">
+                                        </div>
+                                        <!-- Email Address -->
+                                        <div class="group">
+                                            <label class="block text-sm font-medium text-gray-600 mb-2 flex items-center gap-2">
+                                                <i class="fas fa-envelope text-green-500"></i>
+                                                Email Address
+                                            </label>
+                                            <input type="email" name="email" value="<%= user.email || '' %>" 
+                                                   class="input-field">
+                                        </div>
+                                        <!-- Phone Number -->
+                                        <div class="group">
+                                            <label class="block text-sm font-medium text-gray-600 mb-2 flex items-center gap-2">
+                                                <i class="fas fa-phone text-green-500"></i>
+                                                Phone Number
+                                            </label>
+                                            <input type="tel" name="phone" value="<%= user.phone || '' %>" 
+                                                   class="input-field">
+                                        </div>
+                                        <!-- Save Button -->
+                                        <div class="col-span-1 md:col-span-2 mt-4">
+                                            <button class="w-full md:w-auto bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-3 rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-300 flex items-center justify-center gap-3 pulse-button">
+                                                <i class="fas fa-save"></i>
+                                                <span>Save Changes</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     </div>
-                </form>
-            </div>
-        </div>
-    </div>
 
-    <!-- Address & Security Card -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="card bg-white rounded-2xl shadow-2xl p-6">
-            <h3 class="text-lg md:text-xl font-semibold mb-4 md:mb-6 border-b pb-2 md:pb-3">
-                <i class="fas fa-map-marker-alt mr-2 text-green-500"></i>
-                Shipping Address
-            </h3>
-            <div class="space-y-4">
-                <% if (address) { %>
-                <% address.address.forEach(a => { %>
-                    <% if (a.isDefault) { %>
-                    <div class="flex items-center space-x-4">
-                        <% if (a.addressType === "Home") { %>
-                        <i class="fas fa-home text-green-500"></i>
-                        <% } else if (a.addressType === "Office") { %>
-                        <i class="fas fa-building text-green-500"></i>
-                        <% } else if (a.addressType === "Other") { %>
-                        <i class="fas fa-archway text-green-500"></i>
-                        <% } %>
-                        <div>
-                            <p class="font-medium"><%= a.streetAddress %></p>
-                            <p class="text-gray-500"><%= a.city %> <%= a.postalCode %></p>
+                    <!-- Address & Security Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- Address Card -->
+                        <div class="card rounded-3xl shadow-2xl p-6" data-aos="fade-right">
+                            <h3 class="text-xl font-semibold mb-6 flex items-center gap-3">
+                                <i class="fas fa-map-marker-alt text-green-500"></i>
+                                Shipping Address
+                            </h3>
+                            <div class="space-y-6">
+                                <% if (address) { %>
+                                <% address.address.forEach(a => { %>
+                                    <% if (a.isDefault) { %>
+                                    <div class="flex items-center gap-4 bg-green-50 p-4 rounded-xl transition-all duration-300 hover:bg-green-100">
+                                        <div class="text-2xl text-green-500">
+                                            <% if (a.addressType === "Home") { %>
+                                            <i class="fas fa-home"></i>
+                                            <% } else if (a.addressType === "Office") { %>
+                                            <i class="fas fa-building"></i>
+                                            <% } else if (a.addressType === "Other") { %>
+                                            <i class="fas fa-archway"></i>
+                                            <% } %>
+                                        </div>
+                                        <div>
+                                            <p class="font-medium"><%= a.streetAddress %></p>
+                                            <p class="text-gray-500"><%= a.city %> <%= a.postalCode %></p>
+                                        </div>
+                                    </div>
+                                    <button class="bg-green-100 text-green-600 px-6 py-3 rounded-lg hover:bg-green-200 transition-all duration-300 flex items-center gap-2">
+                                        <i class="fas fa-eye"></i>
+                                        <a href="/address">View All Addresses</a>
+                                    </button>
+                                    <% } %>
+                                <% }) %>
+                                <% } else { %>
+                                <div class="text-center py-6">
+                                    <p class="text-gray-500 mb-4">No address found</p>
+                                    <a href="/profile/add-address">
+                                        <button class="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-300 flex items-center gap-2 mx-auto">
+                                            <i class="fas fa-plus"></i>
+                                            <span>Add New Address</span>
+                                        </button>
+                                    </a>
+                                </div>
+                                <% } %>
+                            </div>
+                        </div>
+
+                        <!-- Security Card -->
+                        <div class="card rounded-3xl shadow-2xl p-6" data-aos="fade-left">
+                            <h3 class="text-xl font-semibold mb-6 flex items-center gap-3">
+                                <i class="fas fa-shield-alt text-green-500"></i>
+                                Account Security
+                            </h3>
+                            <div class="space-y-6">
+                                <div class="bg-green-50 p-4 rounded-xl">
+                                    <div class="flex justify-between items-center">
+                                        <div>
+                                            <p class="font-medium flex items-center gap-2">
+                                                <i class="fas fa-key text-green-500"></i>
+                                                Password
+                                            </p>
+                                            <p class="text-gray-500 text-sm mt-1">Last changed: 2 months ago</p>
+                                        </div>
+                                        <a href="/change-password" class="bg-green-100 text-green-600 px-4 py-2 rounded-lg hover:bg-green-200 transition-all duration-300 flex items-center gap-2">
+                                            <i class="fas fa-lock"></i>
+                                            Change Password
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <button class="bg-green-100 text-green-600 px-4 py-2 rounded-lg hover:bg-green-200 transition-all duration-300">
-                        <a href="/address">View Addresses</a>
-                    </button>
-                    <% } %>
-                <% }) %>
-                <% } else { %>
-                <p>No address found</p>
-                <a href="/profile/add-address">
-                    <button class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-all duration-300 flex items-center space-x-2">
-                        <i class="fas fa-plus"></i>
-                        <span>Add New Address</span>
-                    </button>
-                </a>
-                <% } %>
-            </div>
-        </div>
-        <div class="card bg-white rounded-2xl shadow-2xl p-6">
-            <h3 class="text-lg md:text-xl font-semibold mb-4 md:mb-6 border-b pb-2 md:pb-3">
-                <i class="fas fa-lock mr-2 text-green-500"></i>
-                Account Security
-            </h3>
-            <div class="space-y-4">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <p class="font-medium">Password</p>
-                        <p class="text-gray-500">Last changed: 2 months ago</p>
-                    </div>
-                    <a href="/change-password" class="bg-green-100 text-green-600 px-4 py-2 rounded-lg hover:bg-green-200 transition-all duration-300">
-                        Change Password
-                    </a>
                 </div>
-            </div>
-        </div>
-    </div>
-</div>
             </div>
         </div>
     </main>
@@ -178,6 +271,13 @@
     <%- include('../layouts/footer.ejs') %>
 
     <script>
+        // Initialize AOS
+        AOS.init({
+            duration: 800,
+            easing: 'ease-in-out',
+            once: true
+        });
+
         // Enhanced Navigation Active State
         document.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', function() {
@@ -186,16 +286,30 @@
             });
         });
 
-        // Profile Image Preview
-        document.getElementById('profileImageInput').addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById('profileImagePreview').src = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            }
+        // Form validation and submission feedback
+        const form = document.getElementById('profileForm');
+        form.addEventListener('submit', function(e) {
+            const inputs = form.querySelectorAll('input');
+            inputs.forEach(input => {
+                if (input.value.trim() === '') {
+                    input.classList.add('border-red-500');
+                    input.classList.add('animate-shake');
+                } else {
+                    input.classList.remove('border-red-500');
+                    input.classList.remove('animate-shake');
+                }
+            });
+        });
+
+        // Input focus effects
+        const inputs = document.querySelectorAll('.input-field');
+        inputs.forEach(input => {
+            input.addEventListener('focus', function() {
+                this.parentElement.querySelector('label').classList.add('text-green-500');
+            });
+            input.addEventListener('blur', function() {
+                this.parentElement.querySelector('label').classList.remove('text-green-500');
+            });
         });
     </script>
 </body>

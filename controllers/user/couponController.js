@@ -14,13 +14,32 @@ const couponController = {
             
             const excludedCouponIds = [...usedCouponIds, ...appliedCouponIds];
             
+            const currentDate = new Date();
+            console.log('Current Date:', currentDate);
+            
+            // First find all coupons without date filters to check their dates
+            const allCoupons = await Coupon.find({
+                isActive: true,
+                _id: { $nin: excludedCouponIds }
+            });
+            
+            console.log('All Active Coupons:', allCoupons.map(c => ({
+                code: c.code,
+                startDate: c.startDate,
+                expiryDate: c.expiryDate,
+                isStartValid: c.startDate <= currentDate,
+                isExpiryValid: c.expiryDate > currentDate
+            })));
+            
             const coupons = await Coupon.find({
                 isActive: true,
                 _id: { $nin: excludedCouponIds },
-                startDate: { $lte: new Date() },
-                expiryDate: { $gt: new Date() },
+                startDate: { $lte: currentDate },
+                expiryDate: { $gt: currentDate },
                 $expr: { $lt: ['$usedCount', '$usageLimit'] }  
             });
+            
+            console.log('Filtered Coupons:', coupons.map(c => c.code));
             
             if (!coupons || coupons.length === 0) {
                 return res.json({
@@ -48,7 +67,8 @@ const couponController = {
                     discountType: coupon.discountType,
                     discountAmount: coupon.discountAmount,
                     minimumPurchase: coupon.minimumPurchase,
-                    maximumDiscount: coupon.maximumDiscount
+                    maximumDiscount: coupon.maximumDiscount,
+                    expiryDate: coupon.expiryDate
                 }))
             });
         } catch (error) {

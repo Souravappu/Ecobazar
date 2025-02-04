@@ -2,6 +2,7 @@ const Cart = require('../../models/Cart');
 const Product = require('../../models/Products');
 const Category = require('../../models/Category');
 const User =require('../../models/User')
+const Wishlist = require('../../models/Wishlist');
 
 const checkQuantityLimits = async (productId, requestedQuantity, userId) => {
     const [product, cart] = await Promise.all([
@@ -56,7 +57,11 @@ const cartController = {
                 userId
             );
 
-            let cart = await Cart.findOne({ user: userId });
+            let [cart, wishlist] = await Promise.all([
+                Cart.findOne({ user: userId }),
+                Wishlist.findOne({ user: userId })
+            ]);
+
             if (!cart) {
                 cart = new Cart({ user: userId, items: [] });
             }
@@ -78,6 +83,14 @@ const cartController = {
                 return total + (item.quantity * product.salePrice);
             }, 0);
 
+            // Remove item from wishlist if it exists
+            if (wishlist) {
+                wishlist.items = wishlist.items.filter(item => 
+                    item.product.toString() !== productId.toString()
+                );
+                await wishlist.save();
+            }
+
             await cart.save();
 
             res.json({
@@ -86,7 +99,8 @@ const cartController = {
                 cart: {
                     count: cart.items.length,
                     total: cart.total.toFixed(2)
-                }
+                },
+                wishlistCount: wishlist ? wishlist.items.length : 0
             });
 
         } catch (error) {

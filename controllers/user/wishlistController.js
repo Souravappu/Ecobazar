@@ -51,6 +51,7 @@ const wishlistController = {
         try {
             const { productId } = req.params;
             const userId = req.session.user;
+            const currentPage = parseInt(req.query.page) || 1;
 
             const wishlist = await Wishlist.findOne({ user: userId });
             if (!wishlist) {
@@ -60,18 +61,38 @@ const wishlistController = {
                 });
             }
 
+            // Remove the item
             wishlist.items = wishlist.items.filter(item => 
                 item.product.toString() !== productId
             );
 
             await wishlist.save();
 
+            // Calculate pagination info after deletion
+            const limit = 6;
+            const totalItems = wishlist.items.length;
+            const totalPages = Math.ceil(totalItems / limit);
+
+            // Determine if we need to redirect to a different page
+            let redirectPage = currentPage;
+            if (currentPage > totalPages && totalPages > 0) {
+                redirectPage = totalPages;
+            } else if (totalPages === 0) {
+                redirectPage = 1;
+            }
+
             res.locals.wishlistCount = wishlist.items.length;
 
             res.status(200).json({
                 success: true,
                 message: 'Product removed from wishlist',
-                wishlist
+                wishlistCount: wishlist.items.length,
+                pagination: {
+                    currentPage,
+                    totalPages,
+                    redirectPage,
+                    shouldRedirect: redirectPage !== currentPage
+                }
             });
         } catch (error) {
             console.error('Remove from wishlist error:', error);
@@ -86,24 +107,44 @@ const wishlistController = {
         try {
             const userId = req.session.user;
             const page = parseInt(req.query.page) || 1;
-            const limit = 6; 
+            const limit = 6;
             const skip = (page - 1) * limit;
             
-            const wishlistDoc = await Wishlist.findOne({ user: userId });
-            const totalItems = wishlistDoc ? wishlistDoc.items.length : 0;
+            // First check if wishlist exists
+            let wishlist = await Wishlist.findOne({ user: userId })
+                .populate({
+                    path: 'items.product',
+                    model: 'Product',
+                    match: { isDeleted: false, isBlocked: false }
+                });
+
+            // Initialize empty wishlist if not exists
+            if (!wishlist) {
+                wishlist = new Wishlist({ user: userId, items: [] });
+            }
+
+            // Filter out items where product is null (deleted or blocked products)
+            const activeItems = wishlist.items.filter(item => item.product);
+            const totalItems = activeItems.length;
             const totalPages = Math.ceil(totalItems / limit);
 
-            const [wishlist, categories] = await Promise.all([
-                Wishlist.findOne({ user: userId })
+            // Get paginated items only if there are items
+            let paginatedWishlist = wishlist;
+            if (totalItems > 0) {
+                paginatedWishlist = await Wishlist.findOne({ user: userId })
                     .populate({
                         path: 'items.product',
-                        options: {
-                            skip: skip,
-                            limit: limit
-                        }
-                    }),
-                Category.find({ isListed: true, isBlocked: false, isDeleted: false })
-            ]);
+                        model: 'Product',
+                        match: { isDeleted: false, isBlocked: false }
+                    })
+                    .slice('items', [skip, limit]);
+            }
+
+            const categories = await Category.find({ 
+                isListed: true, 
+                isBlocked: false, 
+                isDeleted: false 
+            });
 
             const userData = await User.findById(userId);
             if (!userData) {
@@ -114,23 +155,23 @@ const wishlistController = {
                 userId: userId,
                 "address.isDefault": true
             });
-
-            if (wishlist) {
-                wishlist.items = wishlist.items.slice(skip, skip + limit);
-            }
             
             res.render('user/wishlist', {
                 user: userData,
-                wishlist,
+                wishlist: paginatedWishlist,
                 address: address,
                 categories,
                 title: 'My Wishlist',
-                pagination: {
+                pagination: totalItems > 0 ? {
                     page,
                     totalPages,
                     hasNext: page < totalPages,
-                    hasPrev: page > 1
-                },
+                    hasPrev: page > 1,
+                    totalItems,
+                    limit,
+                    startIndex: skip + 1,
+                    endIndex: Math.min(skip + limit, totalItems)
+                } : null,
                 currentPage: 'wishlist'
             });
         } catch (error) {

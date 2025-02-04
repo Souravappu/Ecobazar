@@ -722,8 +722,8 @@ const getNewPassword = async (req, res) => {
 };
 
 const getProduct = async (req, res) => {
-  try {
-    const productId = req.params.id;
+    try {
+        const productId = req.params.id;
 
     const product = await Product.findOne({
       _id: productId,
@@ -741,8 +741,8 @@ const getProduct = async (req, res) => {
       return res.status(404).render("user/error", {
         message: "Product not found or unavailable",
         categories: [],
-      });
-    }
+            });
+        }
 
     const categories = await Category.find({ 
       isListed: true,
@@ -786,17 +786,17 @@ const getProduct = async (req, res) => {
 
     res.render("user/product-details", {
       product: formattedProduct,
-      categories,
+            categories,
       user: userData,
       relatedProducts: formattedRelatedProducts,
-    });
-  } catch (error) {
+        });
+    } catch (error) {
     console.error("Error getting product details:", error);
     res.status(500).render("user/error", {
       message: "Error loading product details",
       categories: [],
-    });
-  }
+        });
+    }
 };
 
 const getProductsByCategory = async (req, res) => {

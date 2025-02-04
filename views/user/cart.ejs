@@ -9,29 +9,74 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    
+    <style>
+        .cart-item {
+            transition: all 0.3s ease;
+        }
+        .cart-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .quantity-btn {
+            transition: all 0.2s ease;
+        }
+        .quantity-btn:hover:not(:disabled) {
+            transform: scale(1.1);
+        }
+        .quantity-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        .checkout-btn {
+            transition: all 0.3s ease;
+        }
+        .checkout-btn:hover {
+            transform: translateX(5px);
+        }
+    </style>
 </head>
 <body class="bg-gray-50">
     <%- include('../layouts/headerWithoutUser.ejs') %>
 
-    <!-- Breadcrumbs -->
+    <!-- Breadcrumbs with animation -->
     <div >
         <div class="container mx-auto px-4 py-3">
-            <nav class="flex items-center text-sm">
-                <a href="/" class="text-gray-500 hover:text-green-600">Home</a>
-                <span class="mx-2 text-gray-400">/</span>
-                <span class="text-green-600">Shopping Cart</span>
+            <nav class="flex items-center text-sm animate__animated animate__fadeIn">
+                <a href="/" class="text-gray-500 hover:text-green-600 transition-colors flex items-center">
+                    <i class="fas fa-home mr-1"></i> Home
+                </a>
+                <i class="fas fa-chevron-right mx-2 text-gray-400 text-xs"></i>
+                <span class="text-green-600 flex items-center">
+                    <i class="fas fa-shopping-cart mr-1"></i> Shopping Cart
+                </span>
             </nav>
         </div>
     </div>
 
     <main class="container mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold mb-8">Shopping Cart</h1>
+        <h1 class="text-3xl font-bold mb-8 flex items-center animate__animated animate__fadeInDown">
+            <i class="fas fa-shopping-basket mr-3 text-green-500"></i>
+            Shopping Cart
+        </h1>
 
         <% if (!cart || cart.items.length === 0) { %>
-            <div class="text-center py-12">
-                <i class="fas fa-shopping-cart text-6xl text-gray-300 mb-4"></i>
+            <div class="text-center py-12 animate__animated animate__fadeIn">
+                <div class="mb-6">
+                    <i class="fas fa-shopping-cart text-8xl text-gray-300 animate__animated animate__pulse animate__infinite"></i>
+                </div>
                 <h2 class="text-2xl font-semibold text-gray-600 mb-4">Your cart is empty</h2>
-                <a href="/shop" class="inline-block bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-colors">
+                <p class="text-gray-500 mb-6">Looks like you haven't added anything to your cart yet!</p>
+                <a href="/shop" class="inline-flex items-center bg-green-500 text-white px-8 py-3 rounded-lg hover:bg-green-600 transition-all transform hover:scale-105">
+                    <i class="fas fa-store mr-2"></i>
                     Continue Shopping
                 </a>
             </div>
@@ -39,37 +84,44 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Cart Items -->
                 <div class="lg:col-span-2">
-                    <div class="bg-white rounded-lg shadow-sm">
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
                         <% cart.items.forEach(item => { %>
-                            <div id="cart-item-<%= item.product._id %>" class="p-4 border-b last:border-b-0">
-                                <div class="flex items-center gap-4">
-                                    <img src="/uploads/products/<%= item.product.images[0].split('/').pop() %>" 
-                                         alt="<%= item.product.name %>"
-                                         class="w-24 h-24 object-cover rounded-lg">
+                            <div id="cart-item-<%= item.product._id %>" class="cart-item p-6 border-b last:border-b-0 fade-in">
+                                <div class="flex items-center gap-6">
+                                    <div class="relative group">
+                                        <img src="/uploads/products/<%= item.product.images[0].split('/').pop() %>" 
+                                             alt="<%= item.product.name %>"
+                                             class="w-32 h-32 object-cover rounded-lg transition-transform group-hover:scale-105">
+                                        <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300 rounded-lg"></div>
+                                    </div>
                                     
                                     <div class="flex-1">
-                                        <h3 class="font-semibold mb-2"><%= item.product.name %></h3>
-                                        <div class="text-green-600 font-bold">₹<%= item.product.salePrice %></div>
+                                        <h3 class="font-semibold text-lg mb-2 hover:text-green-600 transition-colors">
+                                            <%= item.product.name %>
+                                        </h3>
+                                        <div class="text-green-600 font-bold text-xl mb-3">
+                                            ₹<%= item.product.salePrice %>
+                                        </div>
                                         
-                                        <!-- Stock Status Messages -->
+                                        <!-- Stock Status Messages with icons -->
                                         <% if (!item.stockStatus.inStock) { %>
-                                            <div class="text-red-500 text-sm mt-2">
-                                                <i class="fas fa-exclamation-circle"></i>
+                                            <div class="text-red-500 text-sm mb-3 flex items-center">
+                                                <i class="fas fa-exclamation-circle mr-2 animate__animated animate__headShake animate__infinite"></i>
                                                 Out of stock
                                             </div>
                                         <% } else if (!item.stockStatus.hasEnoughStock) { %>
-                                            <div class="text-orange-500 text-sm mt-2">
-                                                <i class="fas fa-exclamation-triangle"></i>
+                                            <div class="text-orange-500 text-sm mb-3 flex items-center">
+                                                <i class="fas fa-exclamation-triangle mr-2 animate__animated animate__flash"></i>
                                                 Only <%= item.stockStatus.availableStock %> units available
                                             </div>
                                         <% } %>
                                         
-                                        <div class="flex items-center gap-4 mt-4">
-                                            <div class="flex items-center space-x-2">
+                                        <div class="flex items-center gap-6">
+                                            <div class="flex items-center bg-gray-100 rounded-lg p-1">
                                                 <button onclick="updateCartQuantity('<%= item.product._id %>', -1)" 
-                                                        class="p-1 rounded-md hover:bg-gray-100"
+                                                        class="quantity-btn w-8 h-8 flex items-center justify-center rounded-md hover:bg-white"
                                                         <%= !item.stockStatus.inStock ? 'disabled' : '' %>>
-                                                    <i class="fas fa-minus"></i>
+                                                    <i class="fas fa-minus text-gray-600"></i>
                                                 </button>
                                                 <input type="number" 
                                                        value="<%= item.quantity %>" 
@@ -78,18 +130,19 @@
                                                        data-product-id="<%= item.product._id %>"
                                                        data-price="<%= item.product.salePrice %>"
                                                        data-max-stock="<%= item.stockStatus.availableStock %>"
-                                                       class="w-16 text-center border rounded-md <%= !item.stockStatus.hasEnoughStock ? 'border-orange-500' : '' %>"
+                                                       class="w-16 text-center bg-transparent font-medium"
                                                        readonly>
                                                 <button onclick="updateCartQuantity('<%= item.product._id %>', 1)"
-                                                        class="p-1 rounded-md hover:bg-gray-100"
+                                                        class="quantity-btn w-8 h-8 flex items-center justify-center rounded-md hover:bg-white"
                                                         <%= !item.stockStatus.hasEnoughStock || item.quantity >= item.stockStatus.maxAllowed ? 'disabled' : '' %>>
-                                                    <i class="fas fa-plus"></i>
+                                                    <i class="fas fa-plus text-gray-600"></i>
                                                 </button>
                                             </div>
                                             
                                             <button onclick="removeFromCart('<%- item.product._id %>')"
-                                                    class="text-red-500 hover:text-red-600">
-                                                <i class="fas fa-trash"></i>
+                                                    class="flex items-center text-red-500 hover:text-red-600 transition-colors">
+                                                <i class="fas fa-trash-alt mr-2"></i>
+                                                Remove
                                             </button>
                                         </div>
                                     </div>
@@ -101,28 +154,40 @@
 
                 <!-- Cart Summary -->
                 <div class="lg:col-span-1">
-                    <div class="bg-white rounded-lg shadow-sm p-6">
-                        <h2 class="text-xl font-semibold mb-4">Cart Summary</h2>
+                    <div class="bg-white rounded-lg shadow-sm p-6 sticky top-4">
+                        <h2 class="text-xl font-semibold mb-6 flex items-center">
+                            <i class="fas fa-receipt text-green-500 mr-2"></i>
+                            Cart Summary
+                        </h2>
                         
-                        <div class="space-y-3 mb-6">
-                            <div class="flex justify-between">
-                                <span>Subtotal</span>
-                                <span class="subtotal-amount">₹<%= cart.total %></span>
+                        <div class="space-y-4 mb-6">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Subtotal</span>
+                                <span class="subtotal-amount font-medium">₹<%= cart.total %></span>
                             </div>
-                            <div class="flex justify-between text-green-600">
-                                <span>Shipping</span>
+                            <div class="flex justify-between items-center text-green-600">
+                                <span class="flex items-center">
+                                    <i class="fas fa-truck mr-2"></i>
+                                    Shipping
+                                </span>
                                 <span>₹35</span>
-                            </div>
-                            <div class="border-t pt-3 flex justify-between font-bold">
+                                </div>
+                            <div class="border-t pt-4 flex justify-between items-center font-bold text-lg">
                                 <span>Total</span>
                                 <span class="total-amount">₹<%= cart.total+35 %></span>
                             </div>
                         </div>
 
                         <a href="/checkout" 
-                           class="block w-full bg-green-500 text-white text-center py-3 rounded-lg hover:bg-green-600 transition-colors">
+                           class="checkout-btn block w-full bg-green-500 text-white text-center py-4 rounded-lg hover:bg-green-600 transition-all transform hover:scale-105 flex items-center justify-center">
+                            <i class="fas fa-lock mr-2"></i>
                             Proceed to Checkout
                         </a>
+                        
+                        <div class="mt-6 flex items-center justify-center text-gray-500 text-sm">
+                            <i class="fas fa-shield-alt mr-2"></i>
+                                    Secure Checkout
+                        </div>
                     </div>
                 </div>
             </div>
@@ -131,6 +196,9 @@
 
     <%- include('../layouts/footer.ejs') %>
 
+    <!-- Add SweetAlert2 for better notifications -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <script>
         function updateCartQuantity(productId, change) {
             const quantityInput = document.querySelector(`input[data-product-id="${productId}"]`);

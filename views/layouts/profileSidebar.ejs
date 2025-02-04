@@ -1,45 +1,81 @@
-<div class="col-span-3 lg:col-span-3 bg-white rounded-2xl shadow-2xl p-6">
-    <div class="flex items-center space-x-4 mb-8">
-        <div class="w-14 h-14 rounded-full bg-green-500 flex items-center justify-center text-white text-2xl border-4 border-green-200">
-            <i class="fas fa-user"></i>
+<div class="col-span-3 lg:col-span-3 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-shadow duration-300 p-8">
+    <!-- Profile Header -->
+    <div class="flex items-center space-x-6 mb-10 transform hover:scale-105 transition-transform duration-300">
+        <div class="relative">
+            <div class="w-20 h-20 rounded-full bg-gradient-to-r from-green-400 to-green-600 flex items-center justify-center text-white text-3xl border-4 border-green-100 shadow-lg transform hover:rotate-12 transition-all duration-300">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white shadow-lg">
+                <i class="fas fa-check-circle text-sm"></i>
+            </div>
         </div>
-        <div>
-            <h3 class="font-bold text-lg"><%= user.fname %> <%= user.lname %></h3>
-            <p class="text-sm text-gray-500">User</p>
+        <div class="transform hover:translate-x-2 transition-transform duration-300">
+            <h3 class="font-bold text-xl text-gray-800"><%= user.fname %> <%= user.lname %></h3>
+            <p class="text-sm text-gray-500 flex items-center">
+                <i class="fas fa-circle text-green-500 text-xs mr-2"></i>
+                Active User
+            </p>
         </div>
     </div>
-    <nav class="space-y-3">
+
+    <!-- Navigation Menu -->
+    <nav class="space-y-4">
         <a href="/profile" 
-           class="nav-item flex items-center p-4 rounded-lg space-x-4 <%= currentPage === 'profile' ? 'active' : '' %> hover:bg-green-50 transition-all duration-300">
-            <i class="fas fa-home w-5 text-center"></i>
+           class="nav-item group flex items-center p-4 rounded-xl space-x-4 <%= currentPage === 'profile' ? 'bg-green-50 text-green-600' : 'text-gray-600' %> hover:bg-green-50 hover:text-green-600 transition-all duration-300">
+            <div class="w-10 h-10 rounded-lg bg-white shadow-md flex items-center justify-center group-hover:bg-green-500 group-hover:text-white transition-colors duration-300">
+                <i class="fas fa-home"></i>
+            </div>
             <span class="font-medium">Dashboard</span>
+            <i class="fas fa-chevron-right ml-auto opacity-0 group-hover:opacity-100 transform group-hover:translate-x-1 transition-all duration-300"></i>
         </a>
+
         <a href="/orders" 
-           class="nav-item flex items-center p-4 rounded-lg space-x-4 <%= currentPage === 'orders' ? 'active' : '' %> hover:bg-green-50 transition-all duration-300">
-            <i class="fas fa-shopping-basket w-5 text-center"></i>
+           class="nav-item group flex items-center p-4 rounded-xl space-x-4 <%= currentPage === 'orders' ? 'bg-green-50 text-green-600' : 'text-gray-600' %> hover:bg-green-50 hover:text-green-600 transition-all duration-300">
+            <div class="w-10 h-10 rounded-lg bg-white shadow-md flex items-center justify-center group-hover:bg-green-500 group-hover:text-white transition-colors duration-300">
+                <i class="fas fa-shopping-basket"></i>
+            </div>
             <span class="font-medium">Orders</span>
+            <i class="fas fa-chevron-right ml-auto opacity-0 group-hover:opacity-100 transform group-hover:translate-x-1 transition-all duration-300"></i>
         </a>
+
         <a href="/wishlist" 
-           class="nav-item flex items-center p-4 rounded-lg space-x-4 <%= currentPage === 'wishlist' ? 'active' : '' %> hover:bg-green-50 transition-all duration-300">
-            <i class="fas fa-heart w-5 text-center"></i>
+           class="nav-item group flex items-center p-4 rounded-xl space-x-4 <%= currentPage === 'wishlist' ? 'bg-green-50 text-green-600' : 'text-gray-600' %> hover:bg-green-50 hover:text-green-600 transition-all duration-300">
+            <div class="w-10 h-10 rounded-lg bg-white shadow-md flex items-center justify-center group-hover:bg-green-500 group-hover:text-white transition-colors duration-300">
+                <i class="fas fa-heart"></i>
+            </div>
             <span class="font-medium">Wishlist</span>
+            <i class="fas fa-chevron-right ml-auto opacity-0 group-hover:opacity-100 transform group-hover:translate-x-1 transition-all duration-300"></i>
         </a>
+
         <a href="/wallet" 
-           class="nav-item flex items-center p-4 rounded-lg space-x-4 <%= currentPage === 'wallet' ? 'active' : '' %> hover:bg-green-50 transition-all duration-300">
-            <i class="fas fa-wallet w-5 text-center"></i>
+           class="nav-item group flex items-center p-4 rounded-xl space-x-4 <%= currentPage === 'wallet' ? 'bg-green-50 text-green-600' : 'text-gray-600' %> hover:bg-green-50 hover:text-green-600 transition-all duration-300">
+            <div class="w-10 h-10 rounded-lg bg-white shadow-md flex items-center justify-center group-hover:bg-green-500 group-hover:text-white transition-colors duration-300">
+                <i class="fas fa-wallet"></i>
+            </div>
             <span class="font-medium">Wallet</span>
+            <i class="fas fa-chevron-right ml-auto opacity-0 group-hover:opacity-100 transform group-hover:translate-x-1 transition-all duration-300"></i>
         </a>
+
         <a href="/address" 
-           class="nav-item flex items-center p-4 rounded-lg space-x-4 <%= currentPage === 'address' ? 'active' : '' %> hover:bg-green-50 transition-all duration-300">
-            <i class="fas fa-map-marker-alt w-5 text-center"></i>
+           class="nav-item group flex items-center p-4 rounded-xl space-x-4 <%= currentPage === 'address' ? 'bg-green-50 text-green-600' : 'text-gray-600' %> hover:bg-green-50 hover:text-green-600 transition-all duration-300">
+            <div class="w-10 h-10 rounded-lg bg-white shadow-md flex items-center justify-center group-hover:bg-green-500 group-hover:text-white transition-colors duration-300">
+                <i class="fas fa-map-marker-alt"></i>
+            </div>
             <span class="font-medium">Address</span>
+            <i class="fas fa-chevron-right ml-auto opacity-0 group-hover:opacity-100 transform group-hover:translate-x-1 transition-all duration-300"></i>
         </a>
-        <form action="/logout" method="POST" class="mt-4">
-            <button type="submit" 
-                    class="nav-item flex items-center p-4 rounded-lg space-x-4 text-red-500 w-full hover:bg-red-50 transition-all duration-300">
-                <i class="fas fa-sign-out-alt w-5 text-center"></i>
-                <span class="font-medium">Log Out</span>
-            </button>
-        </form>
+
+        <div class="pt-6">
+            <form action="/logout" method="POST">
+                <button type="submit" 
+                        class="nav-item group flex items-center p-4 rounded-xl space-x-4 w-full text-red-500 hover:bg-red-50 transition-all duration-300">
+                    <div class="w-10 h-10 rounded-lg bg-white shadow-md flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-colors duration-300">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </div>
+                    <span class="font-medium">Log Out</span>
+                    <i class="fas fa-chevron-right ml-auto opacity-0 group-hover:opacity-100 transform group-hover:translate-x-1 transition-all duration-300"></i>
+                </button>
+            </form>
+        </div>
     </nav>
 </div>

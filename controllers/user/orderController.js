@@ -11,6 +11,8 @@ const Coupon = require('../../models/Coupon');
 const { processRefund } = require('../../utils/refundHandler');
 const PDFDocument = require('pdfkit');
 const mongoose = require('mongoose');
+const walletController = require('./walletController');
+const Wishlist = require('../../models/Wishlist');
 
 // Initialize Razorpay
 const razorpay = new Razorpay({
@@ -61,18 +63,13 @@ const orderController = {
     createOrder: async (req, res) => {
         try {
             const userId = req.session.user;
-            const { paymentMethod, useWallet, walletAmount, couponCode } = req.body;
+            const { paymentMethod, useWallet, walletAmount, coupon } = req.body;
             
-            const [cart, addressRecord, wallet, user] = await Promise.all([
+            const [cart, addressRecord, wallet] = await Promise.all([
                 Cart.findOne({ user: userId }).populate('items.product'),
                 Address.findOne({ userId }),
-                Wallet.findOne({ user: userId }),
-                User.findById(userId).populate('appliedCoupons.coupon')
+                Wallet.findOne({ user: userId })
             ]);
-
-            const appliedCouponData = user.appliedCoupons.find(ac => ac.status === 'applied');
-            const coupon = appliedCouponData?.coupon;
-            let couponDiscount = appliedCouponData?.discountAmount || 0;
 
             if (!cart || cart.items.length === 0) {
                 return res.status(400).json({
@@ -92,31 +89,32 @@ const orderController = {
             const subtotal = cart.total;
             const shippingCharge = 35;
             
-            // Calculate coupon discount first
-            if (coupon && subtotal >= coupon.minimumPurchase) {
-                if (coupon.discountType === 'percentage') {
-                    couponDiscount = Math.min(
-                        (subtotal * coupon.discountAmount) / 100,
-                        coupon.maximumDiscount
-                    );
-                } else {
-                    couponDiscount = Math.min(coupon.discountAmount, subtotal);
+            // Calculate coupon discount
+            let couponDiscount = 0;
+            let couponId = null;
+            if (coupon && coupon.couponId) {
+                const couponDoc = await Coupon.findById(coupon.couponId);
+                if (couponDoc && couponDoc.isActive) {
+                    couponDiscount = coupon.discountAmount;
+                    couponId = coupon.couponId;
                 }
-                couponDiscount = Math.min(couponDiscount, subtotal);
             }
 
             // Calculate wallet amount
-            let finalWalletAmount = Number(walletAmount) || 0;
-            if (useWallet && finalWalletAmount > 0) {
-                const remainingAfterDiscount = subtotal - couponDiscount + shippingCharge;
-                finalWalletAmount = Math.min(finalWalletAmount, remainingAfterDiscount);
-                
-                // Verify wallet balance
-                if (!wallet || wallet.balance < finalWalletAmount) {
-                    return res.status(400).json({
-                        success: false,
-                        message: 'Insufficient wallet balance'
-                    });
+            let finalWalletAmount = 0;
+            if (useWallet === 'true' || useWallet === true) {
+                const parsedWalletAmount = Number(walletAmount);
+                if (!isNaN(parsedWalletAmount) && parsedWalletAmount > 0) {
+                    const canUseWallet = await walletController.canUseWallet(userId, parsedWalletAmount);
+                    if (!canUseWallet) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Wallet cannot be used for this transaction'
+                        });
+                    }
+
+                    const remainingAfterDiscount = subtotal - couponDiscount + shippingCharge;
+                    finalWalletAmount = Math.min(parsedWalletAmount, remainingAfterDiscount, wallet.balance);
                 }
             }
 
@@ -126,13 +124,10 @@ const orderController = {
             // Determine payment method
             let finalPaymentMethod;
             if (total <= 0) {
-                // If total is 0, it means wallet/coupon covered everything
                 finalPaymentMethod = 'WALLET';
             } else if (finalWalletAmount > 0) {
-                // If wallet is used but didn't cover everything
-                finalPaymentMethod = 'WALLET_PLUS_ONLINE';
+                finalPaymentMethod = paymentMethod === 'COD' ? 'WALLET_PLUS_COD' : 'WALLET_PLUS_ONLINE';
             } else {
-                // No wallet used, use the selected payment method
                 finalPaymentMethod = paymentMethod;
             }
 
@@ -155,52 +150,59 @@ const orderController = {
                     addressType: defaultAddress.addressType
                 },
                 paymentMethod: finalPaymentMethod,
-                paymentStatus: total <= 0 || finalPaymentMethod === 'WALLET' ? 'Paid' : 'Pending',
-                orderStatus: total <= 0 || finalPaymentMethod === 'WALLET' ? 'Processing' : 'Pending',
+                paymentStatus: total <= 0 ? 'Paid' : 'Pending',
+                orderStatus: total <= 0 ? 'Processing' : 'Pending',
                 walletAmount: finalWalletAmount,
-                coupon: coupon?._id,
+                coupon: couponId,
                 couponDiscount,
                 subtotal,
                 shippingCharge,
                 total
             });
 
-            // Handle coupon usage
-            if (coupon) {
-                coupon.usedCount += 1;
+            // Save order first to generate orderId
+            await order.save();
+
+            // Process wallet payment if being used
+            if (finalWalletAmount > 0) {
+                try {
+                    const deductResult = await walletController.deductMoney(
+                        userId,
+                        finalWalletAmount,
+                        `Payment for order ${order.orderId}`,
+                        order._id
+                    );
+                    
+                    if (!deductResult.success) {
+                        await Order.findByIdAndDelete(order._id);
+                        throw new Error('Failed to deduct from wallet');
+                    }
+                } catch (error) {
+                    await Order.findByIdAndDelete(order._id);
+                    return res.status(400).json({
+                        success: false,
+                        message: error.message || 'Error processing wallet payment'
+                    });
+                }
+            }
+
+            // Update coupon usage if coupon was used
+            if (couponId) {
                 await Promise.all([
-                    coupon.save(),
+                    Coupon.findByIdAndUpdate(couponId, { $inc: { usedCount: 1 } }),
                     User.findByIdAndUpdate(userId, {
-                        $push: { couponUsed: coupon._id },
-                        $set: {
-                            'appliedCoupons.$[elem].status': 'used',
-                            'appliedCoupons.$[elem].orderId': order._id
+                        $push: { 
+                            couponUsed: couponId,
+                            appliedCoupons: {
+                                coupon: couponId,
+                                discountAmount: couponDiscount,
+                                status: 'used',
+                                orderId: order._id
+                            }
                         }
-                    }, {
-                        arrayFilters: [{ 
-                            'elem.coupon': coupon._id,
-                            'elem.status': 'applied'
-                        }]
                     })
                 ]);
             }
-
-            // Handle wallet transaction
-            if (finalWalletAmount > 0) {
-                const walletTransaction = {
-                    type: 'DEBIT',
-                    amount: finalWalletAmount,
-                    description: `Payment for order ${order.orderId}`,
-                    orderId: order._id,
-                    status: 'COMPLETED'
-                };
-                
-                wallet.balance -= finalWalletAmount;
-                wallet.transactions.push(walletTransaction);
-                await wallet.save();
-            }
-
-            await order.save();
 
             // Update product quantities and clear cart
             const updatePromises = cart.items.map(item => 
@@ -208,6 +210,16 @@ const orderController = {
                     $inc: { quantity: -item.quantity }
                 })
             );
+
+            // Remove ordered items from wishlist
+            const wishlist = await Wishlist.findOne({ user: userId });
+            if (wishlist) {
+                const orderedProductIds = cart.items.map(item => item.product._id.toString());
+                wishlist.items = wishlist.items.filter(item => 
+                    !orderedProductIds.includes(item.product.toString())
+                );
+                await wishlist.save();
+            }
 
             await Promise.all([...updatePromises, Cart.findOneAndDelete({ user: userId })]);
 
@@ -552,9 +564,49 @@ const orderController = {
 
     verifyPayment: async (req, res) => {
         try {
-            const { razorpay_payment_id, razorpay_order_id, razorpay_signature, useWallet, walletAmount, coupon } = req.body;
+            const { razorpay_payment_id, razorpay_order_id, razorpay_signature, originalOrderId, useWallet, walletAmount, coupon } = req.body;
             const userId = req.session.user;
 
+            // If this is a retry payment
+            if (originalOrderId) {
+                const order = await Order.findById(originalOrderId);
+                if (!order) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'Order not found'
+                    });
+                }
+
+                const hmac = crypto.createHmac('sha256', process.env.KEY_SECRET);
+                hmac.update(razorpay_order_id + "|" + razorpay_payment_id);
+                const generatedSignature = hmac.digest('hex');
+
+                if (generatedSignature === razorpay_signature) {
+                    order.paymentStatus = 'Paid';
+                    order.orderStatus = 'Processing';
+                    order.razorpayPaymentId = razorpay_payment_id;
+                    order.razorpayOrderId = razorpay_order_id;
+                    await order.save();
+
+                    return res.json({
+                        success: true,
+                        orderId: order.orderId,
+                        message: 'Payment successful'
+                    });
+                } else {
+                    order.paymentStatus = 'Failed';
+                    order.orderStatus = 'Payment Failed';
+                    await order.save();
+
+                    return res.json({
+                        success: false,
+                        orderId: order.orderId,
+                        message: 'Payment verification failed'
+                    });
+                }
+            }
+
+            // Handle normal payment flow
             const existingOrder = await Order.findOne({ razorpayOrderId: razorpay_order_id });
             if (existingOrder) {
                 if (!razorpay_signature) {
@@ -615,12 +667,21 @@ const orderController = {
             const shippingCharge = 35;
             let total = subtotal + shippingCharge;
 
-            if (useWallet && walletAmount) {
-                total -= Number(walletAmount);
+            // Calculate coupon discount
+            let couponDiscount = 0;
+            let couponId = null;
+            if (coupon && coupon.couponId) {
+                const couponDoc = await Coupon.findById(coupon.couponId);
+                if (couponDoc && couponDoc.isActive) {
+                    couponDiscount = coupon.discountAmount;
+                    couponId = coupon.couponId;
+                    total -= couponDiscount;
+                }
             }
 
-            if (coupon && coupon.discountAmount) {
-                total -= Number(coupon.discountAmount);
+            // Apply wallet amount
+            if (useWallet && walletAmount) {
+                total -= Number(walletAmount);
             }
 
             const order = new Order({
@@ -650,8 +711,8 @@ const orderController = {
                 subtotal: subtotal,
                 shippingCharge: shippingCharge,
                 total: total,
-                coupon: coupon?.couponId,
-                couponDiscount: coupon?.discountAmount || 0
+                coupon: couponId,
+                couponDiscount: couponDiscount
             });
 
             if (razorpay_signature) {
@@ -667,7 +728,8 @@ const orderController = {
 
             await order.save();
 
-            if (useWallet && walletAmount > 0) {
+            // Process wallet deduction if using wallet
+            if (useWallet && walletAmount > 0 && order.paymentStatus === 'Paid') {
                 const wallet = await Wallet.findOne({ user: userId });
                 if (wallet) {
                     wallet.balance -= Number(walletAmount);
@@ -682,15 +744,16 @@ const orderController = {
                 }
             }
 
-            if (coupon?.couponId) {
+            // Update coupon usage if payment is successful and coupon was used
+            if (couponId && order.paymentStatus === 'Paid') {
                 await Promise.all([
-                    Coupon.findByIdAndUpdate(coupon.couponId, { $inc: { usedCount: 1 } }),
+                    Coupon.findByIdAndUpdate(couponId, { $inc: { usedCount: 1 } }),
                     User.findByIdAndUpdate(userId, {
                         $push: { 
-                            couponUsed: coupon.couponId,
+                            couponUsed: couponId,
                             appliedCoupons: {
-                                coupon: coupon.couponId,
-                                discountAmount: coupon.discountAmount,
+                                coupon: couponId,
+                                discountAmount: couponDiscount,
                                 status: 'used',
                                 orderId: order._id
                             }
@@ -699,14 +762,15 @@ const orderController = {
                 ]);
             }
 
-            await Cart.findOneAndDelete({ user: userId });
-
-            const updatePromises = cart.items.map(item => 
-                Product.findByIdAndUpdate(item.product._id, {
-                    $inc: { quantity: -item.quantity }
-                })
-            );
-            await Promise.all(updatePromises);
+            if (order.paymentStatus === 'Paid') {
+                await Cart.findOneAndDelete({ user: userId });
+                const updatePromises = cart.items.map(item => 
+                    Product.findByIdAndUpdate(item.product._id, {
+                        $inc: { quantity: -item.quantity }
+                    })
+                );
+                await Promise.all(updatePromises);
+            }
 
             res.json({
                 success: order.paymentStatus === 'Paid',
@@ -1024,12 +1088,21 @@ const orderController = {
             const shippingCharge = 35;
             let total = subtotal + shippingCharge;
 
-            if (useWallet && walletAmount) {
-                total -= Number(walletAmount);
+            // Calculate coupon discount
+            let couponDiscount = 0;
+            let couponId = null;
+            if (coupon && coupon.couponId) {
+                const couponDoc = await Coupon.findById(coupon.couponId);
+                if (couponDoc && couponDoc.isActive) {
+                    couponDiscount = coupon.discountAmount;
+                    couponId = coupon.couponId;
+                    total -= couponDiscount;
+                }
             }
 
-            if (coupon && coupon.discountAmount) {
-                total -= Number(coupon.discountAmount);
+            // Apply wallet amount
+            if (useWallet && walletAmount) {
+                total -= Number(walletAmount);
             }
 
             const order = new Order({
@@ -1058,8 +1131,8 @@ const orderController = {
                 subtotal: subtotal,
                 shippingCharge: shippingCharge,
                 total: total,
-                coupon: coupon?.couponId,
-                couponDiscount: coupon?.discountAmount || 0,
+                coupon: couponId,
+                couponDiscount: couponDiscount,
                 cancelReason: error ? `Payment failed: ${error.description || error.reason || 'Unknown error'}` : 'Payment modal closed by user'
             });
 
@@ -1132,17 +1205,15 @@ const orderController = {
 
             // Customer and Invoice Details in Two Columns
             const startY = doc.y;
-            const leftColumnWidth = 250; // Width for the billing address column
+            const leftColumnWidth = 250;
 
             // Left Column - Bill To
             doc.fontSize(10).font('Helvetica-Bold').text('Bill To:', 50);
             doc.moveDown(0.5);
             doc.fontSize(10).font('Helvetica');
             
-            // Calculate y position for address block
             let currentY = doc.y;
             
-            // Name with some padding - wrapped if too long
             const nameHeight = doc.heightOfString(order.shippingAddress.name, {
                 width: leftColumnWidth,
                 align: 'left'
@@ -1153,7 +1224,6 @@ const orderController = {
             });
             currentY += nameHeight + 5;
 
-            // Address parts with proper spacing and text wrapping
             if (order.shippingAddress.streetAddress) {
                 const streetHeight = doc.heightOfString(order.shippingAddress.streetAddress, {
                     width: leftColumnWidth,
@@ -1215,14 +1285,13 @@ const orderController = {
                 currentY += phoneHeight + 5;
             }
 
-            // Right Column - Invoice Details (aligned to the right side, starting from 350)
+            // Right Column - Invoice Details
             doc.fontSize(10).font('Helvetica-Bold').text('Invoice Details:', 350, startY);
             doc.moveDown(0.5);
             doc.fontSize(10).font('Helvetica');
             
             let invoiceY = doc.y;
             
-            // Invoice details with consistent spacing
             const invoiceDetails = [
                 { label: 'Invoice No:', value: order.orderId },
                 { label: 'Date:', value: new Date(order.createdAt).toLocaleDateString('en-US', {
@@ -1242,8 +1311,11 @@ const orderController = {
                 invoiceY += 20;
             });
 
-            // Ensure we move to the lower of the two sections before continuing
             doc.y = Math.max(currentY, invoiceY) + 20;
+
+            // Filter out returned items and calculate new totals
+            const activeItems = order.items.filter(item => item.status !== 'Returned');
+            const returnedItems = order.items.filter(item => item.status === 'Returned');
 
             // Items Table Header
             const tableTop = doc.y + 10;
@@ -1261,8 +1333,8 @@ const orderController = {
             let tableRow = tableTop + 25;
             doc.font('Helvetica');
 
-            order.items.forEach((item, index) => {
-                // Add page if needed
+            // Only show active (non-returned) items
+            activeItems.forEach((item, index) => {
                 if (tableRow > 700) {
                     doc.addPage();
                     tableRow = 50;
@@ -1276,7 +1348,7 @@ const orderController = {
                 
                 tableRow += 25;
 
-                if (index < order.items.length - 1) {
+                if (index < activeItems.length - 1) {
                     doc.strokeColor('#e5e7eb')
                        .moveTo(50, tableRow - 10)
                        .lineTo(550, tableRow - 10)
@@ -1284,19 +1356,31 @@ const orderController = {
                 }
             });
 
+            // Add note about returned items if any
+            if (returnedItems.length > 0) {
+                tableRow += 10;
+                doc.fontSize(9).font('Helvetica-Oblique').fillColor('#666666');
+                doc.text('Note: This invoice excludes returned items', 60, tableRow);
+                tableRow += 20;
+            }
+
             // Final Divider
             doc.strokeColor('#000000')
                .moveTo(50, tableRow)
                .lineTo(550, tableRow)
                .stroke();
 
+            // Calculate adjusted totals (excluding returned items)
+            const adjustedSubtotal = activeItems.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+            const adjustedTotal = adjustedSubtotal + order.shippingCharge - order.couponDiscount - order.walletAmount;
+
             // Summary Section
             tableRow += 20;
-            doc.fontSize(10);
+            doc.fontSize(10).fillColor('#000000');
             
             // Subtotal
             doc.text('Subtotal:', 380, tableRow);
-            doc.text(`₹${order.subtotal.toFixed(2)}`, 480, tableRow);
+            doc.text(`₹${adjustedSubtotal.toFixed(2)}`, 480, tableRow);
 
             // Shipping
             tableRow += 20;
@@ -1322,13 +1406,12 @@ const orderController = {
             doc.rect(350, tableRow - 5, 200, 25).fill('#f0f0f0');
             doc.fillColor('#000000').fontSize(12).font('Helvetica-Bold');
             doc.text('Total:', 380, tableRow);
-            doc.text(`₹${order.total.toFixed(2)}`, 480, tableRow);
+            doc.text(`₹${adjustedTotal.toFixed(2)}`, 480, tableRow);
 
             // Add some spacing after the total
             tableRow += 40;
 
             // Footer Section
-            // Terms & Conditions
             doc.fontSize(8).font('Helvetica-Bold');
             doc.text('Terms & Conditions:', 50, tableRow);
             doc.fontSize(7).font('Helvetica');
@@ -1337,10 +1420,8 @@ const orderController = {
             doc.text('2. This is a computer generated invoice and does not require signature', 50);
             doc.text('3. For any queries, please contact our customer support', 50);
 
-            // Add spacing before thank you note
             doc.moveDown(2);
 
-            // Thank You Note
             doc.fontSize(10).font('Helvetica');
             doc.text('Thank you for shopping with Ecobazar!', {
                 width: 500,

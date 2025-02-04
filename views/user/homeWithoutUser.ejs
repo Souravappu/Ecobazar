@@ -264,7 +264,12 @@
 
    <!-- Popular Products Section  -->
    <div class="container mx-auto px-4 py-16">
-    <h2 class="text-3xl font-bold mb-8">Popular Products</h2>
+    <div class="flex justify-between items-center mb-8">
+        <h2 class="text-3xl font-bold">Popular Products</h2>
+        <a href="/shop" class="text-green-600 hover:text-green-800 flex items-center">
+            View All <i class="fas fa-chevron-right ml-2"></i>
+        </a>
+    </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
         <% products.forEach((product) => { %>
         <div class="product-card bg-white p-4 rounded-lg shadow-md relative" data-product-id="<%= product._id %>">

@@ -12,6 +12,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "autoprefixer": "^10.4.20",
     "bcrypt": "^5.1.1",
     "connect-flash": "^0.1.1",
     "dotenv": "^16.4.5",
@@ -30,7 +31,9 @@
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "pdfkit-table": "^0.1.99",
-    "razorpay": "^2.9.5"
+    "postcss": "^8.5.1",
+    "razorpay": "^2.9.5",
+    "tailwindcss": "^4.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.7"

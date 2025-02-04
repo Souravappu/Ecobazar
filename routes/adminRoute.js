@@ -7,6 +7,7 @@ const productController = require("../controllers/admin/productController");
 const orderController = require("../controllers/admin/orderController");
 const couponController = require("../controllers/admin/couponController");
 const bannerController = require("../controllers/admin/bannerController");
+const offerController = require("../controllers/admin/offerController");
 const { adminAuth, adminAuthentication } = require('../middlewares/auth');
 
 // Admin login 
@@ -45,7 +46,6 @@ adminRouter.get("/block-category/:id", adminAuthentication, Controller.blockCate
 adminRouter.get("/unblock-category/:id", adminAuthentication, Controller.unblockCategory);
 
 //products management
-
 adminRouter.get("/products", adminAuthentication, productController.getProduct);
 adminRouter.get("/add-product", adminAuthentication, productController.getAddProduct);
 adminRouter.post(
@@ -64,7 +64,7 @@ adminRouter.get("/deleteProduct/:id", adminAuthentication, productController.del
 adminRouter.get("/blockProduct/:id", adminAuthentication, productController.blockProduct);
 adminRouter.get("/unblockProduct/:id", adminAuthentication, productController.unblockProduct);
 
-
+// Orders management
 adminRouter.get("/orders", adminAuthentication, orderController.getOrders);
 adminRouter.get("/order/:id", adminAuthentication, orderController.getOrderDetails);
 adminRouter.post("/order/:orderId/cancel", adminAuthentication, orderController.cancelOrder);
@@ -76,6 +76,7 @@ adminRouter.post("/order/:orderId/item/:itemId/approve-return", adminAuthenticat
 adminRouter.post("/order/:orderId/reject-return", adminAuthentication, orderController.rejectReturn);
 adminRouter.post("/order/:orderId/item/:itemId/reject-return", adminAuthentication, orderController.rejectItemReturn);
 
+// Coupon management
 adminRouter.get("/coupons", adminAuthentication, couponController.listCoupons);
 adminRouter.get("/add-coupon", adminAuthentication, couponController.getAddCoupon);
 adminRouter.post("/add-coupon", adminAuthentication, couponController.addCoupon);
@@ -94,6 +95,15 @@ adminRouter.post("/edit-banner/:id", adminAuthentication, upload.single("bannerI
 adminRouter.post("/toggle-banner/:id", adminAuthentication, bannerController.toggleBannerStatus);
 adminRouter.post("/toggle-banner-default/:id", adminAuthentication, bannerController.setDefaultBanner);
 adminRouter.get("/delete-banner/:id", adminAuthentication, bannerController.deleteBanner);
+
+// Offer Management Routes
+adminRouter.get("/offers", adminAuthentication, offerController.listOffers);
+adminRouter.get("/add-offer", adminAuthentication, offerController.getAddOffer);
+adminRouter.post("/add-offer", adminAuthentication, offerController.addOffer);
+adminRouter.get("/edit-offer/:id", adminAuthentication, offerController.getEditOffer);
+adminRouter.post("/edit-offer/:id", adminAuthentication, offerController.updateOffer);
+adminRouter.post("/toggle-offer/:id", adminAuthentication, offerController.toggleOfferStatus);
+adminRouter.delete("/delete-offer/:id", adminAuthentication, offerController.deleteOffer);
 
 module.exports = adminRouter;
 

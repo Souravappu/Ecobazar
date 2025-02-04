@@ -407,17 +407,17 @@
                         </a>
                     </div>
                 </div>
-                
+                    
                 <!-- Thumbnails -->
-                <div class="thumbnail-container">
-                    <% product.images.forEach((image, index) => { %>
-                            <img src="<%= image %>" 
-                                 alt="Product thumbnail"
-                             class="thumbnail <%= index === 0 ? 'active' : '' %>"
-                                 onclick="changeMainImage(this, '<%= image %>')">
-                    <% }); %>
-                </div>
-            </div>
+                        <div class="thumbnail-container">
+                            <% product.images.forEach((image, index) => { %>
+                                <img src="<%= image %>" 
+                                     alt="Product thumbnail"
+                                     class="thumbnail <%= index === 0 ? 'active' : '' %>"
+                                     onclick="changeMainImage(this, '<%= image %>')">
+                            <% }); %>
+                        </div>
+                    </div>
 
             <!-- Product Info -->
             <div class="space-y-6">
@@ -640,7 +640,7 @@
         // Handle thumbnail clicks
         function changeMainImage(thumbnailElement, newSrc) {
             const mainImage = document.getElementById('mainImage');
-            mainImage.src = newSrc;
+                mainImage.src = newSrc;
 
             // Update active thumbnail
             document.querySelectorAll('.thumbnail').forEach(thumb => {

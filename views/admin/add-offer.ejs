@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecobazar - Add New Offer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root {
+            --primary-dark: #1f2937;
+            --secondary-dark: #111827;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+        }
+
+        body {
+            background-color: var(--secondary-dark);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Form Styles */
+        .form-container {
+            background: linear-gradient(145deg, var(--primary-dark), #1c2433);
+            border-radius: 20px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .form-input {
+            background: rgba(17, 24, 39, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+            outline: none;
+        }
+
+        .form-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Select2 Custom Styling */
+        .select2-container--default .select2-selection--multiple {
+            background-color: rgba(17, 24, 39, 0.8) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-radius: 0.75rem !important;
+            min-height: 42px !important;
+        }
+
+        .select2-container--default .select2-selection--multiple .select2-selection__choice {
+            background-color: rgba(59, 130, 246, 0.2) !important;
+            border: 1px solid rgba(59, 130, 246, 0.3) !important;
+            color: var(--text-primary) !important;
+            border-radius: 0.5rem !important;
+            padding: 2px 8px !important;
+        }
+
+        .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+            color: var(--text-primary) !important;
+            margin-right: 5px !important;
+        }
+
+        .select2-dropdown {
+            background-color: var(--primary-dark) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+
+        .select2-container--default .select2-results__option--highlighted[aria-selected] {
+            background-color: var(--accent-blue) !important;
+        }
+
+        .select2-container--default .select2-search--dropdown .select2-search__field {
+            background-color: rgba(17, 24, 39, 0.8) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            color: var(--text-primary) !important;
+        }
+
+        /* Date Range Picker Styling */
+        .daterangepicker {
+            background-color: var(--primary-dark) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            color: var(--text-primary) !important;
+        }
+
+        .daterangepicker .calendar-table {
+            background-color: var(--primary-dark) !important;
+            border: none !important;
+        }
+
+        .daterangepicker td.active, .daterangepicker td.active:hover {
+            background-color: var(--accent-blue) !important;
+        }
+
+        .daterangepicker td.available:hover {
+            background-color: rgba(59, 130, 246, 0.2) !important;
+        }
+
+        .daterangepicker .calendar-table .next span, 
+        .daterangepicker .calendar-table .prev span {
+            border-color: var(--text-primary) !important;
+        }
+
+        /* Submit Button Animation */
+        .submit-btn {
+            background: linear-gradient(135deg, var(--accent-blue), #2563eb);
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
+        }
+
+        .submit-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: all 0.5s ease;
+        }
+
+        .submit-btn:hover::before {
+            left: 100%;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-[#111827]">
+    <%- include('../layouts/side.ejs') %>
+    <%- include('../layouts/head.ejs') %>
+    
+    <div class="flex-1 px-28 py-12 ml-64 bg-gradient-to-br from-[#111827] to-[#1f2937]">
+        <!-- Page Header -->
+        <div class="flex justify-between items-center mb-10">
+            <div>
+                <h1 class="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-pink-600">
+                    Add New Offer
+                </h1>
+                <p class="mt-2 text-gray-400">Create a new offer to attract more customers</p>
+            </div>
+            <a href="/admin/offers" class="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors">
+                <i class="fas fa-arrow-left"></i>
+                <span>Back to Offers</span>
+            </a>
+        </div>
+
+        <!-- Form Container -->
+        <div class="form-container p-8">
+            <form id="offerForm" action="/admin/add-offer" method="POST" class="space-y-8">
+                <!-- Basic Information -->
+                <div class="grid grid-cols-2 gap-8">
+                    <div class="space-y-4">
+                        <label class="form-label">Offer Name</label>
+                        <input type="text" 
+                               name="name" 
+                               required
+                               placeholder="Enter offer name"
+                               class="form-input w-full px-4 py-3 rounded-xl">
+                    </div>
+                    <div class="space-y-4">
+                        <label class="form-label">Offer Type</label>
+                        <select name="offerType" 
+                                required
+                                class="form-input w-full px-4 py-3 rounded-xl"
+                                onchange="toggleOfferType(this.value)">
+                            <option value="">Select offer type</option>
+                            <option value="category">Category Offer</option>
+                            <option value="product">Product Offer</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="space-y-4">
+                    <label class="form-label">Description</label>
+                    <textarea name="description" 
+                              required
+                              placeholder="Enter offer description"
+                              class="form-input w-full px-4 py-3 rounded-xl h-32 resize-none"></textarea>
+                </div>
+
+                <!-- Discount Details -->
+                <div class="grid grid-cols-2 gap-8">
+                    <div class="space-y-4">
+                        <label class="form-label">Discount Type</label>
+                        <select name="discountType" 
+                                required
+                                class="form-input w-full px-4 py-3 rounded-xl"
+                                onchange="updateDiscountPlaceholder(this.value)">
+                            <option value="">Select discount type</option>
+                            <option value="percentage">Percentage</option>
+                            <option value="fixed">Fixed Amount</option>
+                        </select>
+                    </div>
+                    <div class="space-y-4">
+                        <label class="form-label">Discount Value</label>
+                        <input type="number" 
+                               name="discountValue" 
+                               required
+                               placeholder="Enter discount value"
+                               class="form-input w-full px-4 py-3 rounded-xl"
+                               id="discountValueInput">
+                        <p class="text-sm text-gray-400" id="discountValueHelper"></p>
+                    </div>
+                </div>
+
+                <!-- Validity Period -->
+                <div class="grid grid-cols-2 gap-8">
+                    <div class="space-y-4">
+                        <label class="form-label">Valid From</label>
+                        <input type="date" 
+                               name="startDate" 
+                               required
+                               min="<%= new Date().toISOString().split('T')[0] %>"
+                               class="form-input w-full px-4 py-3 rounded-xl"
+                               id="startDate">
+                    </div>
+                    <div class="space-y-4">
+                        <label class="form-label">Valid Through</label>
+                        <input type="date" 
+                               name="endDate" 
+                               required
+                               min="<%= new Date().toISOString().split('T')[0] %>"
+                               class="form-input w-full px-4 py-3 rounded-xl"
+                               id="endDate">
+                    </div>
+                </div>
+
+                <!-- Categories Selection - Only visible for category offers -->
+                <div id="categorySection" class="space-y-4 hidden">
+                    <label class="form-label">Select Categories</label>
+                    <select name="categories[]" 
+                            multiple
+                            class="form-input w-full"
+                            id="categoriesSelect">
+                        <% if (categories && categories.length > 0) { %>
+                            <% categories.forEach(category => { %>
+                                <option value="<%= category._id %>"><%= category.name %></option>
+                            <% }); %>
+                        <% } %>
+                    </select>
+                </div>
+
+                <!-- Products Selection - Only visible for product offers -->
+                <div id="productSection" class="space-y-4 hidden">
+                    <label class="form-label">Select Products</label>
+                    <select name="products[]" 
+                            multiple
+                            class="form-input w-full"
+                            id="productsSelect">
+                        <% if (products && products.length > 0) { %>
+                            <% products.forEach(product => { %>
+                                <option value="<%= product._id %>"><%= product.name %> - ₹<%= product.price %></option>
+                            <% }); %>
+                        <% } %>
+                    </select>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex justify-end">
+                    <button type="submit" 
+                            class="submit-btn px-8 py-3 rounded-xl text-white font-semibold flex items-center space-x-2">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Create Offer</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // Initialize form validation
+            const form = $('#offerForm');
+            const validationErrors = {};
+            
+            // Error message display function
+            function showError(fieldName, message) {
+                const field = $(`[name="${fieldName}"]`);
+                const errorDiv = field.next('.error-message');
+                
+                if (!errorDiv.length) {
+                    field.after(`<div class="error-message text-red-500 text-sm mt-1">${message}</div>`);
+                } else {
+                    errorDiv.text(message);
+                }
+                
+                field.addClass('border-red-500');
+                validationErrors[fieldName] = message;
+            }
+
+            // Clear error message function
+            function clearError(fieldName) {
+                const field = $(`[name="${fieldName}"]`);
+                field.next('.error-message').remove();
+                field.removeClass('border-red-500');
+                delete validationErrors[fieldName];
+            }
+
+            // Clear all errors
+            function clearAllErrors() {
+                $('.error-message').remove();
+                $('input, select, textarea').removeClass('border-red-500');
+                Object.keys(validationErrors).forEach(key => delete validationErrors[key]);
+            }
+
+            // Validate individual fields
+            function validateField(fieldName, value) {
+                clearError(fieldName);
+
+                switch(fieldName) {
+                    case 'name':
+                        if (!value || !value.trim()) {
+                            showError(fieldName, 'Offer name is required');
+                            return false;
+                        }
+                        
+                        const trimmedName = value.trim();
+                        if (trimmedName.length < 3) {
+                            showError(fieldName, 'Offer name must be at least 3 characters');
+                            return false;
+                        }
+                        
+                        if (trimmedName.length > 50) {
+                            showError(fieldName, 'Offer name cannot exceed 50 characters');
+                            return false;
+                        }
+                        
+                        // Check for special characters except spaces and hyphens
+                        if (!/^[a-zA-Z0-9\s-]+$/.test(trimmedName)) {
+                            showError(fieldName, 'Offer name can only contain letters, numbers, spaces, and hyphens');
+                            return false;
+                        }
+                        return true;
+
+                    case 'description':
+                        if (!value || !value.trim()) {
+                            showError(fieldName, 'Description is required');
+                            return false;
+                        }
+                        
+                        const trimmedDesc = value.trim();
+                        if (trimmedDesc.length < 10) {
+                            showError(fieldName, 'Description must be at least 10 characters');
+                            return false;
+                        }
+                        
+                        if (trimmedDesc.length > 500) {
+                            showError(fieldName, 'Description cannot exceed 500 characters');
+                            return false;
+                        }
+                        
+                        // Check for basic HTML injection
+                        if (/<[^>]*>/.test(trimmedDesc)) {
+                            showError(fieldName, 'HTML tags are not allowed in description');
+                            return false;
+                        }
+                        return true;
+
+                    case 'offerType':
+                        if (!value || value === '') {
+                            showError(fieldName, 'Please select an offer type');
+                            return false;
+                        }
+                        
+                        const validOfferTypes = ['category', 'product'];
+                        if (!validOfferTypes.includes(value)) {
+                            showError(fieldName, 'Invalid offer type selected');
+                            return false;
+                        }
+                        
+                        // Clear category/product validation errors when offer type changes
+                        clearError('categories');
+                        clearError('products');
+                        return true;
+
+                    case 'discountType':
+                        if (!value) {
+                            showError(fieldName, 'Please select a discount type');
+                            return false;
+                        }
+                        
+                        const validDiscountTypes = ['percentage', 'fixed'];
+                        if (!validDiscountTypes.includes(value)) {
+                            showError(fieldName, 'Invalid discount type selected');
+                            return false;
+                        }
+                        return true;
+
+                    case 'discountValue':
+                        if (!value) {
+                            showError(fieldName, 'Discount value is required');
+                            return false;
+                        }
+
+                        const numValue = parseFloat(value);
+                        if (isNaN(numValue)) {
+                            showError(fieldName, 'Please enter a valid number');
+                            return false;
+                        }
+
+                        const discountType = $('select[name="discountType"]').val();
+                        
+                        if (discountType === 'percentage') {
+                            if (numValue < 1 || numValue > 90) {
+                                showError(fieldName, 'Percentage discount must be between 1% and 90%');
+                                return false;
+                            }
+                            
+                            // Ensure no decimal places for percentage
+                            if (value.includes('.')) {
+                                showError(fieldName, 'Percentage discount must be a whole number');
+                                return false;
+                            }
+                        } else if (discountType === 'fixed') {
+                            if (numValue < 1) {
+                                showError(fieldName, 'Fixed discount must be at least ₹1');
+                                return false;
+                            }
+                            
+                            // Maximum 2 decimal places for fixed amount
+                            if (value.includes('.') && value.split('.')[1].length > 2) {
+                                showError(fieldName, 'Fixed discount can have maximum 2 decimal places');
+                                return false;
+                            }
+                            
+                            // Maximum fixed discount validation
+                            if (numValue > 100000) {
+                                showError(fieldName, 'Fixed discount cannot exceed ₹100,000');
+                                return false;
+                            }
+                        }
+                        return true;
+
+                    case 'categories':
+                        const offerType = $('select[name="offerType"]').val();
+                        if (offerType === 'category') {
+                            if (!value || !Array.isArray(value) || value.length === 0) {
+                                showError(fieldName, 'Please select at least one category');
+                                return false;
+                            }
+                            
+                            // Maximum categories limit
+                            if (value.length > 10) {
+                                showError(fieldName, 'You can select up to 10 categories');
+                                return false;
+                            }
+                            
+                            // Validate each category ID format
+                            const invalidIds = value.filter(id => !/^[0-9a-fA-F]{24}$/.test(id));
+                            if (invalidIds.length > 0) {
+                                showError(fieldName, 'Invalid category selection');
+                                return false;
+                            }
+                        }
+                        return true;
+
+                    case 'products':
+                        const offerType2 = $('select[name="offerType"]').val();
+                        if (offerType2 === 'product') {
+                            if (!value || !Array.isArray(value) || value.length === 0) {
+                                showError(fieldName, 'Please select at least one product');
+                                return false;
+                            }
+                            
+                            // Maximum products limit
+                            if (value.length > 50) {
+                                showError(fieldName, 'You can select up to 50 products');
+                                return false;
+                            }
+                            
+                            // Validate each product ID format
+                            const invalidProductIds = value.filter(id => !/^[0-9a-fA-F]{24}$/.test(id));
+                            if (invalidProductIds.length > 0) {
+                                showError(fieldName, 'Invalid product selection');
+                                return false;
+                            }
+                        }
+                        return true;
+
+                    case 'startDate':
+                        if (!value) {
+                            showError(fieldName, 'Start date is required');
+                            return false;
+                        }
+                        
+                        const startDate = new Date(value);
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        
+                        if (startDate < today) {
+                            showError(fieldName, 'Start date cannot be in the past');
+                            return false;
+                        }
+                        
+                        // Maximum future date limit (1 year)
+                        const maxFutureDate = new Date();
+                        maxFutureDate.setFullYear(maxFutureDate.getFullYear() + 1);
+                        if (startDate > maxFutureDate) {
+                            showError(fieldName, 'Start date cannot be more than 1 year in the future');
+                            return false;
+                        }
+                        return true;
+
+                    case 'endDate':
+                        if (!value) {
+                            showError(fieldName, 'End date is required');
+                            return false;
+                        }
+                        
+                        const endDate = new Date(value);
+                        const startDateValue = new Date($('#startDate').val());
+                        
+                        if (endDate < startDateValue) {
+                            showError(fieldName, 'End date must be after start date');
+                            return false;
+                        }
+                        
+                        // Minimum duration (1 day)
+                        const minEndDate = new Date(startDateValue);
+                        minEndDate.setDate(minEndDate.getDate() + 1);
+                        if (endDate < minEndDate) {
+                            showError(fieldName, 'Offer must be valid for at least 1 day');
+                            return false;
+                        }
+                        
+                        // Maximum duration (1 year from start date)
+                        const maxEndDate = new Date(startDateValue);
+                        maxEndDate.setFullYear(maxEndDate.getFullYear() + 1);
+                        if (endDate > maxEndDate) {
+                            showError(fieldName, 'Offer cannot be valid for more than 1 year');
+                            return false;
+                        }
+                        return true;
+                }
+                return true;
+            }
+
+            // Real-time validation on field change
+            form.find('input, select, textarea').on('input change', function() {
+                validateField(this.name, this.value);
+            });
+
+            // Select2 change event handling
+            $('#categoriesSelect').on('change', function() {
+                validateField('categories', $(this).val());
+            });
+
+            $('#productsSelect').on('change', function() {
+                validateField('products', $(this).val());
+            });
+
+            // Date validation
+            const startDateInput = document.getElementById('startDate');
+            const endDateInput = document.getElementById('endDate');
+
+            // Set minimum date to today
+            const today = new Date().toISOString().split('T')[0];
+            startDateInput.min = today;
+            endDateInput.min = today;
+
+            // Update end date min when start date changes
+            startDateInput.addEventListener('change', function() {
+                const startDate = new Date(this.value);
+                const endDate = new Date(endDateInput.value);
+                
+                clearError('startDate');
+                clearError('endDate');
+                
+                // Set minimum end date to start date
+                endDateInput.min = this.value;
+                
+                // If end date is before new start date, clear it
+                if (endDate < startDate) {
+                    endDateInput.value = '';
+                }
+                
+                validateDates();
+            });
+
+            // Validate when end date changes
+            endDateInput.addEventListener('change', function() {
+                clearError('startDate');
+                clearError('endDate');
+                validateDates();
+            });
+
+            // Date validation function
+            function validateDates() {
+                const startDate = new Date(startDateInput.value);
+                const endDate = new Date(endDateInput.value);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                clearError('startDate');
+                clearError('endDate');
+
+                if (startDate < today) {
+                    showError('startDate', 'Start date cannot be in the past');
+                    return false;
+                }
+
+                if (endDate < startDate) {
+                    showError('endDate', 'End date must be after start date');
+                    return false;
+                }
+
+                return true;
+            }
+
+            // Initialize Select2
+            function initializeSelect2() {
+                $('#categoriesSelect').select2({
+                    placeholder: 'Select categories',
+                    allowClear: true,
+                    theme: 'default',
+                    width: '100%',
+                    dropdownParent: $('#categorySection')
+                });
+
+                $('#productsSelect').select2({
+                    placeholder: 'Search and select products',
+                    allowClear: true,
+                    theme: 'default',
+                    width: '100%',
+                    dropdownParent: $('#productSection'),
+                    templateResult: formatProduct,
+                    templateSelection: formatProduct
+                });
+            }
+
+            // Toggle between category and product offer types
+            function toggleOfferType(type) {
+                const categorySection = document.getElementById('categorySection');
+                const productSection = document.getElementById('productSection');
+                
+                // First destroy existing Select2 instances
+                $('#categoriesSelect').select2('destroy');
+                $('#productsSelect').select2('destroy');
+                
+                // Clear validation errors
+                clearError('offerType');
+                clearError('categories');
+                clearError('products');
+                
+                if (type === 'category') {
+                    categorySection.classList.remove('hidden');
+                    productSection.classList.add('hidden');
+                    $('#productsSelect').val(null);
+                    
+                    // Reinitialize category select
+                    $('#categoriesSelect').select2({
+                        placeholder: 'Select categories',
+                        allowClear: true,
+                        theme: 'default',
+                        width: '100%',
+                        dropdownParent: $('#categorySection')
+                    }).trigger('change');
+                } else if (type === 'product') {
+                    productSection.classList.remove('hidden');
+                    categorySection.classList.add('hidden');
+                    $('#categoriesSelect').val(null);
+                    
+                    // Reinitialize product select
+                    $('#productsSelect').select2({
+                        placeholder: 'Search and select products',
+                        allowClear: true,
+                        theme: 'default',
+                        width: '100%',
+                        dropdownParent: $('#productSection'),
+                        templateResult: formatProduct,
+                        templateSelection: formatProduct
+                    }).trigger('change');
+                } else {
+                    categorySection.classList.add('hidden');
+                    productSection.classList.add('hidden');
+                    $('#categoriesSelect').val(null);
+                    $('#productsSelect').val(null);
+                }
+            }
+
+            // Document ready function
+            $(document).ready(function() {
+                // Initialize Select2 on page load
+                initializeSelect2();
+                
+                // Get initial offer type and trigger toggle
+                const initialOfferType = $('select[name="offerType"]').val();
+                if (initialOfferType) {
+                    toggleOfferType(initialOfferType);
+                }
+                
+                // Add change event listener for offer type
+                $('select[name="offerType"]').on('change', function() {
+                    toggleOfferType(this.value);
+                });
+
+                // Form submission handling
+                form.on('submit', async function(e) {
+                    e.preventDefault();
+                    clearAllErrors();
+
+                    // Get the current offer type
+                    const offerType = $('select[name="offerType"]').val();
+                    
+                    // Validate all fields
+                    const fields = ['name', 'description', 'offerType', 'discountType', 'discountValue', 'startDate', 'endDate'];
+                    const validations = fields.map(field => validateField(field, $(`[name="${field}"]`).val()));
+
+                    // Validate category/product selection based on offer type
+                    if (offerType === 'category') {
+                        const categoryValues = $('#categoriesSelect').val();
+                        validations.push(validateField('categories', categoryValues));
+                    } else if (offerType === 'product') {
+                        const productValues = $('#productsSelect').val();
+                        validations.push(validateField('products', productValues));
+                    }
+
+                    // Check if all validations passed
+                    if (validations.includes(false)) {
+                        // Scroll to the first error
+                        const firstError = $('.error-message').first();
+                        if (firstError.length) {
+                            $('html, body').animate({
+                                scrollTop: firstError.offset().top - 100
+                            }, 500);
+                        }
+                        return false;
+                    }
+
+                    // Show loading state
+                    const submitBtn = $(this).find('button[type="submit"]');
+                    submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Creating...');
+
+                    try {
+                        const formData = {
+                            name: $('input[name="name"]').val().trim(),
+                            description: $('textarea[name="description"]').val().trim(),
+                            offerType: offerType,
+                            discountType: $('select[name="discountType"]').val(),
+                            discountValue: $('input[name="discountValue"]').val(),
+                            startDate: startDateInput.value,
+                            endDate: endDateInput.value,
+                            categories: $('#categoriesSelect').val(),
+                            products: $('#productsSelect').val()
+                        };
+
+                        const response = await fetch('/admin/add-offer', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(formData)
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success!',
+                                text: 'Offer created successfully',
+                                showConfirmButton: false,
+                                timer: 1500,
+                                background: '#1f2937',
+                                color: '#fff'
+                            }).then(() => {
+                                window.location.href = '/admin/offers';
+                            });
+                        } else {
+                            throw new Error(data.message);
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: error.message || 'Failed to create offer',
+                            background: '#1f2937',
+                            color: '#fff'
+                        });
+                        submitBtn.prop('disabled', false).html('<i class="fas fa-plus-circle"></i> Create Offer');
+                    }
+                });
+            });
+
+            // Format product options in Select2
+            function formatProduct(product) {
+                if (!product.id) return product.text;
+                const text = product.text;
+                const [name, price] = text.split(' - ');
+                return $(`
+                    <div class="flex justify-between items-center py-1">
+                        <span class="font-medium">${name}</span>
+                        <span class="text-sm text-gray-400">${price}</span>
+                    </div>
+                `);
+            }
+
+            // Update discount value placeholder and validation based on type
+            function updateDiscountPlaceholder(type) {
+                const input = document.getElementById('discountValueInput');
+                const helper = document.getElementById('discountValueHelper');
+                const currentValue = parseFloat(input.value);
+                
+                clearError('discountValue');
+                
+                if (type === 'percentage') {
+                    input.placeholder = 'Enter percentage (1-90)';
+                    helper.textContent = 'Enter a value between 1 and 90';
+                    input.min = 1;
+                    input.max = 90;
+                    
+                    // Validate current value for percentage
+                    if (!isNaN(currentValue)) {
+                        if (currentValue < 1 || currentValue > 90) {
+                            showError('discountValue', 'Percentage discount must be between 1 and 90');
+                            input.value = ''; // Clear invalid value
+                        }
+                    }
+                    
+                    // Add percentage symbol to input
+                    $(input).parent().find('.input-symbol').remove();
+                    $(input).after('<span class="input-symbol absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">%</span>');
+                    
+                } else if (type === 'fixed') {
+                    input.placeholder = 'Enter amount in ₹';
+                    helper.textContent = 'Enter the fixed discount amount';
+                    input.min = 1;
+                    input.removeAttribute('max');
+                    
+                    // Validate current value for fixed amount
+                    if (!isNaN(currentValue) && currentValue < 1) {
+                        showError('discountValue', 'Fixed discount must be greater than 0');
+                        input.value = ''; // Clear invalid value
+                    }
+                    
+                    // Add rupee symbol to input
+                    $(input).parent().find('.input-symbol').remove();
+                    $(input).after('<span class="input-symbol absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">₹</span>');
+                } else {
+                    input.placeholder = 'Enter discount value';
+                    helper.textContent = '';
+                    input.removeAttribute('min');
+                    input.removeAttribute('max');
+                    $(input).parent().find('.input-symbol').remove();
+                }
+            }
+
+            // Add event listener for discount type change
+            $('select[name="discountType"]').on('change', function() {
+                updateDiscountPlaceholder(this.value);
+            });
+
+            // Add event listener for discount value input
+            $('#discountValueInput').on('input', function() {
+                const value = this.value;
+                const discountType = $('select[name="discountType"]').val();
+                
+                // Remove non-numeric characters except decimal point
+                this.value = value.replace(/[^\d.]/g, '');
+                
+                // Ensure only one decimal point
+                if ((this.value.match(/\./g) || []).length > 1) {
+                    this.value = this.value.replace(/\.+$/, '');
+                }
+                
+                // Validate the value based on discount type
+                const numValue = parseFloat(this.value);
+                if (!isNaN(numValue)) {
+                    if (discountType === 'percentage' && numValue > 90) {
+                        this.value = '90';
+                    }
+                    
+                    // Limit to 2 decimal places
+                    if (this.value.includes('.')) {
+                        const parts = this.value.split('.');
+                        if (parts[1].length > 2) {
+                            this.value = numValue.toFixed(2);
+                        }
+                    }
+                }
+                
+                validateField('discountValue', this.value);
+            });
+
+            // Initialize discount type placeholder on page load
+            $(document).ready(function() {
+                const initialDiscountType = $('select[name="discountType"]').val();
+                if (initialDiscountType) {
+                    updateDiscountPlaceholder(initialDiscountType);
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

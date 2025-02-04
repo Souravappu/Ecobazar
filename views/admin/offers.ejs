@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecobazar - Offer Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+    
+    <style>
+        :root {
+            --primary-dark: #1f2937;
+            --secondary-dark: #111827;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+        }
+
+        body {
+            background-color: var(--secondary-dark);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        /* Enhanced Animations */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+
+        .fade-in-up { animation: fadeInUp 0.6s ease-out forwards; }
+
+        /* Enhanced Card Styles */
+        .card {
+            background: linear-gradient(145deg, var(--secondary-dark), #1a2436);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.07);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            backdrop-filter: blur(10px);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        /* Enhanced Search Container */
+        .search-container {
+            background: linear-gradient(165deg, rgba(31, 41, 55, 0.9), rgba(17, 24, 39, 0.95));
+            border-radius: 24px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            backdrop-filter: blur(12px);
+            padding: 2rem;
+        }
+
+        /* Enhanced Input Styles */
+        .search-input {
+            background: rgba(17, 24, 39, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            border-radius: 16px;
+            padding: 1rem 1.5rem;
+            backdrop-filter: blur(12px);
+        }
+
+        .search-input:focus {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* Table Column Widths */
+        .table-column-sno { width: 80px; }
+        .table-column-details { width: 300px; }
+        .table-column-type { width: 150px; }
+        .table-column-discount { width: 200px; }
+        .table-column-applied { width: 250px; }
+        .table-column-validity { width: 200px; }
+        .table-column-status { width: 150px; }
+        .table-column-actions { width: 120px; }
+
+        /* Enhanced Table Styling */
+        .table-container {
+            background: linear-gradient(165deg, rgba(31, 41, 55, 0.8), rgba(17, 24, 39, 0.9));
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .table-row {
+            transition: all 0.4s ease;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0) 50%);
+        }
+
+        .table-row:hover {
+            background: linear-gradient(90deg, rgba(59, 130, 246, 0.05), rgba(59, 130, 246, 0.02) 50%);
+            transform: scale(1.005);
+        }
+
+        /* Enhanced Action Buttons */
+        .action-btn {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 12px;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(8px);
+        }
+
+        .action-btn:hover {
+            transform: scale(1.15) rotate(8deg);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .edit-btn:hover { 
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa; 
+        }
+        
+        .delete-btn:hover { 
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171; 
+        }
+
+        /* Enhanced Status Badges */
+        .status-badge {
+            padding: 0.5rem 1.25rem;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .status-badge::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: 0.5s;
+        }
+
+        .status-badge:hover::before {
+            left: 100%;
+        }
+
+        .status-active {
+            background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(16,185,129,0.3));
+            border: 1px solid rgba(16,185,129,0.4);
+            color: #34d399;
+        }
+
+        .status-inactive {
+            background: linear-gradient(135deg, rgba(239,68,68,0.2), rgba(239,68,68,0.3));
+            border: 1px solid rgba(239,68,68,0.4);
+            color: #f87171;
+        }
+
+        /* Enhanced Description Container */
+        .description-container {
+            width: 100%;
+            max-width: 280px;
+            position: relative;
+            padding-right: 1rem;
+        }
+
+        .description-text {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: all 0.3s ease;
+            line-height: 1.5;
+            position: relative;
+        }
+
+        .description-container:hover .description-text {
+            -webkit-line-clamp: unset;
+            position: absolute;
+            background: linear-gradient(165deg, #1f2937, #111827);
+            padding: 1.25rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            z-index: 50;
+            width: 300px;
+            left: 0;
+            top: 100%;
+            margin-top: 0.5rem;
+        }
+
+        /* Add a pseudo-element for hover area */
+        .description-container::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            height: 20px;
+            background: transparent;
+        }
+
+        /* Add tooltip arrow */
+        .description-container:hover .description-text::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: 20px;
+            width: 16px;
+            height: 16px;
+            background: #1f2937;
+            transform: rotate(45deg);
+            border-left: 1px solid rgba(59, 130, 246, 0.2);
+            border-top: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        /* Enhanced Add Offer Button */
+        .add-offer-btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+        }
+
+        .add-offer-btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 15px 30px rgba(16, 185, 129, 0.4);
+        }
+
+        /* Category/Product Tags */
+        .tag {
+            background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(59,130,246,0.2));
+            border: 1px solid rgba(59,130,246,0.3);
+            padding: 0.35rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .tag:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(59,130,246,0.2);
+        }
+
+        /* Date Display Enhancement */
+        .date-display {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.05);
+            transition: all 0.3s ease;
+        }
+
+        .date-display:hover {
+            background: rgba(59,130,246,0.1);
+            transform: translateX(5px);
+        }
+
+        /* Empty State Enhancement */
+        .empty-state {
+            padding: 4rem 2rem;
+            text-align: center;
+            background: linear-gradient(165deg, rgba(31, 41, 55, 0.5), rgba(17, 24, 39, 0.6));
+            border-radius: 20px;
+            backdrop-filter: blur(12px);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            background: linear-gradient(135deg, #60a5fa, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-[#111827]">
+    <%- include('../layouts/side.ejs') %>
+    <%- include('../layouts/head.ejs') %>
+    <div class="flex-1 px-28 py-12 ml-64 bg-gradient-to-br from-[#111827] to-[#1f2937]">
+        <!-- Enhanced Page Header -->
+        <div class="flex justify-between items-center mb-10 fade-in-up">
+            <div class="space-y-2">
+                <h1 class="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-pink-600">
+                    <i class="fas fa-gift mr-4"></i>Offer Management
+                </h1>
+                <p class="text-gray-400">Create and manage your store's special offers and discounts</p>
+            </div>
+            <a href="/admin/add-offer" 
+               class="add-offer-btn flex items-center space-x-3 px-8 py-4 text-white group">
+                <i class="fas fa-plus-circle text-xl group-hover:rotate-180 transition-transform duration-500"></i>
+                <span class="font-semibold">Add New Offer</span>
+            </a>
+        </div>
+
+        <!-- Enhanced Search and Filters -->
+        <div class="search-container mb-10 fade-in-up">
+            <div class="grid grid-cols-4 gap-6">
+                <div class="col-span-2 relative">
+                    <input type="text"
+                           id="searchInput"
+                           placeholder="Search offers by name or description..."
+                           class="w-full search-input pl-12">
+                    <i class="fas fa-search absolute top-1/2 left-5 transform -translate-y-1/2 text-gray-400"></i>
+                </div>
+
+                <div class="relative">
+                    <select id="typeFilter" 
+                            class="search-input w-full appearance-none pl-12"
+                            onchange="applyFilters()">
+                        <option value="">All Types</option>
+                        <option value="percentage">Percentage</option>
+                        <option value="fixed">Fixed Amount</option>
+                    </select>
+                    <i class="fas fa-percentage absolute top-1/2 left-5 transform -translate-y-1/2 text-gray-400"></i>
+                </div>
+
+                <div class="relative">
+                    <select id="statusFilter" 
+                            class="search-input w-full appearance-none pl-12"
+                            onchange="applyFilters()">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                    <i class="fas fa-toggle-on absolute top-1/2 left-5 transform -translate-y-1/2 text-gray-400"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced Table -->
+        <div class="table-container fade-in-up">
+            <table class="w-full min-w-max table-fixed">
+                <thead>
+                    <tr class="bg-gray-800/50">
+                        <th class="py-6 px-7 text-left font-semibold text-gray-300 table-column-sno">
+                            <i class="fas fa-hashtag mr-2"></i>S.No
+                        </th>
+                        <th class="py-6 px-7 text-left font-semibold text-gray-300 table-column-details">
+                            <i class="fas fa-tag mr-2"></i>Offer Details
+                        </th>
+                        <th class="py-6 px-7 text-left font-semibold text-gray-300 table-column-type">
+                            <i class="fas fa-cube mr-2"></i>Type
+                        </th>
+                        <th class="py-6 px-7 text-left font-semibold text-gray-300 table-column-discount">
+                            <i class="fas fa-percent mr-2"></i>Discount
+                        </th>
+                        <th class="py-6 px-7 text-left font-semibold text-gray-300 table-column-applied">
+                            <i class="fas fa-layer-group mr-2"></i>Applied To
+                        </th>
+                        <th class="py-6 px-7 text-left font-semibold text-gray-300 table-column-validity">
+                            <i class="far fa-calendar-alt mr-2"></i>Validity
+                        </th>
+                        <th class="py-6 px-7 text-center font-semibold text-gray-300 table-column-status">
+                            <i class="fas fa-circle-check mr-2"></i>Status
+                        </th>
+                        <th class="py-6 px-7 text-center font-semibold text-gray-300 table-column-actions">
+                            <i class="fas fa-sliders mr-2"></i>Actions
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (offers && offers.length > 0) { %>
+                        <% offers.forEach((offer, index) => { 
+                            const isCategory = offer.categories && offer.categories.length > 0;
+                            const startDate = new Date(offer.startDate);
+                            const endDate = new Date(offer.endDate);
+                            const isExpired = endDate < new Date();
+                        %>
+                            <tr class="table-row" data-offer-id="<%= offer._id %>">
+                                <td class="py-6 px-7 text-gray-300 font-medium table-column-sno">
+                                    #<%= index + 1 %>
+                                </td>
+                                <td class="py-6 px-7 table-column-details">
+                                    <div class="description-container">
+                                        <h3 class="font-medium text-gray-200 mb-1 truncate">
+                                            <%= offer.name %>
+                                        </h3>
+                                        <p class="description-text text-sm text-gray-400">
+                                            <%= offer.description %>
+                                        </p>
+                                    </div>
+                                </td>
+                                <td class="py-6 px-7 table-column-type">
+                                    <span class="tag <%= isCategory ? 'text-purple-400' : 'text-blue-400' %>">
+                                        <i class="<%= isCategory ? 'fas fa-folder' : 'fas fa-box' %> mr-2"></i>
+                                        <%= isCategory ? 'Category Offer' : 'Product Offer' %>
+                                    </span>
+                                </td>
+                                <td class="py-6 px-7 table-column-discount">
+                                    <div class="flex items-center space-x-2">
+                                        <div class="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full <%= offer.discountType === 'percentage' ? 'bg-blue-500/20' : 'bg-green-500/20' %>">
+                                            <i class="<%= offer.discountType === 'percentage' ? 'fas fa-percent' : 'fas fa-dollar-sign' %> <%= offer.discountType === 'percentage' ? 'text-blue-400' : 'text-green-400' %>"></i>
+                                        </div>
+                                        <div class="flex flex-col min-w-0">
+                                            <span class="text-sm text-gray-400 truncate">
+                                                <%= offer.discountType === 'percentage' ? 'Percentage Off' : 'Fixed Amount Off' %>
+                                            </span>
+                                            <span class="font-medium text-gray-200">
+                                                <%= offer.discountValue %><%= offer.discountType === 'percentage' ? '%' : ' ₹' %>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-6 px-7 table-column-applied">
+                                    <div class="flex flex-wrap gap-2">
+                                        <% if (isCategory) { %>
+                                            <% offer.categories.slice(0, 2).forEach(category => { %>
+                                                <span class="tag text-purple-400 truncate max-w-[120px]">
+                                                    <i class="fas fa-folder-open mr-1"></i>
+                                                    <%= category.name %>
+                                                </span>
+                                            <% }); %>
+                                            <% if (offer.categories.length > 2) { %>
+                                                <span class="tag text-purple-400">
+                                                    +<%= offer.categories.length - 2 %> more
+                                                </span>
+                                            <% } %>
+                                        <% } else { %>
+                                            <% offer.products.slice(0, 2).forEach(product => { %>
+                                                <span class="tag text-blue-400 truncate max-w-[120px]">
+                                                    <i class="fas fa-box mr-1"></i>
+                                                    <%= product.name %>
+                                                </span>
+                                            <% }); %>
+                                            <% if (offer.products.length > 2) { %>
+                                                <span class="tag text-blue-400">
+                                                    +<%= offer.products.length - 2 %> more
+                                                </span>
+                                            <% } %>
+                                        <% } %>
+                                    </div>
+                                </td>
+                                <td class="py-6 px-7 table-column-validity">
+                                    <div class="space-y-2">
+                                        <div class="date-display text-sm">
+                                            <i class="far fa-calendar-plus text-green-400"></i>
+                                            <span class="text-gray-300 truncate">
+                                                Starts: <%= startDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short' }) %>
+                                            </span>
+                                        </div>
+                                        <div class="date-display text-sm">
+                                            <i class="far fa-calendar-check text-red-400"></i>
+                                            <span class="text-gray-300 truncate">
+                                                Ends: <%= endDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short' }) %>
+                                            </span>
+                                        </div>
+                                        <% if (isExpired) { %>
+                                            <span class="text-xs text-red-400 flex items-center">
+                                                <i class="fas fa-exclamation-circle mr-1"></i>
+                                                Expired
+                                            </span>
+                                        <% } %>
+                                    </div>
+                                </td>
+                                <td class="py-6 px-7 table-column-status">
+                                    <div class="flex justify-center">
+                                        <button onclick="toggleOfferStatus('<%= offer._id %>')"
+                                                class="status-badge <%= offer.isActive && !isExpired ? 'status-active' : 'status-inactive' %>">
+                                            <i class="fas <%= offer.isActive && !isExpired ? 'fa-check-circle' : 'fa-times-circle' %> mr-2"></i>
+                                            <%= offer.isActive && !isExpired ? 'Active' : 'Inactive' %>
+                                        </button>
+                                    </div>
+                                </td>
+                                <td class="py-6 px-7 table-column-actions">
+                                    <div class="flex justify-center space-x-4">
+                                        <a href="/admin/edit-offer/<%= offer._id %>" 
+                                           class="action-btn edit-btn group"
+                                           title="Edit Offer">
+                                            <i class="fas fa-edit group-hover:rotate-12 transition-transform"></i>
+                                        </a>
+                                        <button onclick="deleteOffer('<%= offer._id %>', '<%= offer.name %>')"
+                                                class="action-btn delete-btn group"
+                                                title="Delete Offer">
+                                            <i class="fas fa-trash-alt group-hover:rotate-12 transition-transform"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="8">
+                                <div class="empty-state py-16">
+                                    <i class="fas fa-gift mb-4 text-6xl"></i>
+                                    <h3 class="text-xl font-semibold text-gray-300 mb-2">No Offers Found</h3>
+                                    <p class="text-gray-400 mb-6">Start creating exciting offers for your customers!</p>
+                                    
+                                </div>
+                            </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Enhanced Pagination -->
+        <% if (totalPages > 0) { %>
+        <div class="flex justify-center mt-8 space-x-2">
+            <% if (hasPreviousPage) { %>
+                <a href="/admin/offers?page=<%= previousPage %>" 
+                   class="pagination-btn px-6 py-3 bg-gray-800 text-white rounded-xl hover:bg-gray-700 transition-all flex items-center space-x-2">
+                    <i class="fas fa-chevron-left"></i>
+                    <span>Previous</span>
+                </a>
+            <% } %>
+
+            <% 
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, startPage + 4);
+            
+            if (endPage - startPage < 4) {
+                startPage = Math.max(1, endPage - 4);
+            }
+            
+            for (let i = startPage; i <= endPage; i++) { 
+            %>
+                <a href="/admin/offers?page=<%= i %>" 
+                   class="pagination-btn px-4 py-3 <%= currentPage === i ? 'bg-blue-600' : 'bg-gray-700' %> text-white rounded-xl hover:bg-blue-500 transition-all">
+                    <%= i %>
+                </a>
+            <% } %>
+
+            <% if (hasNextPage) { %>
+                <a href="/admin/offers?page=<%= nextPage %>" 
+                   class="pagination-btn px-6 py-3 bg-gray-800 text-white rounded-xl hover:bg-gray-700 transition-all flex items-center space-x-2">
+                    <span>Next</span>
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            <% } %>
+        </div>
+        <% } %>
+    </div>
+
+    <script>
+        // Add animation for table rows
+        document.addEventListener('DOMContentLoaded', function() {
+            const tableRows = document.querySelectorAll('.table-row');
+            tableRows.forEach((row, index) => {
+                row.style.opacity = '0';
+                row.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    row.style.transition = 'all 0.4s ease';
+                    row.style.opacity = '1';
+                    row.style.transform = 'translateY(0)';
+                }, 100 * index);
+            });
+        });
+
+        async function toggleOfferStatus(offerId) {
+            try {
+                const response = await fetch(`/admin/toggle-offer/${offerId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const button = event.target.closest('.status-badge');
+                    if (data.isActive) {
+                        button.classList.remove('status-inactive');
+                        button.classList.add('status-active');
+                        button.textContent = 'Active';
+                    } else {
+                        button.classList.remove('status-active');
+                        button.classList.add('status-inactive');
+                        button.textContent = 'Inactive';
+                    }
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: data.message,
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to update offer status'
+                });
+            }
+        }
+
+        function deleteOffer(offerId, offerName) {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: `Do you want to delete ${offerName}?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#EF4444',
+                cancelButtonColor: '#6B7280',
+                confirmButtonText: 'Yes, delete it!',
+                background: '#1f2937',
+                color: '#fff'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        const response = await fetch(`/admin/delete-offer/${offerId}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            // Find and remove the offer row from the table
+                            const row = document.querySelector(`tr[data-offer-id="${offerId}"]`);
+                            if (row) {
+                                row.style.transition = 'all 0.3s ease';
+                                row.style.transform = 'translateX(100%)';
+                                row.style.opacity = '0';
+                                
+                                setTimeout(() => {
+                                    row.remove();
+                                    
+                                    // Check if there are no more offers
+                                    const remainingRows = document.querySelectorAll('tbody tr').length;
+                                    if (remainingRows === 0) {
+                                        location.reload(); // Reload to show empty state
+                                    }
+                                }, 300);
+                            }
+                            
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Deleted!',
+                                text: data.message,
+                                showConfirmButton: false,
+                                timer: 1500,
+                                background: '#1f2937',
+                                color: '#fff'
+                            });
+                        } else {
+                            throw new Error(data.message);
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: error.message || 'Failed to delete offer',
+                            background: '#1f2937',
+                            color: '#fff'
+                        });
+                    }
+                }
+            });
+        }
+
+        // Filter functionality
+        document.getElementById('searchInput').addEventListener('input', filterOffers);
+        document.getElementById('typeFilter').addEventListener('change', filterOffers);
+        document.getElementById('statusFilter').addEventListener('change', filterOffers);
+
+        function filterOffers() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const typeFilter = document.getElementById('typeFilter').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
+            const rows = document.querySelectorAll('.table-row');
+
+            rows.forEach(row => {
+                const name = row.querySelector('h3').textContent.toLowerCase();
+                const description = row.querySelector('p').textContent.toLowerCase();
+                const type = row.querySelector('.bg-blue-500\\/20').textContent.toLowerCase();
+                const status = row.querySelector('.status-badge').textContent.toLowerCase();
+
+                const matchesSearch = name.includes(searchTerm) || description.includes(searchTerm);
+                const matchesType = !typeFilter || type === typeFilter;
+                const matchesStatus = !statusFilter || status === statusFilter;
+
+                if (matchesSearch && matchesType && matchesStatus) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html> 

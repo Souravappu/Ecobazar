@@ -6,6 +6,7 @@
     <title>Wishlist - Ecobazar</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -28,21 +29,147 @@
             color: white;
             box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
         }
-        .card {
-            transition: all 0.4s ease;
+        .product-card {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
         }
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+        .product-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, rgba(16, 185, 129, 0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.4s ease;
         }
-        main {
-            flex-grow: 1;
-            padding: 1rem;
+        .product-card:hover {
+            transform: translateY(-8px) scale(1.01);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+        }
+        .product-card:hover::before {
+            opacity: 1;
+        }
+        .product-image {
+            transition: transform 0.6s ease;
+        }
+        .product-card:hover .product-image {
+            transform: scale(1.08);
+        }
+        .btn-remove {
+            transform: translateX(100%);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        .product-card:hover .btn-remove {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        .price-tag {
+            position: relative;
+            overflow: hidden;
+        }
+        .price-tag::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: #10b981;
+            transform: scaleX(0);
+            transform-origin: right;
+            transition: transform 0.3s ease;
+        }
+        .product-card:hover .price-tag::after {
+            transform: scaleX(1);
+            transform-origin: left;
+        }
+        .add-to-cart-btn {
+            transition: all 0.3s ease;
+            overflow: hidden;
+            position: relative;
+        }
+        .add-to-cart-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s ease, height 0.6s ease;
+        }
+        .add-to-cart-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        .shimmer {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .empty-wishlist {
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+        .pagination-btn {
+            transition: all 0.2s ease;
+        }
+        .pagination-btn:not(:disabled):hover {
+            transform: translateY(-1px);
+        }
+        .pagination-btn:not(:disabled):active {
+            transform: translateY(0);
+        }
+        @media (max-width: 640px) {
+            .pagination-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
         }
     </style>
 </head>
 <body>
     <%- include('../layouts/headerWithoutUser.ejs') %>
+
+    <!-- Breadcrumb with hover effect -->
+    <div class="container mx-auto px-4 py-4">
+        <nav class="flex" aria-label="Breadcrumb">
+            <ol class="inline-flex items-center space-x-2 md:space-x-3">
+                <li class="inline-flex items-center">
+                    <a href="/" class="text-gray-700 hover:text-green-600 transition-colors duration-300 flex items-center">
+                        <i class="fas fa-home mr-2 transform hover:scale-110 transition-transform duration-300"></i>
+                        Home
+                    </a>
+                </li>
+                <li>
+                    <div class="flex items-center">
+                        <i class="fas fa-chevron-right text-gray-500 mx-2"></i>
+                        <a href="/profile" class="text-gray-700 hover:text-green-600 transition-colors duration-300">Account</a>
+                    </div>
+                </li>
+                <li aria-current="page">
+                    <div class="flex items-center">
+                        <i class="fas fa-chevron-right text-gray-500 mx-2"></i>
+                        <span class="text-green-600">My Wishlist</span>
+                    </div>
+                </li>
+            </ol>
+        </nav>
+    </div>
 
     <main class="container mx-auto grid grid-cols-1 md:grid-cols-12 gap-6 p-4">
         <!-- Navigation Sidebar -->
@@ -50,58 +177,176 @@
 
         <!-- Wishlist Content -->
         <div class="col-span-1 md:col-span-9 space-y-6">
-            <div class="card bg-white rounded-2xl shadow-2xl p-6 md:p-8">
-                <h2 class="text-xl md:text-2xl font-bold mb-6 border-b pb-4">My Wishlist</h2>
+            <div class="bg-white rounded-2xl shadow-2xl p-6 md:p-8 animate__animated animate__fadeIn">
+                <div class="flex items-center justify-between border-b pb-4 mb-6">
+                    <h2 class="text-2xl md:text-3xl font-bold text-gray-800 flex items-center">
+                        <i class="fas fa-heart text-green-500 mr-3 animate__animated animate__heartBeat animate__infinite"></i>
+                        My Wishlist
+                    </h2>
+                    <span class="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
+                        <%= wishlist && wishlist.items ? wishlist.items.filter(item => item.product).length : 0 %> items
+                    </span>
+                </div>
 
-                <% if (!wishlist || !wishlist.items || wishlist.items.length === 0) { %>
-                    <div class="text-center py-8">
-                        <i class="fas fa-heart text-4xl md:text-6xl text-gray-300 mb-4"></i>
-                        <h2 class="text-lg md:text-xl font-semibold text-gray-600 mb-4">Your wishlist is empty</h2>
-                        <a href="/shop" class="inline-block bg-green-600 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg hover:bg-green-700 transition-all duration-300">
+                <% if (!wishlist || !wishlist.items || wishlist.items.filter(item => item.product).length === 0) { %>
+                    <div class="text-center py-12 empty-wishlist">
+                        <div class="mb-6">
+                            <i class="fas fa-heart text-7xl md:text-8xl text-green-200"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold text-gray-700 mb-4">Your wishlist is empty</h2>
+                        <p class="text-gray-500 mb-8">Discover and save items you love!</p>
+                        <a href="/shop" class="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                            <i class="fas fa-shopping-bag mr-2"></i>
                             Start Shopping
                         </a>
                     </div>
                 <% } else { %>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                        <% wishlist.items.forEach(item => { %>
-                            <% const product = item.product; %>
-                            <div class="card bg-white rounded-xl overflow-hidden border hover:shadow-xl">
-                                <div class="relative">
-                                    <a href="/product/<%= product._id %>" class="block">
-                                        <img src="/uploads/products/<%= product.images[0].split('/').pop() %>" 
-                                             alt="<%= product.name %>"
-                                             class="w-full h-36 sm:h-48 object-cover hover:opacity-90 transition-all duration-300">
-                                    </a>
-                                    <button onclick="removeFromWishlist('<%= product._id %>')"
-                                            class="absolute top-2 right-2 text-red-500 hover:text-red-600 bg-white rounded-full p-2 shadow-lg hover:shadow-xl transition-all duration-300">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                                <div class="p-4">
-                                    <a href="/product/<%= product._id %>" class="block hover:text-green-600 transition-colors">
-                                        <h3 class="font-semibold text-sm md:text-base mb-2 line-clamp-2"><%= product.name %></h3>
-                                    </a>
-                                    <div class="flex justify-between items-end mt-4">
-                                        <div class="space-y-1">
-                                            <div class="text-green-600 font-bold text-sm md:text-lg">₹<%= product.salePrice %></div>
-                                            <% if (product.regularPrice > product.salePrice) { %>
-                                                <div class="text-xs md:text-sm text-gray-500 line-through">₹<%= product.regularPrice %></div>
-                                            <% } %>
-                                        </div>
-                                        <% if (product.quantity > 0) { %>
-                                            <button onclick="addToCart('<%= product._id %>')" 
-                                                    class="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-all duration-300 flex items-center space-x-2">
-                                                <i class="fas fa-shopping-cart"></i>
-                                                <span>Add to Cart</span>
-                                            </button>
-                                        <% } else { %>
-                                            <span class="text-red-500 text-xs md:text-sm font-medium">Out of Stock</span>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <% if (wishlist && wishlist.items) { %>
+                            <% wishlist.items.filter(item => item.product).forEach(item => { %>
+                                <% const product = item.product; %>
+                                <div class="product-card bg-white rounded-xl border hover:border-green-200 animate__animated animate__fadeIn">
+                                    <div class="relative overflow-hidden group">
+                                        <a href="/product/<%= product._id %>">
+                                            <img src="/uploads/products/<%= product.images[0].split('/').pop() %>" 
+                                                 alt="<%= product.name %>"
+                                                 class="product-image w-full h-48 object-cover">
+                                        </a>
+                                        <button onclick="removeFromWishlist('<%= product._id %>')"
+                                                class="btn-remove absolute top-2 right-2 bg-white/90 backdrop-blur-sm text-red-500 hover:text-red-600 p-2 rounded-full shadow-lg group-hover:shadow-xl">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        <% if (product.quantity <= 0) { %>
+                                            <div class="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                                                Out of Stock
+                                            </div>
                                         <% } %>
                                     </div>
+                                    <div class="p-4">
+                                        <a href="/product/<%= product._id %>" class="block group">
+                                            <h3 class="font-semibold text-gray-800 group-hover:text-green-600 transition-colors duration-300 line-clamp-2">
+                                                <%= product.name %>
+                                            </h3>
+                                        </a>
+                                        <div class="mt-4 flex justify-between items-end">
+                                            <div class="space-y-1 price-tag">
+                                                <div class="text-green-600 font-bold text-lg">₹<%= product.salePrice %></div>
+                                                <% if (product.regularPrice > product.salePrice) { %>
+                                                    <div class="text-sm text-gray-500 line-through">₹<%= product.regularPrice %></div>
+                                                    <div class="text-xs text-green-500">
+                                                        <%= Math.round((product.regularPrice - product.salePrice) / product.regularPrice * 100) %>% OFF
+                                                    </div>
+                                                <% } %>
+                                            </div>
+                                            <% if (product.quantity > 0) { %>
+                                                <button onclick="addToCart('<%= product._id %>')" 
+                                                        class="add-to-cart-btn bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center space-x-2">
+                                                    <i class="fas fa-shopping-cart"></i>
+                                                    <span>Add</span>
+                                                </button>
+                                            <% } %>
+                                        </div>
+                                    </div>
+                                </div>
+                            <% }); %>
+                        <% } %>
+                    </div>
+
+                    <!-- Pagination Component -->
+                    <% if (pagination && pagination.totalPages > 1) { %>
+                        <div class="mt-8 border-t pt-6">
+                            <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                                <!-- Items per page info -->
+                                <div class="text-sm text-gray-500">
+                                    Showing
+                                    <span class="font-medium mx-1"><%= pagination.startIndex %></span>
+                                    to
+                                    <span class="font-medium mx-1"><%= pagination.endIndex %></span>
+                                    of
+                                    <span class="font-medium mx-1"><%= pagination.totalItems %></span>
+                                    items
+                                </div>
+
+                                <!-- Pagination Controls -->
+                                <div class="flex items-center justify-center space-x-2">
+                                    <!-- Previous Page -->
+                                    <% if (pagination.hasPrev) { %>
+                                        <a href="?page=<%= pagination.page - 1 %>" 
+                                           class="pagination-btn inline-flex items-center px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-green-50 hover:border-green-300 transition-all duration-200">
+                                            <i class="fas fa-chevron-left mr-2 text-xs"></i>
+                                            Previous
+                                        </a>
+                                    <% } else { %>
+                                        <button disabled 
+                                                class="inline-flex items-center px-4 py-2 rounded-lg border border-gray-200 bg-gray-50 text-sm font-medium text-gray-400 cursor-not-allowed">
+                                            <i class="fas fa-chevron-left mr-2 text-xs"></i>
+                                            Previous
+                                        </button>
+                                    <% } %>
+
+                                    <!-- Page Numbers -->
+                                    <div class="hidden sm:flex items-center space-x-1">
+                                        <% 
+                                        let startPage = Math.max(1, pagination.page - 1);
+                                        let endPage = Math.min(pagination.totalPages, pagination.page + 1);
+                                        
+                                        if (startPage > 1) { %>
+                                            <a href="?page=1" 
+                                               class="pagination-btn inline-flex items-center px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-green-50 hover:border-green-300 transition-all duration-200">
+                                                1
+                                            </a>
+                                            <% if (startPage > 2) { %>
+                                                <span class="px-2 py-1 text-gray-500">...</span>
+                                            <% } %>
+                                        <% } %>
+
+                                        <% for(let i = startPage; i <= endPage; i++) { %>
+                                            <% if (i === pagination.page) { %>
+                                                <span class="inline-flex items-center px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium">
+                                                    <%= i %>
+                                                </span>
+                                            <% } else { %>
+                                                <a href="?page=<%= i %>" 
+                                                   class="pagination-btn inline-flex items-center px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-green-50 hover:border-green-300 transition-all duration-200">
+                                                    <%= i %>
+                                                </a>
+                                            <% } %>
+                                        <% } %>
+
+                                        <% if (endPage < pagination.totalPages) { %>
+                                            <% if (endPage < pagination.totalPages - 1) { %>
+                                                <span class="px-2 py-1 text-gray-500">...</span>
+                                            <% } %>
+                                            <a href="?page=<%= pagination.totalPages %>" 
+                                               class="pagination-btn inline-flex items-center px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-green-50 hover:border-green-300 transition-all duration-200">
+                                                <%= pagination.totalPages %>
+                                            </a>
+                                        <% } %>
+                                    </div>
+
+                                    <!-- Mobile Page Indicator -->
+                                    <span class="sm:hidden text-sm text-gray-700">
+                                        Page <%= pagination.page %> of <%= pagination.totalPages %>
+                                    </span>
+
+                                    <!-- Next Page -->
+                                    <% if (pagination.hasNext) { %>
+                                        <a href="?page=<%= pagination.page + 1 %>" 
+                                           class="pagination-btn inline-flex items-center px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-green-50 hover:border-green-300 transition-all duration-200">
+                                            Next
+                                            <i class="fas fa-chevron-right ml-2 text-xs"></i>
+                                        </a>
+                                    <% } else { %>
+                                        <button disabled 
+                                                class="inline-flex items-center px-4 py-2 rounded-lg border border-gray-200 bg-gray-50 text-sm font-medium text-gray-400 cursor-not-allowed">
+                                            Next
+                                            <i class="fas fa-chevron-right ml-2 text-xs"></i>
+                                        </button>
+                                    <% } %>
                                 </div>
                             </div>
-                        <% }); %>
-                    </div>
+                        </div>
+                    <% } %>
                 <% } %>
             </div>
         </div>
@@ -110,6 +355,19 @@
     <%- include('../layouts/footer.ejs') %>
 
     <script>
+        function showLoadingState() {
+            Swal.fire({
+                title: 'Processing...',
+                html: '<i class="fas fa-spinner fa-spin fa-2x"></i>',
+                showConfirmButton: false,
+                allowOutsideClick: false,
+                backdrop: 'rgba(0,0,0,0.4)',
+                customClass: {
+                    popup: 'animate__animated animate__fadeIn'
+                }
+            });
+        }
+
         function removeFromWishlist(productId) {
             Swal.fire({
                 title: 'Remove Item?',
@@ -118,21 +376,52 @@
                 showCancelButton: true,
                 confirmButtonColor: '#22C55E',
                 cancelButtonColor: '#6B7280',
-                confirmButtonText: 'Yes, remove it!'
+                confirmButtonText: '<i class="fas fa-trash mr-2"></i>Yes, remove it!',
+                cancelButtonText: '<i class="fas fa-times mr-2"></i>Cancel',
+                customClass: {
+                    popup: 'animate__animated animate__fadeIn'
+                }
             }).then((result) => {
                 if (result.isConfirmed) {
-                    fetch(`/wishlist/remove/${productId}`, {
+                    showLoadingState();
+                    
+                    // Get current page from URL or default to 1
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const currentPage = urlParams.get('page') || 1;
+                    
+                    fetch(`/wishlist/remove/${productId}?page=${currentPage}`, {
                         method: 'DELETE'
                     })
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
+                            // Update wishlist count in header if exists
+                            const wishlistCountElement = document.querySelector('.wishlist-count');
+                            if (wishlistCountElement) {
+                                if (data.wishlistCount > 0) {
+                                    wishlistCountElement.textContent = data.wishlistCount;
+                                    wishlistCountElement.style.display = 'flex';
+                                } else {
+                                    wishlistCountElement.style.display = 'none';
+                                }
+                            }
+
+                            // Handle pagination redirect if needed
+                            if (data.pagination && data.pagination.shouldRedirect) {
+                                window.location.href = `?page=${data.pagination.redirectPage}`;
+                                return;
+                            }
+
+                            // If no redirect needed, just reload the current page
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Removed!',
                                 text: 'Item has been removed from your wishlist',
                                 showConfirmButton: false,
-                                timer: 1500
+                                timer: 1500,
+                                customClass: {
+                                    popup: 'animate__animated animate__fadeIn'
+                                }
                             }).then(() => {
                                 location.reload();
                             });
@@ -144,7 +433,10 @@
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
-                            text: error.message || 'An error occurred'
+                            text: error.message || 'An error occurred',
+                            customClass: {
+                                popup: 'animate__animated animate__fadeIn'
+                            }
                         });
                     });
                 }
@@ -152,6 +444,7 @@
         }
 
         function addToCart(productId) {
+            showLoadingState();
             fetch('/cart/add', {
                 method: 'POST',
                 headers: {
@@ -162,20 +455,50 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    // Update cart count
+                    const cartCountElement = document.querySelector('.cart-count');
+                    if (cartCountElement) {
+                        cartCountElement.textContent = data.cart.count;
+                        cartCountElement.style.display = 'flex';
+                        cartCountElement.classList.add('animate__animated', 'animate__bounceIn');
+                    }
+
+                    // Update wishlist count
+                    const wishlistCountElement = document.querySelector('.wishlist-count');
+                    if (wishlistCountElement) {
+                        if (data.wishlistCount > 0) {
+                            wishlistCountElement.textContent = data.wishlistCount;
+                            wishlistCountElement.style.display = 'flex';
+                        } else {
+                            wishlistCountElement.style.display = 'none';
+                        }
+                    }
+
+                    // Remove the product card from the UI
+                    const productCard = document.querySelector(`.product-card[data-product-id="${productId}"]`);
+                    if (productCard) {
+                        productCard.classList.add('animate__fadeOut');
+                        setTimeout(() => {
+                            productCard.remove();
+                            
+                            // Check if there are any remaining items
+                            const remainingCards = document.querySelectorAll('.product-card');
+                            if (remainingCards.length === 0) {
+                                location.reload(); // Reload to show empty wishlist state
+                            }
+                        }, 500);
+                    }
+
                     Swal.fire({
                         icon: 'success',
                         title: 'Added to Cart!',
                         text: 'Item has been added to your cart',
                         showConfirmButton: false,
-                        timer: 1500
+                        timer: 1500,
+                        customClass: {
+                            popup: 'animate__animated animate__fadeIn'
+                        }
                     });
-                    
-                    // Update cart count in header if needed
-                    const cartCountElement = document.querySelector('.cart-count');
-                    if (cartCountElement) {
-                        cartCountElement.textContent = data.cartCount;
-                        cartCountElement.style.display = 'flex';
-                    }
                 } else {
                     throw new Error(data.message);
                 }
@@ -184,10 +507,23 @@
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
-                    text: error.message || 'An error occurred'
+                    text: error.message || 'An error occurred',
+                    customClass: {
+                        popup: 'animate__animated animate__fadeIn'
+                    }
                 });
             });
         }
+
+        // Add loading animation
+        document.addEventListener('DOMContentLoaded', function() {
+            const productCards = document.querySelectorAll('.product-card');
+            productCards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.classList.add('animate__animated', 'animate__fadeInUp');
+                }, index * 100);
+            });
+        });
     </script>
 </body>
 </html> 

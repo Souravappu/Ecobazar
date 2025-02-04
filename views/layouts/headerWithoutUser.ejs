@@ -71,22 +71,48 @@
             display: none;
             position: absolute;
             background-color: white;
-            min-width: 160px;
-            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-            z-index: 10;
+            min-width: 200px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            z-index: 50;
             border-radius: 0.5rem;
-        }
-
-        .dropdown-content {
-            transition: all 0.3s ease;
             opacity: 0;
             visibility: hidden;
+            transition: opacity 0.2s ease-in-out;
         }
 
-        .dropdown-content.show {
+        .dropdown-content.show,
+        .group:hover .dropdown-content {
             display: block;
             opacity: 1;
             visibility: visible;
+        }
+
+        /* Navigation item hover effect */
+        .group > a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background-color: #22c55e;
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+        }
+
+        .group:hover > a::after {
+            width: 100%;
+        }
+
+        /* Dropdown item hover effect */
+        .dropdown-content a {
+            position: relative;
+            transition: background-color 0.2s ease;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #f3f4f6;
+            color: #22c55e;
         }
 
         @media (max-width: 768px) {
@@ -379,36 +405,37 @@
 
                 <!-- Desktop Menu -->
                 <ul class="hidden md:flex items-center gap-8">
-                    <li>
-                        <a href="/" class="block px-4 py-2 text-white hover:text-green-500 transition-colors">
+                    <li class="relative group">
+                        <a href="/" class="flex items-center gap-1 px-4 py-2 text-white hover:text-green-500 transition-colors">
                             Home 
                         </a>
                     </li>
-                        <!-- <div class="dropdown-content mt-2">
-                            <a href="/" class="block px-4 py-2 text-black hover:bg-gray-100">Home v1</a>
-                            <a href="/home-2" class="block px-4 py-2 text-black hover:bg-gray-100">Home v2</a>
-                        </div> -->
-                    
-                    <li>
-                        <a href="/shop" class="hover:text-green-500 transition-colors">Shop</a>
-                    </li>
-                    <li class="dropdown relative">
-                        <a href="#" class="dropdown-toggle flex items-center gap-1 hover:text-green-500 transition-colors">
-                            Categories <i class="fas fa-chevron-down text-xs"></i>
+                    <li class="relative group">
+                        <a href="/shop" class="flex items-center gap-1 px-4 py-2 text-white hover:text-green-500 transition-colors">
+                            Shop
                         </a>
-                        <div class="dropdown-content mt-2">
+                    </li>
+                    <li class="relative group">
+                        <a href="#" class="dropdown-toggle flex items-center gap-1 px-4 py-2 text-white hover:text-green-500 transition-colors">
+                            Categories <i class="fas fa-chevron-down text-xs ml-1 group-hover:rotate-180 transition-transform duration-200"></i>
+                        </a>
+                        <div class="dropdown-content absolute left-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 overflow-hidden">
                             <% if(categories) { %>
                                 <% categories.forEach((category) => { %>
-                                    <a href="/category/<%= category._id %>" class="block px-4 py-2 text-black hover:bg-gray-100"><%= category.name %></a>
+                                    <a href="/category/<%= category._id %>" class="block px-4 py-3 text-gray-700 hover:bg-gray-50 hover:text-green-500 transition-colors"><%= category.name %></a>
                                 <% }) %>
                             <%}%> 
                         </div>
                     </li>
-                    <li>
-                        <a href="/about" class="hover:text-green-500 transition-colors">About Us</a>
+                    <li class="relative group">
+                        <a href="/about" class="flex items-center gap-1 px-4 py-2 text-white hover:text-green-500 transition-colors">
+                            About Us
+                        </a>
                     </li>
-                    <li>
-                        <a href="/contact" class="hover:text-green-500 transition-colors">Contact Us</a>
+                    <li class="relative group">
+                        <a href="/contact" class="flex items-center gap-1 px-4 py-2 text-white hover:text-green-500 transition-colors">
+                            Contact Us
+                        </a>
                     </li>
                 </ul>
 
@@ -755,7 +782,7 @@ function validateSearch(event) {
     
     // Check if empty or less than 3 characters
     if (!searchTerm || searchTerm.length < 3) {
-        searchError.textContent = 'Please enter at least 3 characters to search';
+        searchError.textContent = 'Please enter at least 2 characters to search';
         searchError.classList.remove('hidden');
         searchInput.classList.add('border-red-500');
         return false;

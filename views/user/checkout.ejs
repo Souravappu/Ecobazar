@@ -6,8 +6,100 @@
     <title>Checkout - Ecobazar</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <style>
+        .checkout-section {
+            transition: all 0.3s ease;
+        }
+        .checkout-section:hover {
+            transform: translateY(-2px);
+        }
+        .coupon-card {
+            transition: all 0.3s ease;
+        }
+        .coupon-card:hover {
+            transform: scale(1.02);
+        }
+        .payment-option {
+            transition: all 0.3s ease;
+        }
+        .payment-option:hover {
+            background-color: #f0fdf4;
+        }
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+        .pulse-button {
+            animation: pulse-border 2s infinite;
+        }
+        .shimmer {
+            background: linear-gradient(90deg, #f0fdf4 25%, #dcfce7 50%, #f0fdf4 75%);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        /* Enhanced Input Styles */
+        .form-input {
+            height: 3rem;
+            font-size: 1rem;
+            padding-left: 2.5rem;
+            padding-right: 1rem;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+        
+        .form-input:focus {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(34, 197, 94, 0.1), 0 2px 4px -1px rgba(34, 197, 94, 0.06);
+        }
+        
+        .form-checkbox, .form-radio {
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 0.375rem;
+            transition: all 0.2s ease;
+        }
+        
+        .form-checkbox:checked, .form-radio:checked {
+            transform: scale(1.1);
+        }
+        
+        .input-icon {
+            font-size: 1.25rem;
+            color: #22C55E;
+        }
+        
+        .wallet-input {
+            font-size: 1.125rem;
+            font-weight: 500;
+            padding-left: 2rem;
+            width: 8rem;
+        }
+        
+        /* Input group hover effect */
+        .input-group {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .input-group:hover .form-input {
+            border-color: #22C55E;
+        }
+        
+        .input-group:hover .input-icon {
+            transform: scale(1.1);
+        }
+    </style>
 </head>
 <body class="bg-gray-50">
     <%- include('../layouts/headerWithoutUser.ejs') %>
@@ -16,26 +108,39 @@
     <div >
         <div class="container mx-auto px-4 py-3">
             <nav class="flex items-center text-sm">
-                <a href="/" class="text-gray-500 hover:text-green-600">Home</a>
+                <a href="/" class="text-gray-500 hover:text-green-600 transition-colors duration-200">
+                    <i class="fas fa-home mr-1"></i> Home
+                </a>
                 <span class="mx-2 text-gray-400">/</span>
-                <a href="/cart" class="text-gray-500 hover:text-green-600">Shopping Cart</a>
+                <a href="/cart" class="text-gray-500 hover:text-green-600 transition-colors duration-200">
+                    <i class="fas fa-shopping-cart mr-1"></i> Shopping Cart
+                </a>
                 <span class="mx-2 text-gray-400">/</span>
-                <span class="text-green-600">Checkout</span>
+                <span class="text-green-600">
+                    <i class="fas fa-credit-card mr-1"></i> Checkout
+                </span>
             </nav>
         </div>
     </div>
 
     <main class="container mx-auto px-4 sm:px-6 py-4 sm:py-8">
-        <h1 class="text-2xl sm:text-3xl font-bold mb-4 sm:mb-8">Checkout</h1>
+        <h1 class="text-2xl sm:text-3xl font-bold mb-4 sm:mb-8 flex items-center animate__animated animate__fadeIn">
+            <i class="fas fa-shopping-bag mr-3 text-green-600"></i>
+            Checkout
+            <span class="ml-3 text-sm font-normal text-gray-500">(<%= cart.items.length %> items)</span>
+        </h1>
 
         <form id="checkoutForm" class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8" onsubmit="handleSubmit(event)">
             <!-- Shipping Address Section -->
             <div class="lg:col-span-2 space-y-4 sm:space-y-6">
-                <div class="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+                <div class="checkout-section bg-white rounded-lg shadow-sm p-4 sm:p-6" data-aos="fade-up">
                     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4">
-                        <h2 class="text-lg sm:text-xl font-semibold mb-2 sm:mb-0">Shipping Address</h2>
+                        <h2 class="text-lg sm:text-xl font-semibold mb-2 sm:mb-0 flex items-center">
+                            <i class="fas fa-map-marker-alt text-green-600 mr-2"></i>
+                            Shipping Address
+                        </h2>
                         <a href="/checkout/view-addresses" 
-                           class="inline-flex items-center text-green-600 hover:text-green-700 text-sm sm:text-base">
+                           class="inline-flex items-center text-green-600 hover:text-green-700 text-sm sm:text-base transition-colors duration-200">
                             <i class="fas fa-address-book mr-2"></i>
                             Manage Addresses
                         </a>
@@ -49,68 +154,97 @@
                     %>
                     
                     <% if (defaultAddress) { %>
-                        <div class="border rounded-lg p-3 sm:p-4 border-green-500 bg-green-50">
+                        <div class="border rounded-lg p-3 sm:p-4 border-green-500 bg-green-50 hover:shadow-md transition-all duration-300">
                             <input type="hidden" name="addressId" value="<%= defaultAddress._id %>">
                             <div class="flex-1">
                                 <div class="flex flex-wrap items-center gap-2 mb-2">
                                     <h3 class="font-medium"><%= defaultAddress.name %></h3>
                                     <span class="text-sm text-gray-500">(<%= defaultAddress.addressType %>)</span>
-                                    <span class="text-xs bg-green-500 text-white px-2 py-1 rounded">Default</span>
+                                    <span class="text-xs bg-green-500 text-white px-2 py-1 rounded-full animate__animated animate__fadeIn">Default</span>
                                 </div>
-                                <p class="text-sm sm:text-base text-gray-600"><%= defaultAddress.streetAddress %></p>
-                                <% if (defaultAddress.apartment) { %>
-                                    <p class="text-sm sm:text-base text-gray-600"><%= defaultAddress.apartment %></p>
-                                <% } %>
-                                <p class="text-sm sm:text-base text-gray-600"><%= defaultAddress.city %>, <%= defaultAddress.postalCode %></p>
-                                <% if (defaultAddress.landMark) { %>
-                                    <p class="text-sm sm:text-base text-gray-600">Landmark: <%= defaultAddress.landMark %></p>
-                                <% } %>
-                                <p class="text-sm sm:text-base text-gray-600">Phone: <%= defaultAddress.phone %></p>
+                                <div class="space-y-1 text-gray-600">
+                                    <p class="text-sm sm:text-base flex items-center">
+                                        <i class="fas fa-location-dot mr-2 text-green-500"></i>
+                                        <%= defaultAddress.streetAddress %>
+                                    </p>
+                                    <% if (defaultAddress.apartment) { %>
+                                        <p class="text-sm sm:text-base flex items-center">
+                                            <i class="fas fa-building mr-2 text-green-500"></i>
+                                            <%= defaultAddress.apartment %>
+                                        </p>
+                                    <% } %>
+                                    <p class="text-sm sm:text-base flex items-center">
+                                        <i class="fas fa-city mr-2 text-green-500"></i>
+                                        <%= defaultAddress.city %>, <%= defaultAddress.postalCode %>
+                                    </p>
+                                    <% if (defaultAddress.landMark) { %>
+                                        <p class="text-sm sm:text-base flex items-center">
+                                            <i class="fas fa-landmark mr-2 text-green-500"></i>
+                                            <%= defaultAddress.landMark %>
+                                        </p>
+                                    <% } %>
+                                    <p class="text-sm sm:text-base flex items-center">
+                                        <i class="fas fa-phone mr-2 text-green-500"></i>
+                                        <%= defaultAddress.phone %>
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     <% } else { %>
                         <div class="text-center py-6 sm:py-8">
-                            <p class="text-gray-600 mb-4">No default shipping address set</p>
-                            <a href="/checkout/view-addresses" 
-                               class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm sm:text-base">
-                                <i class="fas fa-plus mr-2"></i>
-                                Add Shipping Address
-                            </a>
+                            <div class="animate__animated animate__fadeIn">
+                                <i class="fas fa-home text-5xl text-gray-300 mb-4"></i>
+                                <p class="text-gray-600 mb-4">No default shipping address set</p>
+                                <a href="/checkout/view-addresses" 
+                                   class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm sm:text-base transition-all duration-300 pulse-button">
+                                    <i class="fas fa-plus mr-2"></i>
+                                    Add Shipping Address
+                                </a>
+                            </div>
                         </div>
                     <% } %>
                 </div>
 
                 <!-- Apply Coupon Section -->
-                <div class="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-4">
-                    <h2 class="text-lg sm:text-xl font-semibold mb-4">Apply Coupon</h2>
+                <div class="checkout-section bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-4" data-aos="fade-up" data-aos-delay="100">
+                    <h2 class="text-lg sm:text-xl font-semibold mb-4 flex items-center">
+                        <i class="fas fa-ticket-alt text-green-600 mr-2"></i>
+                        Apply Coupon
+                    </h2>
                     <div class="space-y-4">
                         <!-- Coupon Input Field -->
                         <div class="flex flex-col sm:flex-row gap-2">
-                            <input type="text" 
-                                   id="couponCode" 
-                                   class="form-input rounded border-gray-300 w-full sm:flex-1"
-                                   placeholder="Enter coupon code"
-                                   <%= locals.appliedCoupon ? 'disabled' : '' %>>
+                            <div class="relative flex-1 input-group">
+                                <input type="text" 
+                                       id="couponCode" 
+                                       class="form-input rounded-lg border-gray-300 w-full pl-12 focus:border-green-500 focus:ring focus:ring-green-200 focus:ring-opacity-50"
+                                       placeholder="Enter coupon code"
+                                       <%= locals.appliedCoupon ? 'disabled' : '' %>>
+                                <i class="fas fa-tag absolute left-4 top-1/2 transform -translate-y-1/2 input-icon transition-all duration-300"></i>
+                            </div>
                             <div class="flex gap-2">
                                 <button type="button" 
                                         id="applyCouponBtn"
-                                        class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm sm:text-base w-full sm:w-auto"
+                                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm sm:text-base w-full sm:w-auto transition-all duration-300 flex items-center justify-center"
                                         <%= locals.appliedCoupon ? 'disabled' : '' %>>
+                                    <i class="fas fa-check mr-2"></i>
                                     Apply
                                 </button>
                                 <button type="button" 
                                         onclick="openCouponModal()"
-                                        class="px-4 py-2 border border-green-600 text-green-600 rounded hover:bg-green-50 text-sm sm:text-base w-full sm:w-auto">
+                                        class="px-4 py-2 border border-green-600 text-green-600 rounded-lg hover:bg-green-50 text-sm sm:text-base w-full sm:w-auto transition-all duration-300 flex items-center justify-center shimmer">
+                                    <i class="fas fa-gift mr-2"></i>
                                     View Coupons
                                 </button>
                             </div>
                         </div>
 
                         <!-- Applied Coupon Info -->
-                        <div id="appliedCouponInfo" class="hidden border rounded-lg p-3 sm:p-4 bg-green-50">
+                        <div id="appliedCouponInfo" class="hidden border rounded-lg p-3 sm:p-4 bg-green-50 animate__animated animate__fadeIn">
                             <div class="flex justify-between items-start">
                                 <div>
                                     <div class="flex items-center space-x-2">
+                                        <i class="fas fa-check-circle text-green-600"></i>
                                         <span class="text-green-600 font-medium">Applied Coupon:</span>
                                         <span id="appliedCouponCode" class="font-medium"></span>
                                     </div>
@@ -119,70 +253,101 @@
                                 </div>
                                 <button type="button" 
                                         onclick="removeCoupon()"
-                                        class="text-red-600 hover:text-red-700">
-                                    <i class="fas fa-times"></i>
+                                        class="text-red-600 hover:text-red-700 transition-colors duration-200">
+                                    <i class="fas fa-times-circle text-lg"></i>
                                 </button>
                             </div>
                         </div>
-
-                        <div id="couponMessage" class="mt-2 text-sm"></div>
                     </div>
                 </div>
 
                 <!-- Payment Method Section -->
-                <div class="bg-white rounded-lg shadow-sm p-4 sm:p-6">
-                    <h2 class="text-lg sm:text-xl font-semibold mb-4">Payment Method</h2>
+                <div class="checkout-section bg-white rounded-lg shadow-sm p-4 sm:p-6" data-aos="fade-up" data-aos-delay="200">
+                    <h2 class="text-lg sm:text-xl font-semibold mb-4 flex items-center">
+                        <i class="fas fa-wallet text-green-600 mr-2"></i>
+                        Payment Method
+                    </h2>
                     <div class="space-y-4">
                         <!-- Wallet Section -->
-                        <div class="border rounded-lg p-3 sm:p-4">
+                        <div class="payment-option border rounded-lg p-3 sm:p-4 transition-all duration-300">
                             <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                                 <div class="flex items-center space-x-4">
-                                    <input type="checkbox" 
-                                           id="useWallet" 
-                                           name="useWallet"
-                                           class="form-checkbox text-green-500 h-5 w-5"
-                                           <%= walletBalance === 0 ? 'disabled' : '' %>>
+                                    <div class="relative">
+                                        <input type="checkbox" 
+                                               id="useWallet" 
+                                               name="useWallet"
+                                               class="form-checkbox text-green-500 rounded transition-all duration-200 focus:ring-green-500 focus:ring-offset-0"
+                                               <%= walletBalance === 0 || cart.total > 10000 ? 'disabled' : '' %>>
+                                        <div class="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate__animated animate__pulse animate__infinite" 
+                                             style="<%= walletBalance === 0 || cart.total > 10000 ? 'display: none;' : '' %>"></div>
+                                    </div>
                                     <div>
-                                        <h3 class="font-medium text-sm sm:text-base">Wallet Balance</h3>
+                                        <h3 class="font-medium text-sm sm:text-base flex items-center">
+                                            <i class="fas fa-wallet text-green-500 mr-2"></i>
+                                            Wallet Balance
+                                        </h3>
                                         <p class="text-sm text-gray-500">Available: ₹<%= walletBalance %></p>
+                                        <% if (cart.total > 10000) { %>
+                                            <p class="text-xs text-red-500 flex items-center mt-1">
+                                                <i class="fas fa-exclamation-circle mr-1"></i>
+                                                Wallet cannot be used for orders above ₹10,000
+                                            </p>
+                                        <% } %>
                                     </div>
                                 </div>
-                                <div>
+                                <div class="relative">
                                     <input type="number" 
                                            id="walletAmount" 
                                            name="walletAmount" 
-                                           min="0" 
+                                           min="1" 
                                            max="<%= Math.min(walletBalance, cart.total + 35) %>"
                                            step="1"
-                                           class="form-input rounded border-gray-300 w-24"
+                                           class="wallet-input form-input rounded-lg border-gray-300 focus:border-green-500 focus:ring focus:ring-green-200 focus:ring-opacity-50"
                                            disabled>
+                                    <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg font-medium">₹</span>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Payment Options -->
                         <div class="space-y-3">
-                            <label class="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors
+                            <label class="payment-option flex items-center space-x-4 p-4 border rounded-lg cursor-pointer transition-all duration-300
                                 <%= (cart.total + 35) > 500 ? 'opacity-50 cursor-not-allowed' : '' %>">
-                                <input type="radio" name="paymentMethod" value="COD" class="h-5 w-5 text-green-600"
+                                <input type="radio" 
+                                       name="paymentMethod" 
+                                       value="COD" 
+                                       class="form-radio text-green-600 focus:ring-green-500 focus:ring-offset-0"
                                     <%= (cart.total + 35) > 500 ? 'disabled' : '' %>>
-                                <div>
-                                    <p class="font-medium text-sm sm:text-base">Cash on Delivery</p>
-                                    <p class="text-sm text-gray-500">Pay when you receive</p>
+                                <div class="flex-1">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-money-bill-wave text-green-500 mr-2 text-xl"></i>
+                                        <p class="font-medium text-base">Cash on Delivery</p>
+                                    </div>
+                                    <p class="text-sm text-gray-500 mt-1">Pay when you receive</p>
                                     <% if ((cart.total + 35) > 500) { %>
-                                        <p class="text-red-500 text-xs sm:text-sm mt-1">COD not available for orders above ₹500</p>
+                                        <p class="text-red-500 text-sm mt-1 flex items-center">
+                                            <i class="fas fa-exclamation-circle mr-1"></i>
+                                            COD not available for orders above ₹500
+                                        </p>
                                     <% } %>
                                 </div>
                             </label>
-                            <div class="border rounded-lg p-3 sm:p-4">
+                            <div class="payment-option border rounded-lg p-4 transition-all duration-300">
                                 <div class="flex items-center space-x-4">
                                     <input type="radio" 
                                            name="paymentMethod" 
                                            value="ONLINE"
-                                           class="form-radio text-green-500 h-5 w-5">
-                                    <div>
-                                        <h3 class="font-medium text-sm sm:text-base">Online Payment</h3>
-                                        <p class="text-sm text-gray-500">Pay securely with Razorpay</p>
+                                           class="form-radio text-green-600 focus:ring-green-500 focus:ring-offset-0">
+                                    <div class="flex-1">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-credit-card text-green-500 mr-2 text-xl"></i>
+                                            <h3 class="font-medium text-base">Online Payment</h3>
+                                        </div>
+                                        <p class="text-sm text-gray-500 mt-1">Pay securely with Razorpay</p>
+                                        <div class="flex items-center gap-2 mt-2">
+                                            <img src="https://cdn.razorpay.com/static/assets/logo/payment.svg" alt="Razorpay" class="h-7">
+                                            <span class="text-xs text-gray-500">Secured by Razorpay</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -193,19 +358,26 @@
 
             <!-- Order Summary -->
             <div class="lg:col-span-1">
-                <div class="bg-white rounded-lg shadow-sm p-4 sm:p-6 sticky top-4">
-                    <h2 class="text-lg sm:text-xl font-semibold mb-4">Order Summary</h2>
+                <div class="checkout-section bg-white rounded-lg shadow-sm p-4 sm:p-6 sticky top-4" data-aos="fade-left">
+                    <h2 class="text-lg sm:text-xl font-semibold mb-4 flex items-center">
+                        <i class="fas fa-shopping-basket text-green-600 mr-2"></i>
+                        Order Summary
+                    </h2>
                     
                     <div class="space-y-4">
                         <% cart.items.forEach(item => { %>
-                            <div class="flex items-center space-x-3 sm:space-x-4">
-                                <img src="/uploads/products/<%= item.product.images[0].split('/').pop() %>" 
-                                     alt="<%= item.product.name %>"
-                                     class="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded">
+                            <div class="flex items-center space-x-3 sm:space-x-4 animate__animated animate__fadeIn">
+                                <div class="relative">
+                                    <img src="/uploads/products/<%= item.product.images[0].split('/').pop() %>" 
+                                         alt="<%= item.product.name %>"
+                                         class="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-lg">
+                                    <span class="absolute -top-2 -right-2 w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-xs">
+                                        <%= item.quantity %>
+                                    </span>
+                                </div>
                                 <div class="flex-1">
                                     <h3 class="font-medium text-sm sm:text-base"><%= item.product.name %></h3>
-                                    <p class="text-xs sm:text-sm text-gray-500">Qty: <%= item.quantity %></p>
-                                    <p class="text-green-600 text-sm sm:text-base">₹<%= item.product.salePrice * item.quantity %></p>
+                                    <p class="text-green-600 text-sm sm:text-base font-medium">₹<%= item.product.salePrice * item.quantity %></p>
                                 </div>
                             </div>
                         <% }); %>
@@ -213,19 +385,28 @@
 
                     <div class="border-t mt-4 sm:mt-6 pt-4 space-y-2">
                         <div class="flex justify-between text-sm sm:text-base">
-                            <span>Subtotal</span>
-                            <span>₹<%= cart.total %></span>
+                            <span class="text-gray-600">Subtotal</span>
+                            <span class="font-medium">₹<%= cart.total %></span>
                         </div>
-                        <div id="couponDiscountDiv" class="flex justify-between text-green-600 text-sm sm:text-base hidden">
-                            <span>Coupon Discount</span>
+                        <div id="couponDiscountDiv" class="flex justify-between text-green-600 text-sm sm:text-base hidden animate__animated animate__fadeIn">
+                            <span class="flex items-center">
+                                <i class="fas fa-tag mr-2"></i>
+                                Coupon Discount
+                            </span>
                             <span>-₹<span id="couponDiscountAmount">0</span></span>
                         </div>
                         <div class="flex justify-between text-green-600 text-sm sm:text-base">
-                            <span>Shipping</span>
+                            <span class="flex items-center">
+                                <i class="fas fa-truck mr-2"></i>
+                                Shipping
+                            </span>
                             <span>₹35</span>
                         </div>
-                        <div id="walletDeduction" class="flex justify-between text-red-600 text-sm sm:text-base hidden">
-                            <span>Wallet Deduction</span>
+                        <div id="walletDeduction" class="flex justify-between text-red-600 text-sm sm:text-base hidden animate__animated animate__fadeIn">
+                            <span class="flex items-center">
+                                <i class="fas fa-wallet mr-2"></i>
+                                Wallet Deduction
+                            </span>
                             <span>-₹<span id="walletDeductionAmount">0</span></span>
                         </div>
                         <div class="flex justify-between font-bold text-base sm:text-lg border-t pt-2">
@@ -235,7 +416,8 @@
                     </div>
 
                     <button type="submit"
-                            class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors mt-4 text-sm sm:text-base">
+                            class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-all duration-300 mt-4 text-sm sm:text-base flex items-center justify-center pulse-button">
+                        <i class="fas fa-lock mr-2"></i>
                         Place Order
                     </button>
                 </div>
@@ -244,19 +426,25 @@
     </main>
 
     <!-- Coupon Modal -->
-    <div id="couponModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50" onclick="handleModalClick(event)">
+    <div id="couponModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 animate__animated animate__fadeIn" onclick="handleModalClick(event)">
         <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-gray-100 rounded-lg shadow-xl w-full max-w-md sm:max-w-lg max-h-[85vh] flex flex-col relative mx-auto">
+            <div class="bg-gray-100 rounded-lg shadow-xl w-full max-w-md sm:max-w-lg max-h-[85vh] flex flex-col relative mx-auto animate__animated animate__zoomIn">
                 <!-- Modal Header -->
                 <div class="p-4 border-b bg-white rounded-t-lg sticky top-0 z-10">
                     <div class="flex justify-between items-center">
                         <div>
-                            <h3 class="text-lg sm:text-xl font-semibold">Available Coupons</h3>
-                            <p class="text-xs sm:text-sm text-gray-500 mt-0.5">Select a coupon to apply to your order</p>
+                            <h3 class="text-lg sm:text-xl font-semibold flex items-center">
+                                <i class="fas fa-ticket-alt text-green-600 mr-2"></i>
+                                Available Coupons
+                            </h3>
+                            <p class="text-xs sm:text-sm text-gray-500 mt-0.5 flex items-center">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Select a coupon to apply to your order
+                            </p>
                         </div>
                         <button type="button" 
                                 onclick="closeCouponModal()" 
-                                class="text-gray-400 hover:text-gray-600 p-2">
+                                class="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-all duration-200">
                             <i class="fas fa-times text-xl"></i>
                         </button>
                     </div>
@@ -264,7 +452,16 @@
                 <!-- Modal Body -->
                 <div class="overflow-y-auto flex-1 px-4 py-3">
                     <div class="space-y-3" id="availableCoupons">
-                        <!-- Coupons will be loaded here -->
+                        <!-- Loading State -->
+                        <div class="animate-pulse space-y-3">
+                            <% for(let i = 0; i < 3; i++) { %>
+                                <div class="bg-white rounded-lg p-4">
+                                    <div class="h-5 bg-gray-200 rounded w-1/3 mb-3"></div>
+                                    <div class="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                                    <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+                                </div>
+                            <% } %>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -276,23 +473,29 @@
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
     <script>
+        // Initialize AOS
+        AOS.init({
+            duration: 800,
+            once: true,
+            offset: 50
+        });
+
         document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             try {
                 const defaultAddressId = document.querySelector('input[name="addressId"]')?.value;
                 const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
-                
-                // Get wallet data
                 const useWallet = document.getElementById('useWallet').checked;
                 const walletAmount = useWallet ? Number(document.getElementById('walletAmount').value) || 0 : 0;
                 
-                // Get coupon data
+                // Add coupon information
                 const couponData = appliedCoupon ? {
                     couponId: appliedCoupon._id,
+                    code: appliedCoupon.code,
                     discountAmount: appliedCoupon.calculatedDiscount
                 } : null;
-                
+
                 if (!defaultAddressId) {
                     Swal.fire({
                         icon: 'error',
@@ -332,7 +535,7 @@
                 }
 
                 // For non-zero totals, require payment method
-                if (!paymentMethod && !useWallet) {
+                if (!paymentMethod && currentTotal > 0) {
                     Swal.fire({
                         icon: 'error',
                         title: 'Payment Method Required',
@@ -479,7 +682,7 @@
                             paymentMethod: 'COD',
                             useWallet: false,
                             walletAmount: 0,
-                            couponCode: null
+                            coupon: couponData
                         })
                     });
 
@@ -497,7 +700,13 @@
                     icon: 'error',
                     title: 'Error',
                     text: error.message || 'An error occurred while placing your order',
-                    confirmButtonColor: '#22C55E'
+                    confirmButtonColor: '#22C55E',
+                    showClass: {
+                        popup: 'animate__animated animate__fadeInDown'
+                    },
+                    hideClass: {
+                        popup: 'animate__animated animate__fadeOutUp'
+                    }
                 });
             }
         });
@@ -510,7 +719,12 @@
         useWalletCheckbox.addEventListener('change', function() {
             walletAmountInput.disabled = !this.checked;
             if (this.checked) {
-                walletAmountInput.value = Math.min(walletBalance, orderTotal);
+                const maxWalletUsage = Math.min(
+                    Number(walletBalance),
+                    10000, // Max ₹10,000 per transaction
+                    Number(orderTotal)
+                );
+                walletAmountInput.value = maxWalletUsage;
                 
                 // Disable COD if wallet is being used
                 const codRadio = document.querySelector('input[value="COD"]');
@@ -530,101 +744,99 @@
             } else {
                 walletAmountInput.value = '';
             }
-            updatePaymentOptions();
+            updateTotals();
         });
 
         walletAmountInput.addEventListener('input', function() {
-            if (this.value > walletBalance) {
-                this.value = walletBalance;
+            const maxWalletUsage = Math.min(
+                Number(walletBalance),
+                10000, // Max ₹10,000 per transaction
+                Number(orderTotal)
+            );
+            
+            if (this.value > maxWalletUsage) {
+                this.value = maxWalletUsage;
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Maximum Limit',
+                    text: `Maximum wallet usage for this order is ₹${maxWalletUsage}`,
+                    confirmButtonColor: '#22C55E'
+                });
             }
-            if (this.value > orderTotal) {
-                this.value = orderTotal;
+            
+            if (this.value < 0) {
+                this.value = 0;
             }
-            updatePaymentOptions();
+            
+            updateTotals();
         });
 
-        function updatePaymentOptions() {
-            const walletAmount = Number(walletAmountInput.value) || 0;
-            const remainingAmount = orderTotal - walletAmount;
+        function updateTotals() {
+            const subtotal = Number('<%= cart.total %>');
+            const shipping = 35;
+            let discount = 0;
+            let walletDeduction = 0;
             
-            const codRadio = document.querySelector('input[value="COD"]');
-            const onlineRadio = document.querySelector('input[value="ONLINE"]');
-            const submitButton = document.querySelector('button[type="submit"]');
+            // Calculate coupon discount first
+            if (appliedCoupon) {
+                if (appliedCoupon.discountType === 'percentage') {
+                    discount = Math.min(
+                        (subtotal * appliedCoupon.discountAmount) / 100,
+                        appliedCoupon.maximumDiscount
+                    );
+                } else {
+                    discount = Math.min(appliedCoupon.discountAmount, subtotal);
+                }
+                discount = Math.min(discount, subtotal);
+                
+                document.getElementById('couponDiscountDiv').classList.remove('hidden');
+                document.getElementById('couponDiscountAmount').textContent = discount.toFixed(2);
+            } else {
+                document.getElementById('couponDiscountDiv').classList.add('hidden');
+            }
             
-            const walletDeductionDiv = document.getElementById('walletDeduction');
-            const walletDeductionAmount = document.getElementById('walletDeductionAmount');
-            const finalTotalSpan = document.getElementById('finalTotal');
+            // Calculate wallet deduction
+            if (useWalletCheckbox.checked) {
+                walletDeduction = Number(walletAmountInput.value) || 0;
+                const remainingAfterDiscount = subtotal - discount + shipping;
+                walletDeduction = Math.min(walletDeduction, remainingAfterDiscount);
+                
+                if (walletDeduction > 0) {
+                    document.getElementById('walletDeduction').classList.remove('hidden');
+                    document.getElementById('walletDeductionAmount').textContent = walletDeduction.toFixed(2);
+                    walletAmountInput.value = walletDeduction;
+                } else {
+                    document.getElementById('walletDeduction').classList.add('hidden');
+                }
+            } else {
+                document.getElementById('walletDeduction').classList.add('hidden');
+            }
             
             // Calculate final total
-            let finalTotal = orderTotal;
-            if (walletAmount > 0) {
-                finalTotal -= walletAmount;
-                walletDeductionDiv.classList.remove('hidden');
-                walletDeductionAmount.textContent = walletAmount.toFixed(2);
-            } else {
-                walletDeductionDiv.classList.add('hidden');
-                walletDeductionAmount.textContent = '0';
-            }
-            if (appliedCoupon) {
-                finalTotal -= appliedCoupon.calculatedDiscount;
-            }
-            finalTotalSpan.textContent = finalTotal.toFixed(2);
+            const finalTotal = Math.max(0, subtotal - discount + shipping - walletDeduction);
+            document.getElementById('finalTotal').textContent = finalTotal.toFixed(2);
             
-            // Handle payment method availability
-            if (codRadio) {
-                const isCODAvailable = finalTotal <= 500 && !appliedCoupon && walletAmount === 0;
-                codRadio.disabled = !isCODAvailable;
-            }
-            
-            if (onlineRadio) {
-                // Disable online payment if total is 0 (fully covered by wallet/coupon)
-                if (finalTotal <= 0) {
-                    onlineRadio.disabled = true;
-                    onlineRadio.checked = false;
-                    if (codRadio) {
-                        codRadio.disabled = true;
-                        codRadio.checked = false;
-                    }
-                    // Update submit button text for zero total
-                    submitButton.textContent = 'Place Order with Wallet';
-                    // Show info message about zero total
-                    Swal.fire({
-                        icon: 'info',
-                        title: 'Full Amount Covered',
-                        text: 'Your order amount is fully covered by wallet/coupon. No additional payment needed.',
-                        confirmButtonColor: '#22C55E'
-                    });
-                } else {
-                    onlineRadio.disabled = false;
-                    // If COD is not available and no payment method is selected, default to online
-                    if ((!codRadio || codRadio.disabled) && !codRadio?.checked) {
-                        onlineRadio.checked = true;
-                    }
-                    // Reset submit button text
-                    submitButton.textContent = 'Place Order';
-                }
-            }
+            // Update payment options based on final total
+            updatePaymentOptions(finalTotal);
         }
-
-        // Add event listeners for payment method changes
-        document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
-            radio.addEventListener('change', updatePaymentOptions);
-        });
-
-        document.addEventListener('DOMContentLoaded', function() {
-            if (useWalletCheckbox.checked) {
-                updatePaymentOptions();
-            }
-        });
 
         let appliedCoupon = null;
         
         function openCouponModal() {
-            document.getElementById('couponModal').classList.remove('hidden');
+            const modal = document.getElementById('couponModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('animate__fadeIn');
+            document.body.style.overflow = 'hidden';
         }
 
         function closeCouponModal() {
-            document.getElementById('couponModal').classList.add('hidden');
+            const modal = document.getElementById('couponModal');
+            modal.classList.add('animate__fadeOut');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('animate__fadeOut');
+                document.body.style.overflow = 'auto';
+            }, 500);
         }
 
         function removeCoupon() {
@@ -639,7 +851,12 @@
                     couponId: appliedCoupon._id 
                 })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     // Reset coupon state
@@ -661,7 +878,7 @@
                     
                     // Re-enable COD if eligible
                     const codRadio = document.querySelector('input[value="COD"]');
-                    const total = `<%= cart.total + 35 %>`;
+                    const total = Number('<%= cart.total %>') + 35;
                     const walletAmount = Number(walletAmountInput.value) || 0;
                     const remainingAmount = total - walletAmount;
                     
@@ -674,9 +891,11 @@
                     Swal.fire({
                         icon: 'success',
                         title: 'Coupon Removed',
-                        text: 'Coupon has been removed successfully',
+                        text: data.message,
                         confirmButtonColor: '#22C55E'
                     });
+                } else {
+                    throw new Error(data.message || 'Failed to remove coupon');
                 }
             })
             .catch(error => {
@@ -684,13 +903,13 @@
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
-                    text: 'Error removing coupon. Please try again.',
+                    text: error.message || 'Error removing coupon. Please try again.',
                     confirmButtonColor: '#22C55E'
                 });
             });
         }
 
-        // Load available coupons
+        // Enhanced loadAvailableCoupons function
         async function loadAvailableCoupons() {
             try {
                 const response = await fetch('/coupons/available');
@@ -700,30 +919,39 @@
                 
                 if (!data.success || !data.coupons.length) {
                     couponsContainer.innerHTML = `
-                        <div class="text-center py-6">
-                            <i class="fas fa-ticket-alt text-4xl mb-3 text-gray-300"></i>
-                            <p class="text-gray-500 text-sm sm:text-base">No coupons available at the moment</p>
+                        <div class="text-center py-8 animate__animated animate__fadeIn">
+                            <div class="bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                                <i class="fas fa-ticket-alt text-4xl text-gray-300"></i>
+                            </div>
+                            <p class="text-gray-500 text-sm sm:text-base mb-2">No coupons available at the moment</p>
+                            <p class="text-xs text-gray-400">Check back later for exciting offers!</p>
                         </div>
                     `;
                     return;
                 }
                 
-                // Render coupons with improved responsive design
-                couponsContainer.innerHTML = data.coupons.map(coupon => `
-                    <div class="bg-white rounded-lg border hover:shadow-md transition-shadow">
-                        <!-- Coupon Header with Code -->
-                        <div class="p-3 sm:p-4 border-b bg-gray-50">
-                            <div class="flex items-center justify-between gap-2">
+                couponsContainer.innerHTML = data.coupons.map((coupon, index) => `
+                    <div class="coupon-card bg-white rounded-lg border hover:shadow-md transition-all duration-300 animate__animated animate__fadeIn animate__delay-${index}s">
+                        <!-- Coupon Header -->
+                        <div class="p-3 sm:p-4 border-b bg-gradient-to-r from-green-50 to-white relative overflow-hidden">
+                            <div class="flex items-center justify-between gap-2 relative z-10">
                                 <div class="flex items-center gap-2">
                                     <span class="font-semibold text-base sm:text-lg text-green-600">${coupon.code}</span>
-                                    <span class="text-xs px-2 py-0.5 bg-green-100 text-green-800 rounded-full whitespace-nowrap">Active</span>
+                                    <span class="text-xs px-2 py-0.5 bg-green-100 text-green-800 rounded-full whitespace-nowrap flex items-center">
+                                        <i class="fas fa-clock mr-1"></i>
+                                        Active
+                                    </span>
                                 </div>
                                 <button type="button" 
-                                        class="apply-coupon-btn px-3 py-1.5 bg-green-600 text-white text-xs sm:text-sm rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap"
+                                        class="apply-coupon-btn px-3 py-1.5 bg-green-600 text-white text-xs sm:text-sm rounded-lg hover:bg-green-700 transition-all duration-300 whitespace-nowrap flex items-center group"
                                         data-code="${coupon.code}">
+                                    <i class="fas fa-tag mr-2 group-hover:rotate-12 transition-transform"></i>
                                     Apply Now
                                 </button>
                             </div>
+                            <!-- Decorative Elements -->
+                            <div class="absolute -left-4 -bottom-4 w-24 h-24 bg-green-100 rounded-full opacity-50"></div>
+                            <div class="absolute -right-4 -top-4 w-20 h-20 bg-green-50 rounded-full opacity-50"></div>
                         </div>
 
                         <!-- Coupon Body -->
@@ -732,22 +960,22 @@
                             <p class="text-sm text-gray-600">${coupon.description}</p>
 
                             <!-- Discount Details -->
-                            <div class="grid grid-cols-1 gap-2 text-sm">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                                        <i class="fas fa-tag text-gray-500 text-sm"></i>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                                <div class="flex items-center gap-2 bg-gray-50 p-2 rounded-lg">
+                                    <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                                        <i class="fas fa-tag text-green-500"></i>
                                     </div>
                                     <div>
-                                        <span class="text-gray-500">Minimum Purchase</span>
+                                        <span class="text-gray-500 text-xs">Minimum Purchase</span>
                                         <p class="font-medium">₹${coupon.minimumPurchase}</p>
                                     </div>
                                 </div>
-                                <div class="flex items-center gap-2">
-                                    <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                                        <i class="fas fa-percent text-gray-500 text-sm"></i>
+                                <div class="flex items-center gap-2 bg-gray-50 p-2 rounded-lg">
+                                    <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                                        <i class="fas fa-percent text-green-500"></i>
                                     </div>
                                     <div>
-                                        <span class="text-gray-500">${coupon.discountType === 'percentage' ? 'Discount' : 'Flat Off'}</span>
+                                        <span class="text-gray-500 text-xs">${coupon.discountType === 'percentage' ? 'Discount' : 'Flat Off'}</span>
                                         <p class="font-medium">
                                             ${coupon.discountType === 'percentage' ? 
                                               `${coupon.discountAmount}% up to ₹${coupon.maximumDiscount}` : 
@@ -759,7 +987,7 @@
 
                             <!-- Expiry -->
                             <div class="flex items-center gap-2 pt-2 border-t text-xs text-gray-500">
-                                <i class="far fa-clock"></i>
+                                <i class="far fa-calendar-alt"></i>
                                 <span>Valid until: ${new Date(coupon.expiryDate).toLocaleDateString()}</span>
                             </div>
                         </div>
@@ -778,9 +1006,16 @@
                 console.error('Error loading coupons:', error);
                 const couponsContainer = document.getElementById('availableCoupons');
                 couponsContainer.innerHTML = `
-                    <div class="text-center py-6">
-                        <i class="fas fa-exclamation-circle text-4xl mb-3 text-red-300"></i>
-                        <p class="text-red-500 text-sm sm:text-base">Error loading coupons. Please try again.</p>
+                    <div class="text-center py-8 animate__animated animate__fadeIn">
+                        <div class="bg-red-50 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                            <i class="fas fa-exclamation-circle text-4xl text-red-300"></i>
+                        </div>
+                        <p class="text-red-500 text-sm sm:text-base mb-2">Error loading coupons</p>
+                        <button onclick="loadAvailableCoupons()" 
+                                class="text-green-600 hover:text-green-700 text-sm flex items-center justify-center mx-auto mt-2">
+                            <i class="fas fa-redo mr-2"></i>
+                            Try Again
+                        </button>
                     </div>
                 `;
             }
@@ -934,50 +1169,59 @@
             // You can call your existing order creation function
         }
 
-        function updateTotals() {
-            const subtotal = Number(`<%= cart.total %>`);
-            const shipping = 35;
-            let discount = 0;
-            let walletDeduction = Number(document.getElementById('walletAmount').value) || 0;
+        function updatePaymentOptions(finalTotal) {
+            const codRadio = document.querySelector('input[value="COD"]');
+            const onlineRadio = document.querySelector('input[value="ONLINE"]');
+            const submitButton = document.querySelector('button[type="submit"]');
             
-            // Calculate coupon discount first based on subtotal
-            if (appliedCoupon) {
-                if (appliedCoupon.discountType === 'percentage') {
-                    discount = Math.min(
-                        (subtotal * appliedCoupon.discountAmount) / 100,
-                        appliedCoupon.maximumDiscount
-                    );
-                } else {
-                    discount = Math.min(appliedCoupon.discountAmount, subtotal);
+            // Disable wallet for orders above ₹10,000
+            if (finalTotal > 10000) {
+                useWalletCheckbox.disabled = true;
+                useWalletCheckbox.checked = false;
+                document.getElementById('walletAmount').disabled = true;
+                document.getElementById('walletAmount').value = '';
+            }
+            
+            // Handle payment method availability
+            if (codRadio) {
+                const isCODAvailable = finalTotal <= 500 && !appliedCoupon && Number(document.getElementById('walletAmount').value || 0) === 0;
+                codRadio.disabled = !isCODAvailable;
+                
+                if (codRadio.disabled && codRadio.checked) {
+                    codRadio.checked = false;
+                    if (onlineRadio) {
+                        onlineRadio.checked = true;
+                    }
                 }
-                
-                document.getElementById('couponDiscountDiv').classList.remove('hidden');
-                document.getElementById('couponDiscountAmount').textContent = discount.toFixed(2);
-            } else {
-                document.getElementById('couponDiscountDiv').classList.add('hidden');
             }
             
-            // Apply wallet deduction after coupon discount
-            if (walletDeduction > 0) {
-                // Ensure wallet deduction doesn't exceed remaining amount
-                const remainingAfterDiscount = subtotal - discount + shipping;
-                walletDeduction = Math.min(walletDeduction, remainingAfterDiscount);
-                
-                document.getElementById('walletDeduction').classList.remove('hidden');
-                document.getElementById('walletDeductionAmount').textContent = walletDeduction.toFixed(2);
-                
-                // Update wallet input if amount was adjusted
-                document.getElementById('walletAmount').value = walletDeduction;
-            } else {
-                document.getElementById('walletDeduction').classList.add('hidden');
+            if (onlineRadio) {
+                if (finalTotal <= 0) {
+                    onlineRadio.disabled = true;
+                    onlineRadio.checked = false;
+                    if (codRadio) {
+                        codRadio.disabled = true;
+                        codRadio.checked = false;
+                    }
+                    submitButton.textContent = 'Place Order with Wallet';
+                } else {
+                    onlineRadio.disabled = false;
+                    if ((!codRadio || codRadio.disabled) && !codRadio?.checked) {
+                        onlineRadio.checked = true;
+                    }
+                    submitButton.textContent = 'Place Order';
+                }
             }
             
-            // Calculate final total: subtotal - coupon discount + shipping - wallet
-            const total = Math.max(0, subtotal - discount + shipping - walletDeduction);
-            document.getElementById('finalTotal').textContent = total.toFixed(2);
-            
-            // Update payment options based on final total
-            updatePaymentOptions();
+            // Show appropriate messages
+            if (finalTotal <= 0) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Full Amount Covered',
+                    text: 'Your order amount is fully covered by wallet/coupon. No additional payment needed.',
+                    confirmButtonColor: '#22C55E'
+                });
+            }
         }
     </script>
 </body>

@@ -8,7 +8,8 @@ const transactionSchema = new mongoose.Schema({
     },
     amount: {
         type: Number,
-        required: true
+        required: true,
+        min: [0, 'Amount cannot be negative']
     },
     description: {
         type: String,
@@ -38,11 +39,34 @@ const walletSchema = new mongoose.Schema({
     },
     balance: {
         type: Number,
+        default: 0,
+        min: [0, 'Wallet balance cannot be negative'],
+        validate: {
+            validator: function(v) {
+                return v >= 0;
+            },
+            message: 'Insufficient wallet balance'
+        }
+    },
+    transactions: [transactionSchema],
+    minimumBalance: {
+        type: Number,
         default: 0
     },
-    transactions: [transactionSchema]
+    isActive: {
+        type: Boolean,
+        default: true
+    }
 }, {
     timestamps: true
+});
+
+// Add middleware to validate balance before saving
+walletSchema.pre('save', function(next) {
+    if (this.balance < 0) {
+        next(new Error('Wallet balance cannot be negative'));
+    }
+    next();
 });
 
 module.exports = mongoose.model('Wallet', walletSchema); 

@@ -299,8 +299,18 @@
                             </td>
                             <td class="px-6 py-4">
                                 <div class="flex justify-center">
-                                    <span class="status-badge <%= coupon.isActive ? 'status-active' : 'status-inactive' %>">
-                                        <%= coupon.isActive ? 'Active' : 'Inactive' %>
+                                    <% 
+                                    const isExpired = new Date(coupon.expiryDate) <= new Date();
+                                    let statusClass = coupon.isActive ? 'status-active' : 'status-inactive';
+                                    let statusText = coupon.isActive ? 'Active' : 'Inactive';
+                                    
+                                    if (isExpired) {
+                                        statusClass = 'status-inactive';
+                                        statusText = 'Expired';
+                                    }
+                                    %>
+                                    <span class="status-badge <%= statusClass %>">
+                                        <%= statusText %>
                                     </span>
                                 </div>
                             </td>

@@ -3,7 +3,7 @@ const Coupon = require('../../models/Coupon');
 const listCoupons = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
-        const limit = 5;
+        const limit = 4;
         const search = req.query.search || '';
         const status = req.query.status;
 
@@ -18,8 +18,12 @@ const listCoupons = async (req, res) => {
 
         if (status === 'active') {
             query.isActive = true;
+            query.expiryDate = { $gt: new Date() };
         } else if (status === 'inactive') {
-            query.isActive = false;
+            query.$or = [
+                { isActive: false },
+                { expiryDate: { $lte: new Date() } }
+            ];
         }
 
         const totalCoupons = await Coupon.countDocuments(query);
@@ -30,8 +34,16 @@ const listCoupons = async (req, res) => {
             .skip((page - 1) * limit)
             .limit(limit);
 
+        const transformedCoupons = coupons.map(coupon => {
+            const couponObj = coupon.toObject();
+            if (new Date(couponObj.expiryDate) <= new Date()) {
+                couponObj.isActive = false;
+            }
+            return couponObj;
+        });
+
         res.render('admin/coupons', {
-            coupons,
+            coupons: transformedCoupons,
             currentPage: page,
             totalPages,
             search,
@@ -241,6 +253,14 @@ const toggleCouponStatus = async (req, res) => {
             return res.status(404).json({ 
                 success: false, 
                 message: 'Coupon not found' 
+            });
+        }
+
+        // Check if trying to activate an expired coupon
+        if (!coupon.isActive && new Date(coupon.expiryDate) <= new Date()) {
+            return res.status(400).json({
+                success: false,
+                message: 'Cannot activate expired coupon'
             });
         }
 
