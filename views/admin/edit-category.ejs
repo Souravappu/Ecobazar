@@ -211,24 +211,6 @@
                             placeholder="Enter category description" required><%= category.description %></textarea>
                         </div>
 
-                        <!-- Category Offer -->
-                        <div class="space-y-2">
-                          <label class="text-sm font-medium text-gray-400">Category Offer (%)</label>
-                          <div class="relative">
-                            <input type="text" 
-                                   id="offerInput"
-                                   name="offer" 
-                                   value="<%= category.categoryOffer || 0 %>"
-                                   class="form-input w-full px-4 py-3 rounded-lg" 
-                                   placeholder="Enter offer percentage (0-90)"
-                                   maxlength="5"
-                                   oninput="validateOffer(this)">
-                            <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">%</span>
-                            <div id="offerError" class="hidden absolute -bottom-6 left-0 text-red-500 text-sm"></div>
-                          </div>
-                          <p class="text-xs text-gray-400 mt-1">Enter a value between 0 and 90</p>
-                        </div>
-
                         <!-- Category Image -->
                         <div class="space-y-2">
                           <label class="text-sm font-medium text-gray-400">Category Image</label>
@@ -356,69 +338,6 @@
           return true;
         };
 
-        function validateOffer(input) {
-            const offerError = document.getElementById('offerError');
-            let value = input.value.trim();
-            
-            // Clear previous error state
-            input.classList.remove('border-red-500', 'border-green-500');
-            offerError.classList.add('hidden');
-            
-            // Remove any non-numeric characters except decimal point
-            value = value.replace(/[^\d.]/g, '');
-            
-            // Ensure only one decimal point
-            const decimalCount = (value.match(/\./g) || []).length;
-            if (decimalCount > 1) {
-                value = value.replace(/\./g, (match, index) => index === value.indexOf('.') ? match : '');
-            }
-            
-            // Limit to 2 decimal places
-            if (value.includes('.')) {
-                const parts = value.split('.');
-                if (parts[1].length > 2) {
-                    value = parts[0] + '.' + parts[1].slice(0, 2);
-                }
-            }
-            
-            // Update input value with cleaned value
-            input.value = value;
-            
-            if (value === '' || value === '.') {
-                input.classList.add('border-red-500');
-                offerError.textContent = 'Offer percentage is required';
-                offerError.classList.remove('hidden');
-                return false;
-            }
-            
-            const offerValue = parseFloat(value);
-            
-            if (isNaN(offerValue)) {
-                input.classList.add('border-red-500');
-                offerError.textContent = 'Please enter a valid number';
-                offerError.classList.remove('hidden');
-                return false;
-            }
-            
-            if (offerValue < 0) {
-                input.classList.add('border-red-500');
-                offerError.textContent = 'Offer cannot be negative';
-                offerError.classList.remove('hidden');
-                return false;
-            }
-            
-            if (offerValue > 90) {
-                input.classList.add('border-red-500');
-                offerError.textContent = 'Offer cannot exceed 90%';
-                offerError.classList.remove('hidden');
-                return false;
-            }
-            
-            // If all validations pass
-            input.classList.add('border-green-500');
-            return true;
-        }
-
         const validateImage = () => {
           const imageInput = document.getElementById('imageInput');
           const existingImage = document.getElementById('imagePreview').src;
@@ -487,13 +406,6 @@
           }
         };
 
-        // Add real-time validation
-        nameInput.addEventListener('input', validateName);
-        descriptionInput.addEventListener('input', validateDescription);
-        if (document.querySelector('input[name="offer"]')) {
-          document.querySelector('input[name="offer"]').addEventListener('input', validateOffer);
-        }
-
         // Create error elements
         const nameError = document.createElement('div');
         nameError.className = 'error-message mt-1 text-sm opacity-0 transition-opacity duration-300';
@@ -503,64 +415,35 @@
         descriptionError.className = 'error-message mt-1 text-sm opacity-0 transition-opacity duration-300';
         descriptionInput.parentNode.appendChild(descriptionError);
 
-        const offerError = document.createElement('div');
-        offerError.className = 'error-message mt-1 text-sm opacity-0 transition-opacity duration-300';
-        if (document.querySelector('input[name="offer"]')) {
-          document.querySelector('input[name="offer"]').parentNode.appendChild(offerError);
-        }
-
         const imageError = document.createElement('div');
         imageError.className = 'error-message mt-1 text-sm opacity-0 transition-opacity duration-300';
         document.querySelector('.image-upload-container').appendChild(imageError);
 
-        // Add keypress validation for offer input to allow only numbers
-        if (document.querySelector('input[name="offer"]')) {
-          document.querySelector('input[name="offer"]').addEventListener('keypress', function(e) {
-            // Allow: backspace, delete, tab, escape, enter, decimal point
-            if (e.key === '.' && !this.value.includes('.')) {
-                return;
-            }
-            
-            // Allow numbers only
-            if (!/^\d$/.test(e.key)) {
-                e.preventDefault();
-            }
-            
-            // Prevent input if it would result in more than 5 characters
-            if (this.value.length >= 5 && e.key !== 'Backspace' && e.key !== 'Delete') {
-                e.preventDefault();
-            }
-          });
-        }
+        // Add real-time validation
+        nameInput.addEventListener('input', () => {
+          validateName();
+          // Sanitize input
+          nameInput.value = nameInput.value.replace(/[^a-zA-Z0-9\s-]/g, '');
+        });
 
-        // Add paste event handler to sanitize pasted content
-        if (document.querySelector('input[name="offer"]')) {
-          document.querySelector('input[name="offer"]').addEventListener('paste', function(e) {
-            e.preventDefault();
-            const pastedText = (e.clipboardData || window.clipboardData).getData('text');
-            const sanitizedText = pastedText.replace(/[^\d.]/g, '');
-            
-            // Only take first 5 characters
-            const truncatedText = sanitizedText.slice(0, 5);
-            
-            // Insert at cursor position
-            const startPos = this.selectionStart;
-            const endPos = this.selectionEnd;
-            this.value = this.value.substring(0, startPos) + truncatedText + this.value.substring(endPos);
-            
-            // Move cursor to end of pasted text
-            this.selectionStart = this.selectionEnd = startPos + truncatedText.length;
-            
-            validateOffer(this);
-          });
-        }
+        descriptionInput.addEventListener('input', validateDescription);
 
-        // Add input event listener for immediate validation
-        if (document.querySelector('input[name="offer"]')) {
-          document.querySelector('input[name="offer"]').addEventListener('input', function() {
-            validateOffer(this);
-          });
-        }
+        // Add character counter for description
+        const addCharacterCounter = (textarea) => {
+          const counter = document.createElement('div');
+          counter.className = 'text-sm text-gray-400 mt-1';
+          textarea.parentNode.appendChild(counter);
+
+          const updateCounter = () => {
+            const remaining = 500 - textarea.value.length;
+            counter.textContent = `${remaining} characters remaining`;
+          };
+
+          textarea.addEventListener('input', updateCounter);
+          updateCounter();
+        };
+
+        addCharacterCounter(descriptionInput);
 
         // Form submission with validation
         form.addEventListener('submit', function(e) {
@@ -568,10 +451,9 @@
 
           const isNameValid = validateName();
           const isDescriptionValid = validateDescription();
-          const isOfferValid = validateOffer(document.getElementById('offerInput'));
           const isImageValid = validateImage();
 
-          if (!isNameValid || !isDescriptionValid || !isOfferValid || !isImageValid) {
+          if (!isNameValid || !isDescriptionValid || !isImageValid) {
             // Find first error and scroll to it
             const firstError = form.querySelector('.error-message:not(.opacity-0)');
             if (firstError) {
@@ -586,6 +468,56 @@
           // If all validations pass, submit the form
           this.submit();
         });
+
+        // File upload handling
+        uploadArea.addEventListener('click', () => {
+          imageInput.click();
+        });
+
+        uploadArea.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          uploadArea.classList.add('border-blue-500');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+          uploadArea.classList.remove('border-blue-500');
+        });
+
+        uploadArea.addEventListener('drop', async (e) => {
+          e.preventDefault();
+          uploadArea.classList.remove('border-blue-500');
+          
+          if (e.dataTransfer.files.length) {
+            const file = e.dataTransfer.files[0];
+            try {
+              await validateImageFile(file);
+              imageInput.files = e.dataTransfer.files;
+              previewImage({ target: imageInput });
+            } catch (error) {
+              showError(imageError, error.message);
+            }
+          }
+        });
+
+        // Image validation function
+        async function validateImageFile(file) {
+          const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+          const maxSize = 5 * 1024 * 1024; // 5MB
+
+          return new Promise((resolve, reject) => {
+            if (!validTypes.includes(file.type)) {
+              reject(new Error('Only JPG, PNG and WebP images are allowed'));
+              return;
+            }
+
+            if (file.size > maxSize) {
+              reject(new Error('Image size should be less than 5MB'));
+              return;
+            }
+
+            resolve(true);
+          });
+        }
 
         // Add styles for animations
         const style = document.createElement('style');
@@ -631,13 +563,19 @@
           uploadArea.classList.remove('border-blue-500');
         });
 
-        uploadArea.addEventListener('drop', (e) => {
+        uploadArea.addEventListener('drop', async (e) => {
           e.preventDefault();
           uploadArea.classList.remove('border-blue-500');
           
           if (e.dataTransfer.files.length) {
-            imageInput.files = e.dataTransfer.files;
-            previewImage({ target: imageInput });
+            const file = e.dataTransfer.files[0];
+            try {
+              await validateImageFile(file);
+              imageInput.files = e.dataTransfer.files;
+              previewImage({ target: imageInput });
+            } catch (error) {
+              showError(imageError, error.message);
+            }
           }
         });
 
@@ -728,12 +666,6 @@
             window.cropper.destroy();
           }
         };
-
-        // Initialize validation on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            const offerInput = document.getElementById('offerInput');
-            validateOffer(offerInput);
-        });
       });
     </script>
 </body>

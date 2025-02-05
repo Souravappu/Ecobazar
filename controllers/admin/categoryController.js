@@ -145,20 +145,40 @@ const getEditCategory = async (req, res, next) => {
 const editCategory = async (req, res) => {
     try {
         const id = req.params.id;
-        const { name, description, offer, isActive } = req.body;
+        const { name, description, isActive } = req.body;
         const category = await Category.findById(id);
         
+        if (!category) {
+            return res.render('admin/edit-category', {
+                errorMessage: 'Category not found',
+                successMessage: null,
+                category: null,
+                formData: req.body
+            });
+        }
+
         const formData = {
             name,
             description,
-            offer,
             isActive,
             categoryImage: req.file ? `/uploads/categories/${req.file.filename}` : category.image
         };
         
-        if (!name || !description) {
+        // Validation
+        const errors = [];
+        if (!name || name.trim().length < 3 || name.trim().length > 50) {
+            errors.push('Category name must be between 3 and 50 characters');
+        }
+        if (!/^[a-zA-Z0-9\s-]+$/.test(name)) {
+            errors.push('Category name can only contain letters, numbers, spaces and hyphens');
+        }
+        if (!description || description.trim().length < 10 || description.trim().length > 500) {
+            errors.push('Description must be between 10 and 500 characters');
+        }
+
+        if (errors.length > 0) {
             return res.render('admin/edit-category', {
-                errorMessage: 'Name and description are required',
+                errorMessage: errors.join('. '),
                 successMessage: null,
                 category: { ...category.toObject(), ...formData },
                 formData
@@ -168,7 +188,7 @@ const editCategory = async (req, res) => {
         // Check for existing category with same name (case-insensitive) excluding current category
         const existingCategory = await Category.findOne({
             _id: { $ne: id },
-            name: { $regex: new RegExp(`^${name}$`, 'i') }
+            name: { $regex: new RegExp(`^${name.trim()}$`, 'i') }
         });
 
         if (existingCategory) {
@@ -180,10 +200,33 @@ const editCategory = async (req, res) => {
             });
         }
 
+        // Image validation
+        if (req.file) {
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+            const maxSize = 5 * 1024 * 1024; // 5MB
+
+            if (!allowedTypes.includes(req.file.mimetype)) {
+                return res.render('admin/edit-category', {
+                    errorMessage: 'Invalid file type. Only JPG, PNG and WebP images are allowed',
+                    successMessage: null,
+                    category: { ...category.toObject(), ...formData },
+                    formData
+                });
+            }
+
+            if (req.file.size > maxSize) {
+                return res.render('admin/edit-category', {
+                    errorMessage: 'Image size should be less than 5MB',
+                    successMessage: null,
+                    category: { ...category.toObject(), ...formData },
+                    formData
+                });
+            }
+        }
+
         const updatedCategory = {
             name: name.trim(),
             description: description.trim(),
-            categoryOffer: offer ? parseInt(offer) : 0,
             isListed: isActive === 'on'
         };
 
@@ -230,7 +273,7 @@ const editCategory = async (req, res) => {
         return res.render('admin/edit-category', {
             errorMessage: 'Error updating category: ' + error.message,
             successMessage: null,
-            category: { ...category.toObject(), ...formData },
+            category: category ? { ...category.toObject(), ...formData } : null,
             formData
         });
     }

@@ -510,36 +510,91 @@ const adminController = {
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Sales Report');
 
+        // Add title and date range/period information
+        worksheet.mergeCells('A1:J1');
+        worksheet.getCell('A1').value = 'Delivered Orders Report';
+        worksheet.getCell('A1').alignment = { horizontal: 'center' };
+        worksheet.getCell('A1').font = { bold: true, size: 16 };
+
+        worksheet.mergeCells('A2:J2');
+        const dateRangeText = orders.length > 0 ? 
+            `Report Period: ${moment(orders[0].createdAt).format('DD/MM/YYYY')} to ${moment(orders[orders.length - 1].createdAt).format('DD/MM/YYYY')}` :
+            'No orders in selected period';
+        worksheet.getCell('A2').value = dateRangeText;
+        worksheet.getCell('A2').alignment = { horizontal: 'center' };
+        
+        // Add empty row
+        worksheet.addRow([]);
+
+        // Define columns
         worksheet.columns = [
             { header: 'Order ID', key: 'orderId', width: 15 },
             { header: 'Date', key: 'date', width: 15 },
-            { header: 'Customer', key: 'customer', width: 20 },
-            { header: 'Status', key: 'status', width: 15 },
-            { header: 'Items', key: 'items', width: 30 },
+            { header: 'Customer Name', key: 'customerName', width: 20 },
+            { header: 'Phone', key: 'phone', width: 15 },
+            { header: 'Payment Method', key: 'paymentMethod', width: 15 },
+            { header: 'Items', key: 'items', width: 40 },
             { header: 'Subtotal', key: 'subtotal', width: 15 },
-            { header: 'Discount', key: 'discount', width: 15 },
+            { header: 'Wallet Used', key: 'walletAmount', width: 15 },
+            { header: 'Coupon Code', key: 'couponCode', width: 15 },
+            { header: 'Coupon Discount', key: 'couponDiscount', width: 15 },
+            { header: 'Shipping Charge', key: 'shippingCharge', width: 15 },
             { header: 'Total', key: 'total', width: 15 }
         ];
 
+        // Style the header row
+        worksheet.getRow(4).font = { bold: true };
+        worksheet.getRow(4).alignment = { horizontal: 'center' };
+
+        // Add order data
         orders.forEach(order => {
             worksheet.addRow({
                 orderId: order.orderId,
-                date: moment(order.createdAt).format('YYYY-MM-DD'),
-                customer: order.user ? `${order.user.fname} ${order.user.lname}` : 'Deleted User',
-                status: order.orderStatus,
-                items: order.items.map(item => `${item.product.name} (${item.quantity})`).join(', '),
+                date: moment(order.createdAt).format('DD/MM/YYYY'),
+                customerName: order.user ? `${order.user.fname} ${order.user.lname}` : 'Deleted User',
+                phone: order.shippingAddress ? order.shippingAddress.phone : 'N/A',
+                paymentMethod: order.paymentMethod,
+                items: order.items.map(item => 
+                    `${item.product.name} (Qty: ${item.quantity}) - ₹${item.price}`
+                ).join(', '),
                 subtotal: order.subtotal,
-                discount: order.couponDiscount || 0,
+                walletAmount: order.walletAmount || 0,
+                couponCode: order.coupon ? order.coupon.code : 'No Coupon',
+                couponDiscount: order.couponDiscount || 0,
+                shippingCharge: order.shippingCharge || 0,
                 total: order.total
             });
         });
 
+        // Add empty row before summary
         worksheet.addRow([]);
-        worksheet.addRow(['Summary']);
+        worksheet.addRow([]);
+
+        // Add summary section
+        const summaryStartRow = worksheet.rowCount + 1;
+        worksheet.mergeCells(`A${summaryStartRow}:C${summaryStartRow}`);
+        worksheet.getCell(`A${summaryStartRow}`).value = 'Summary';
+        worksheet.getCell(`A${summaryStartRow}`).font = { bold: true };
+
+        // Add summary details
         worksheet.addRow(['Total Orders', summary.totalOrders]);
-        worksheet.addRow(['Total Revenue', summary.totalRevenue]);
-        worksheet.addRow(['Total Discount', summary.totalDiscount]);
-        worksheet.addRow(['Average Order Value', summary.averageOrderValue]);
+        worksheet.addRow(['Total Revenue', `₹${summary.totalRevenue.toFixed(2)}`]);
+        worksheet.addRow(['Total Wallet Amount Used', `₹${summary.totalWalletUsed.toFixed(2)}`]);
+        worksheet.addRow(['Total Coupon Discount', `₹${summary.totalCouponDiscount.toFixed(2)}`]);
+        worksheet.addRow(['Total Shipping Charges', `₹${summary.totalShippingCharges.toFixed(2)}`]);
+        worksheet.addRow(['Average Order Value', `₹${summary.averageOrderValue.toFixed(2)}`]);
+
+        // Style numbers in the data to be right-aligned
+        worksheet.eachRow((row, rowNumber) => {
+            if (rowNumber > 4) { // Skip header rows
+                ['G', 'H', 'J', 'K', 'L'].forEach(col => {
+                    if (row.getCell(col).value) {
+                        row.getCell(col).alignment = { horizontal: 'right' };
+                        row.getCell(col).numFmt = '₹#,##0.00';
+                    }
+                });
+            }
+        });
 
         res.setHeader(
             'Content-Type',
@@ -554,38 +609,78 @@ const adminController = {
     },
 
     generatePDFReport: async function(res, orders, summary) {
-        const doc = new PDFDocument();
+        const doc = new PDFDocument({ margin: 30, size: 'A4', layout: 'landscape' });
         
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', 'attachment; filename=sales-report.pdf');
 
         doc.pipe(res);
 
-        doc.fontSize(20).text('Sales Report', { align: 'center' });
+        // Add title
+        doc.fontSize(20).text('Delivered Orders Report', { align: 'center' });
         doc.moveDown();
 
-        doc.fontSize(14).text('Summary');
+        // Add date range
+        if (orders.length > 0) {
+            doc.fontSize(12).text(
+                `Report Period: ${moment(orders[0].createdAt).format('DD/MM/YYYY')} to ${moment(orders[orders.length - 1].createdAt).format('DD/MM/YYYY')}`,
+                { align: 'center' }
+            );
+        }
+        doc.moveDown();
+
+        // Add summary section
+        doc.fontSize(14).text('Summary', { underline: true });
         doc.fontSize(12);
         doc.text(`Total Orders: ${summary.totalOrders}`);
         doc.text(`Total Revenue: ₹${summary.totalRevenue.toFixed(2)}`);
-        doc.text(`Total Discount: ₹${summary.totalDiscount.toFixed(2)}`);
+        doc.text(`Total Wallet Amount Used: ₹${summary.totalWalletUsed.toFixed(2)}`);
+        doc.text(`Total Coupon Discount: ₹${summary.totalCouponDiscount.toFixed(2)}`);
+        doc.text(`Total Shipping Charges: ₹${summary.totalShippingCharges.toFixed(2)}`);
         doc.text(`Average Order Value: ₹${summary.averageOrderValue.toFixed(2)}`);
         doc.moveDown();
 
+        // Create the orders table
         const table = {
-            headers: ['Order ID', 'Date', 'Customer', 'Status', 'Total'],
+            headers: [
+                'Order ID',
+                'Date',
+                'Customer',
+                'Payment Method',
+                'Items',
+                'Subtotal',
+                'Wallet',
+                'Discount',
+                'Total'
+            ],
             rows: orders.map(order => [
                 order.orderId,
-                moment(order.createdAt).format('YYYY-MM-DD'),
+                moment(order.createdAt).format('DD/MM/YYYY'),
                 order.user ? `${order.user.fname} ${order.user.lname}` : 'Deleted User',
-                order.orderStatus,
+                order.paymentMethod,
+                order.items.map(item => 
+                    `${item.product.name}(${item.quantity})`
+                ).join(', '),
+                `₹${order.subtotal.toFixed(2)}`,
+                `₹${(order.walletAmount || 0).toFixed(2)}`,
+                `₹${(order.couponDiscount || 0).toFixed(2)}`,
                 `₹${order.total.toFixed(2)}`
             ])
         };
 
+        // Set table layout
+        const tableLayout = {
+            prepareHeader: () => doc.font('Helvetica-Bold').fontSize(8),
+            prepareRow: () => doc.font('Helvetica').fontSize(8)
+        };
+
+        // Draw the table
         await doc.table(table, {
-            prepareHeader: () => doc.fontSize(10),
-            prepareRow: () => doc.fontSize(10)
+            ...tableLayout,
+            width: 750,
+            padding: 5,
+            columnSpacing: 10,
+            columnsSize: [60, 60, 80, 60, 200, 70, 70, 70, 70]
         });
 
         doc.end();
@@ -616,17 +711,13 @@ const adminController = {
                 startDate,
                 endDate,
                 period,
-                status,
                 downloadFormat
             } = req.query;
 
+            // Set default query to only show delivered orders
             let query = {
-                orderStatus: { $ne: 'Cancelled' }
+                orderStatus: 'Delivered'
             };
-
-            if (status && status !== 'all') {
-                query.orderStatus = status;
-            }
 
             if (startDate && endDate) {
                 const start = moment(startDate).startOf('day').toDate();
@@ -665,13 +756,46 @@ const adminController = {
                 }
             }
 
+            // Get all filtered orders for summary calculation
+            const filteredOrders = await Order.find(query)
+                .populate('user', 'fname lname email')
+                .populate('items.product', 'name price')
+                .populate('coupon', 'code')
+                .sort({ createdAt: -1 });
+
+            // Calculate summary based on filtered orders
+            const summary = {
+                totalOrders: filteredOrders.length,
+                totalRevenue: filteredOrders.reduce((sum, order) => sum + order.total, 0),
+                totalWalletUsed: filteredOrders.reduce((sum, order) => sum + (order.walletAmount || 0), 0),
+                totalCouponDiscount: filteredOrders.reduce((sum, order) => sum + (order.couponDiscount || 0), 0),
+                totalShippingCharges: filteredOrders.reduce((sum, order) => sum + (order.shippingCharge || 0), 0),
+                averageOrderValue: filteredOrders.length ? 
+                    filteredOrders.reduce((sum, order) => sum + order.total, 0) / filteredOrders.length : 0
+            };
+
+            // Handle download formats
+            if (downloadFormat) {
+                if (downloadFormat === 'excel') {
+                    const generateExcel = adminController.generateExcelReport.bind(adminController);
+                    await generateExcel(res, filteredOrders, summary);
+                    return;
+                } else if (downloadFormat === 'pdf') {
+                    const generatePDF = adminController.generatePDFReport.bind(adminController);
+                    await generatePDF(res, filteredOrders, summary);
+                    return;
+                }
+            }
+
+            // For display, apply pagination
             const page = parseInt(req.query.page) || 1;
             const limit = 10;
             const skip = (page - 1) * limit;
 
-            const orders = await Order.find(query)
+            const paginatedOrders = await Order.find(query)
                 .populate('user', 'fname lname email')
                 .populate('items.product', 'name price')
+                .populate('coupon', 'code')
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limit);
@@ -679,42 +803,13 @@ const adminController = {
             const totalOrders = await Order.countDocuments(query);
             const totalPages = Math.ceil(totalOrders / limit);
 
-            const orderSummary = await Order.find()
-                .populate('user', 'fname lname email')
-                .populate('items.product', 'name price')
-                .sort({ createdAt: -1 })
-            const summary = {
-                totalOrders: orderSummary.length,
-                totalRevenue: orderSummary.reduce((sum, order) => sum + order.total, 0),
-                totalDiscount: orderSummary.reduce((sum, order) => sum + (order.couponDiscount || 0), 0),
-                averageOrderValue: orderSummary.length ? 
-                    orderSummary.reduce((sum, order) => sum + order.total, 0) / orderSummary.length : 0,
-                statusCounts: orderSummary.reduce((acc, order) => {
-                    acc[order.orderStatus] = (acc[order.orderStatus] || 0) + 1;
-                    return acc;
-                }, {})
-            };
-
-            if (downloadFormat) {
-                if (downloadFormat === 'excel') {
-                    const generateExcel = adminController.generateExcelReport.bind(adminController);
-                    await generateExcel(res, orderSummary, summary);
-                    return;
-                } else if (downloadFormat === 'pdf') {
-                    const generatePDF = adminController.generatePDFReport.bind(adminController);
-                    await generatePDF(res, orderSummary, summary);
-                    return;
-                }
-            }
-
             res.render('admin/sales-report', {
-                orders,
+                orders: paginatedOrders,
                 summary,
                 filters: {
                     startDate,
                     endDate,
-                    period,
-                    status
+                    period
                 },
                 pagination: {
                     page,

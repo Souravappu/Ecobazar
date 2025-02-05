@@ -683,33 +683,97 @@
         }
 
         // Filter functionality
-        document.getElementById('searchInput').addEventListener('input', filterOffers);
+        document.getElementById('searchInput').addEventListener('input', debounce(filterOffers, 300));
         document.getElementById('typeFilter').addEventListener('change', filterOffers);
         document.getElementById('statusFilter').addEventListener('change', filterOffers);
 
+        // Debounce function to prevent too many filter calls
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
         function filterOffers() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
             const typeFilter = document.getElementById('typeFilter').value.toLowerCase();
             const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
             const rows = document.querySelectorAll('.table-row');
+            let visibleCount = 0;
 
             rows.forEach(row => {
-                const name = row.querySelector('h3').textContent.toLowerCase();
-                const description = row.querySelector('p').textContent.toLowerCase();
-                const type = row.querySelector('.bg-blue-500\\/20').textContent.toLowerCase();
-                const status = row.querySelector('.status-badge').textContent.toLowerCase();
+                // Get all searchable content
+                const name = row.querySelector('h3')?.textContent.toLowerCase() || '';
+                const description = row.querySelector('.description-text')?.textContent.toLowerCase() || '';
+                const offerType = row.querySelector('.tag')?.textContent.toLowerCase() || '';
+                const status = row.querySelector('.status-badge')?.textContent.toLowerCase().trim() || '';
+                const appliedTo = Array.from(row.querySelectorAll('.tag')).map(tag => tag.textContent.toLowerCase()).join(' ');
+                
+                // Search in all relevant content
+                const searchableContent = `${name} ${description} ${appliedTo}`;
+                const matchesSearch = !searchTerm || searchableContent.includes(searchTerm);
 
-                const matchesSearch = name.includes(searchTerm) || description.includes(searchTerm);
-                const matchesType = !typeFilter || type === typeFilter;
-                const matchesStatus = !statusFilter || status === statusFilter;
+                // Type filter matching
+                const matchesType = !typeFilter || 
+                    (typeFilter === 'percentage' && offerType.includes('category')) ||
+                    (typeFilter === 'fixed' && offerType.includes('product'));
 
+                // Status filter matching
+                const matchesStatus = !statusFilter || status.includes(statusFilter);
+
+                // Show/hide row based on all filters
                 if (matchesSearch && matchesType && matchesStatus) {
                     row.style.display = '';
+                    visibleCount++;
+                    // Add fade-in animation
+                    row.style.animation = 'fadeInUp 0.3s ease forwards';
                 } else {
                     row.style.display = 'none';
                 }
             });
+
+            // Show/hide empty state message
+            const tbody = document.querySelector('tbody');
+            const existingEmptyMessage = tbody.querySelector('.empty-state')?.parentElement?.parentElement;
+            
+            if (visibleCount === 0) {
+                if (!existingEmptyMessage) {
+                    const emptyRow = document.createElement('tr');
+                    emptyRow.innerHTML = `
+                        <td colspan="8">
+                            <div class="empty-state py-16">
+                                <i class="fas fa-search mb-4 text-6xl"></i>
+                                <h3 class="text-xl font-semibold text-gray-300 mb-2">No Matching Offers Found</h3>
+                                <p class="text-gray-400 mb-6">Try adjusting your search or filter criteria</p>
+                                <button onclick="resetFilters()" 
+                                        class="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-500 transition-all">
+                                    Reset Filters
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(emptyRow);
+                }
+            } else if (existingEmptyMessage) {
+                existingEmptyMessage.remove();
+            }
         }
+
+        function resetFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('typeFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            filterOffers();
+        }
+
+        // Initial filter on page load
+        filterOffers();
     </script>
 </body>
 </html> 

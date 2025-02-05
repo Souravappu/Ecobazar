@@ -180,7 +180,7 @@
         <!-- Page Header -->
         <div class="flex justify-between items-center mb-10 fade-in-up">
             <h1 class="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-pink-600">
-                Sales Report
+                Delivered Orders Report
             </h1>
             <div class="flex gap-4">
                 <button onclick="downloadReport('excel')" class="btn bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl shadow-lg transition-all duration-300">
@@ -195,15 +195,26 @@
         <!-- Filters -->
         <div class="search-container mb-10 fade-in-up">
             <form id="filterForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <!-- Date Range -->
+                <!-- Start Date -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-400 mb-2">Date Range</label>
-                    <input type="text" 
-                           id="dateRange" 
-                           name="dateRange" 
-                           class="search-input w-full px-4 py-3 rounded-xl"
-                           placeholder="Select date range"
-                           value="<%= filters.startDate && filters.endDate ? `${filters.startDate} - ${filters.endDate}` : '' %>">
+                    <label class="block text-sm font-medium text-gray-400 mb-2">Start Date</label>
+                    <input type="date" 
+                           id="startDate" 
+                           name="startDate" 
+                           class="search-input w-full px-4 py-3 rounded-xl bg-[#1f2937] border border-gray-600 text-gray-200"
+                           value="<%= filters.startDate || '' %>"
+                           max="<%= new Date().toISOString().split('T')[0] %>">
+                </div>
+
+                <!-- End Date -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-2">End Date</label>
+                    <input type="date" 
+                           id="endDate" 
+                           name="endDate" 
+                           class="search-input w-full px-4 py-3 rounded-xl bg-[#1f2937] border border-gray-600 text-gray-200"
+                           value="<%= filters.endDate || '' %>"
+                           max="<%= new Date().toISOString().split('T')[0] %>">
                 </div>
 
                 <!-- Period Filter -->
@@ -215,18 +226,6 @@
                         <option value="weekly" <%= filters.period === 'weekly' ? 'selected' : '' %>>Weekly</option>
                         <option value="monthly" <%= filters.period === 'monthly' ? 'selected' : '' %>>Monthly</option>
                         <option value="yearly" <%= filters.period === 'yearly' ? 'selected' : '' %>>Yearly</option>
-                    </select>
-                </div>
-
-                <!-- Status Filter -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-400 mb-2">Order Status</label>
-                    <select name="status" class="search-input w-full px-4 py-3 rounded-xl">
-                        <option value="all">All Status</option>
-                        <option value="Pending" <%= filters.status === 'Pending' ? 'selected' : '' %>>Pending</option>
-                        <option value="Processing" <%= filters.status === 'Processing' ? 'selected' : '' %>>Processing</option>
-                        <option value="Shipped" <%= filters.status === 'Shipped' ? 'selected' : '' %>>Shipped</option>
-                        <option value="Delivered" <%= filters.status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
                     </select>
                 </div>
 
@@ -267,15 +266,41 @@
                 </div>
             </div>
 
-            <!-- Total Discount -->
+            <!-- Total Wallet Used -->
             <div class="card p-6">
                 <div class="flex items-center">
                     <div class="p-3 bg-purple-500/20 rounded-full">
-                        <i class="fas fa-tags text-purple-500"></i>
+                        <i class="fas fa-wallet text-purple-500"></i>
                     </div>
                     <div class="ml-4">
-                        <h3 class="text-sm font-medium text-gray-400">Total Discount</h3>
-                        <p class="text-2xl font-semibold">₹<%= summary.totalDiscount.toFixed(2) %></p>
+                        <h3 class="text-sm font-medium text-gray-400">Wallet Used</h3>
+                        <p class="text-2xl font-semibold">₹<%= summary.totalWalletUsed.toFixed(2) %></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Coupon Discount -->
+            <div class="card p-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-yellow-500/20 rounded-full">
+                        <i class="fas fa-tags text-yellow-500"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-sm font-medium text-gray-400">Coupon Discount</h3>
+                        <p class="text-2xl font-semibold">₹<%= summary.totalCouponDiscount.toFixed(2) %></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Shipping Charges -->
+            <div class="card p-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-red-500/20 rounded-full">
+                        <i class="fas fa-truck text-red-500"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-sm font-medium text-gray-400">Shipping Charges</h3>
+                        <p class="text-2xl font-semibold">₹<%= summary.totalShippingCharges.toFixed(2) %></p>
                     </div>
                 </div>
             </div>
@@ -283,8 +308,8 @@
             <!-- Average Order Value -->
             <div class="card p-6">
                 <div class="flex items-center">
-                    <div class="p-3 bg-yellow-500/20 rounded-full">
-                        <i class="fas fa-chart-line text-yellow-500"></i>
+                    <div class="p-3 bg-indigo-500/20 rounded-full">
+                        <i class="fas fa-chart-line text-indigo-500"></i>
                     </div>
                     <div class="ml-4">
                         <h3 class="text-sm font-medium text-gray-400">Avg. Order Value</h3>
@@ -302,9 +327,11 @@
                         <th class="py-5 px-7 text-left">Order ID</th>
                         <th class="py-5 px-7 text-left">Date</th>
                         <th class="py-5 px-7 text-left">Customer</th>
-                        <th class="py-5 px-7 text-center">Status</th>
+                        <th class="py-5 px-7 text-left">Payment</th>
                         <th class="py-5 px-7 text-right">Subtotal</th>
-                        <th class="py-5 px-7 text-right">Discount</th>
+                        <th class="py-5 px-7 text-right">Wallet Used</th>
+                        <th class="py-5 px-7 text-right">Coupon</th>
+                        <th class="py-5 px-7 text-right">Shipping</th>
                         <th class="py-5 px-7 text-right">Total</th>
                     </tr>
                 </thead>
@@ -322,18 +349,13 @@
                             <td class="py-5 px-7 text-gray-300">
                                 <%= order.user ? `${order.user.fname} ${order.user.lname}` : 'Deleted User' %>
                             </td>
-                            <td class="py-5 px-7">
-                                <div class="flex justify-center">
-                                    <span class="px-3 py-1 rounded-full text-sm
-                                        <%= order.orderStatus === 'Delivered' ? 'bg-green-500/20 text-green-400' :
-                                            order.orderStatus === 'Cancelled' ? 'bg-red-500/20 text-red-400' :
-                                            'bg-yellow-500/20 text-yellow-400' %>">
-                                        <%= order.orderStatus %>
-                                    </span>
-                                </div>
+                            <td class="py-5 px-7 text-gray-300">
+                                <%= order.paymentMethod %>
                             </td>
                             <td class="py-5 px-7 text-right text-gray-300">₹<%= order.subtotal.toFixed(2) %></td>
+                            <td class="py-5 px-7 text-right text-gray-300">₹<%= (order.walletAmount || 0).toFixed(2) %></td>
                             <td class="py-5 px-7 text-right text-gray-300">₹<%= (order.couponDiscount || 0).toFixed(2) %></td>
+                            <td class="py-5 px-7 text-right text-gray-300">₹<%= (order.shippingCharge || 0).toFixed(2) %></td>
                             <td class="py-5 px-7 text-right font-medium text-gray-200">₹<%= order.total.toFixed(2) %></td>
                         </tr>
                     <% }); %>
@@ -345,21 +367,21 @@
         <div class="flex justify-center mt-8 space-x-2">
             <% if (pagination.totalPages > 1) { %>
                 <% if (pagination.hasPrev) { %>
-                    <a href="?page=<%= pagination.page-1 %>&status=<%= filters.status %>&period=<%= filters.period %>&dateRange=<%= filters.dateRange %>" 
+                    <a href="?page=<%= pagination.page-1 %><%= filters.period ? '&period=' + filters.period : '' %><%= filters.startDate && filters.endDate ? '&startDate=' + filters.startDate + '&endDate=' + filters.endDate : '' %>" 
                        class="pagination-btn px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all">
                         Previous
                     </a>
                 <% } %>
                 
                 <% for(let i = 1; i <= pagination.totalPages; i++) { %>
-                    <a href="?page=<%= i %>&status=<%= filters.status %>&period=<%= filters.period %>&dateRange=<%= filters.dateRange %>" 
+                    <a href="?page=<%= i %><%= filters.period ? '&period=' + filters.period : '' %><%= filters.startDate && filters.endDate ? '&startDate=' + filters.startDate + '&endDate=' + filters.endDate : '' %>" 
                        class="pagination-btn px-4 py-2 <%= pagination.page == i ? 'bg-blue-700 text-white' : 'bg-gray-700 text-gray-300' %> rounded-lg">
                         <%= i %>
                     </a>
                 <% } %>
                 
                 <% if (pagination.hasNext) { %>
-                    <a href="?page=<%= pagination.page+1 %>&status=<%= filters.status %>&period=<%= filters.period %>&dateRange=<%= filters.dateRange %>" 
+                    <a href="?page=<%= pagination.page+1 %><%= filters.period ? '&period=' + filters.period : '' %><%= filters.startDate && filters.endDate ? '&startDate=' + filters.startDate + '&endDate=' + filters.endDate : '' %>" 
                        class="pagination-btn px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all">
                         Next
                     </a>
@@ -373,90 +395,44 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
     
     <script>
-        $(document).ready(function() {
-            // Initialize date range picker with fixed year range 2020-2030
-            $('#dateRange').daterangepicker({
-                autoUpdateInput: false,
-                opens: 'left',
-                showDropdowns: true,
-                minYear: 2020,
-                maxYear: parseInt(moment().format('YYYY'), 10),
-                ranges: {
-                    'Today': [moment(), moment()],
-                    'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-                    'Last 7 Days': [moment().subtract(6, 'days'), moment()],
-                    'Last 30 Days': [moment().subtract(29, 'days'), moment()],
-                    'This Month': [moment().startOf('month'), moment().endOf('month')],
-                    'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
-                    'This Year': [moment().startOf('year'), moment().endOf('year')],
-                    'Last Year': [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')]
-                },
-                locale: {
-                    format: 'DD/MM/YYYY',
-                    separator: ' - ',
-                    applyLabel: 'Apply',
-                    cancelLabel: 'Clear',
-                    fromLabel: 'From',
-                    toLabel: 'To',
-                    customRangeLabel: 'Custom Range',
-                    weekLabel: 'W',
-                    daysOfWeek: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
-                    monthNames: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
-                    firstDay: 1
-                },
-                alwaysShowCalendars: true,
-                showCustomRangeLabel: true,
-                linkedCalendars: false,
-                showWeekNumbers: true,
-                autoApply: false
-            });
-
-            // Handle date range selection
-            $('#dateRange').on('apply.daterangepicker', function(ev, picker) {
-                // Format for display
-                $(this).val(picker.startDate.format('DD/MM/YYYY') + ' - ' + picker.endDate.format('DD/MM/YYYY'));
-                
-                // Format for backend (YYYY-MM-DD)
-                if ($('#startDate').length === 0) {
-                    $(this).after('<input type="hidden" name="startDate" id="startDate">');
-                    $(this).after('<input type="hidden" name="endDate" id="endDate">');
-                }
-                $('#startDate').val(picker.startDate.format('YYYY-MM-DD'));
-                $('#endDate').val(picker.endDate.format('YYYY-MM-DD'));
-                $('#periodSelect').val('');
-            });
-
-            $('#dateRange').on('cancel.daterangepicker', function(ev, picker) {
-                $(this).val('');
-                $('#startDate, #endDate').remove();
-            });
-
-            // Handle period selection
-            $('#periodSelect').change(function() {
-                if ($(this).val()) {
-                    $('#dateRange').prop('disabled', true).val('');
-                    $('#startDate, #endDate').remove();
-                } else {
-                    $('#dateRange').prop('disabled', false);
-                }
-            });
-
-            // Initialize period selection state
-            if ($('#periodSelect').val()) {
-                $('#dateRange').prop('disabled', true);
-            }
-        });
-
-        // Download report function
-        function downloadReport(format) {
-            const currentUrl = new URL(window.location.href);
-            const params = new URLSearchParams(currentUrl.search);
-            params.append('downloadFormat', format);
-            window.location.href = `/admin/sales-report?${params.toString()}`;
-        }
-
-        // Add animation for table rows
         document.addEventListener('DOMContentLoaded', function() {
+            const startDateInput = document.getElementById('startDate');
+            const endDateInput = document.getElementById('endDate');
+            const periodSelect = document.getElementById('periodSelect');
+
+            // Function to toggle date inputs based on period selection
+            function toggleDateInputs() {
+                const isPeriodSelected = periodSelect.value !== '';
+                startDateInput.disabled = isPeriodSelected;
+                endDateInput.disabled = isPeriodSelected;
+                if (isPeriodSelected) {
+                    startDateInput.value = '';
+                    endDateInput.value = '';
+                }
+            }
+
+            // Add event listeners
+            periodSelect.addEventListener('change', toggleDateInputs);
+
+            // Validate date range
+            startDateInput.addEventListener('change', function() {
+                endDateInput.min = this.value;
+                if (endDateInput.value && endDateInput.value < this.value) {
+                    endDateInput.value = this.value;
+                }
+            });
+
+            endDateInput.addEventListener('change', function() {
+                startDateInput.max = this.value;
+                if (startDateInput.value && startDateInput.value > this.value) {
+                    startDateInput.value = this.value;
+                }
+            });
+
+            // Initialize state
+            toggleDateInputs();
+
+            // Add animation for table rows
             const tableRows = document.querySelectorAll('.table-row');
             tableRows.forEach((row, index) => {
                 row.style.opacity = '0';
@@ -468,6 +444,46 @@
                 }, 100 * index);
             });
         });
+
+        // Download report function
+        function downloadReport(format) {
+            // Get current URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            // Create new params for download
+            const params = new URLSearchParams();
+            
+            // Add download format
+            params.append('downloadFormat', format);
+            
+            // Get filter values
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const period = document.getElementById('periodSelect').value;
+            
+            // Add filter parameters based on what's selected
+            if (period) {
+                params.append('period', period);
+            } else if (startDate && endDate) {
+                params.append('startDate', startDate);
+                params.append('endDate', endDate);
+            } else {
+                // If no new filters are selected, use the existing URL parameters
+                const existingStartDate = urlParams.get('startDate');
+                const existingEndDate = urlParams.get('endDate');
+                const existingPeriod = urlParams.get('period');
+                
+                if (existingPeriod) {
+                    params.append('period', existingPeriod);
+                } else if (existingStartDate && existingEndDate) {
+                    params.append('startDate', existingStartDate);
+                    params.append('endDate', existingEndDate);
+                }
+            }
+            
+            // Create download URL with all parameters
+            window.location.href = `/admin/sales-report?${params.toString()}`;
+        }
     </script>
 </body>
 </html> 

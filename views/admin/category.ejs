@@ -211,7 +211,6 @@
               <th class="py-5 px-6 text-left font-bold tracking-wider">Sl</th>
               <th class="py-5 px-6 text-left font-bold tracking-wider">Image</th>
               <th class="py-5 px-6 text-left font-bold tracking-wider">Name</th>
-              <th class="py-5 px-6 text-left font-bold tracking-wider">Offer</th>
               <th class="py-5 px-6 text-left font-bold tracking-wider">Status</th>
               <th class="py-5 px-6 text-center font-bold tracking-wider">Actions</th>
             </tr>
@@ -228,11 +227,6 @@
                 </div>
               </td>
               <td class="py-4 px-6 font-medium text-blue-300"><%= category.name %></td>
-              <td class="py-4 px-6">
-                <span class="status-badge <%= category.categoryOffer > 0 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-gray-500/20 text-gray-400' %> px-3 py-1 rounded-full text-sm">
-                  <%= category.categoryOffer %>%
-                </span>
-              </td>
               <td class="py-4 px-6">
                 <span class="status-badge ml-2 <%= category.isListed ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400' %> px-3 py-1 rounded-full text-sm">
                   <%= category.isListed ? 'Listed' : 'Not Listed' %>
