@@ -114,79 +114,97 @@ const addAddress = async (req, res, next) => {
             return res.redirect('/login');
         }
 
-        const oldValues = { 
-            name, 
-            street, 
-            apartment, 
-            city, 
-            postalCode, 
-            phone, 
-            landMark 
+        // Validation function
+        const validateInput = (input) => {
+            return input ? input.trim() : '';
         };
 
-        const validationErrors = [];
+        const validatedInputs = {
+            name: validateInput(name),
+            street: validateInput(street),
+            city: validateInput(city),
+            postalCode: validateInput(postalCode),
+            phone: validateInput(phone),
+            apartment: validateInput(apartment),
+            landMark: validateInput(landMark)
+        };
 
-        if (!name || name.trim() === '') {
-            validationErrors.push('Full Name is required');
+        const errors = {};
+
+        // Name validation
+        if (!validatedInputs.name) {
+            errors.name = 'Full Name is required';
+        } else if (validatedInputs.name.length < 3) {
+            errors.name = 'Name must be at least 3 characters';
+        } else if (!/^[A-Za-z\s]{3,50}$/.test(validatedInputs.name)) {
+            errors.name = 'Name should contain only letters';
         }
 
-        if (!street || street.trim() === '') {
-            validationErrors.push('Street Address is required');
+        // Street validation
+        if (!validatedInputs.street) {
+            errors.street = 'Street Address is required';
+        } else if (validatedInputs.street.length < 5) {
+            errors.street = 'Street address must be at least 5 characters';
         }
 
-        if (!city || city.trim() === '') {
-            validationErrors.push('City is required');
+        // City validation
+        if (!validatedInputs.city) {
+            errors.city = 'City is required';
+        } else if (!/^[A-Za-z\s]{3,30}$/.test(validatedInputs.city)) {
+            errors.city = 'City should contain only letters';
         }
 
-        if (!postalCode || postalCode.trim().length < 5) {
-            validationErrors.push('Please enter a valid Postal Code');
+        // Postal code validation
+        if (!validatedInputs.postalCode) {
+            errors.postalCode = 'Postal Code is required';
+        } else if (!/^[0-9]{6}$/.test(validatedInputs.postalCode)) {
+            errors.postalCode = 'Please enter a valid 6-digit Postal Code';
         }
 
-        if (!phone || !/^\d{10}$/.test(phone.trim())) {
-            validationErrors.push('Please enter a valid 10-digit Phone Number');
+        // Phone validation
+        if (!validatedInputs.phone) {
+            errors.phone = 'Phone Number is required';
+        } else if (!/^[0-9]{10}$/.test(validatedInputs.phone)) {
+            errors.phone = 'Please enter a valid 10-digit Phone Number';
         }
 
-        if (validationErrors.length > 0) {
-            req.session.oldValue = oldValues;
-            req.flash('error_msg', validationErrors.join(' | '));
+        if (Object.keys(errors).length > 0) {
+            req.session.oldValue = validatedInputs;
+            req.flash('error_msg', Object.values(errors).join(' | '));
             return res.redirect('/profile/add-address');
         }
 
         const newAddress = {
-            name: name.trim(),
-            streetAddress: street.trim(),
+            name: validatedInputs.name,
+            streetAddress: validatedInputs.street,
             addressType: addressType || 'Home',
-            city: city.trim(),
-            apartment: apartment ? apartment.trim() : '',
-            landMark: landMark ? landMark.trim() : '',
-            postalCode: postalCode.trim(),
-            phone: phone.trim()
+            city: validatedInputs.city,
+            apartment: validatedInputs.apartment,
+            landMark: validatedInputs.landMark,
+            postalCode: validatedInputs.postalCode,
+            phone: validatedInputs.phone
         };
 
-        let addressRecord = await Address.findOne({ userId })
+        let addressRecord = await Address.findOne({ userId });
 
-         if (!addressRecord) {
+        if (!addressRecord) {
             addressRecord = new Address({
                 userId,
                 address: [{ ...newAddress, isDefault: true }]
             });
-        }else {
+        } else {
             const hasDefaultAddress = addressRecord.address.some(addr => addr.isDefault);
-
             newAddress.isDefault = !hasDefaultAddress;
-            
             addressRecord.address.push(newAddress);
         }
-        await addressRecord.save();
 
+        await addressRecord.save();
         req.flash('success_msg', 'Address added successfully');
         return res.redirect('/address');
 
     } catch (error) {
         console.error('Add Address Error:', error);
-        
-        const errorMessage = error.message || 'An unexpected error occurred';
-        req.flash('error_msg', `Server error: ${errorMessage}`);
+        req.flash('error_msg', `Server error: ${error.message || 'An unexpected error occurred'}`);
         return res.redirect('/profile/add-address');
     }
 };
@@ -242,27 +260,64 @@ const editAddress = async (req, res, next) => {
         const addressId = req.params.id;
         const { addressType, city, street, apartment, postalCode, phone, landMark, name } = req.body;
 
-        const requiredFields = { name, street, apartment, city, postalCode, phone };
-        const missingFields = Object.entries(requiredFields)
-            .filter(([, value]) => !value)
-            .map(([key]) => key);
+        // Validation function
+        const validateInput = (input) => {
+            return input ? input.trim() : '';
+        };
 
-        if (missingFields.length > 0) {
-            req.session.oldValue = { ...requiredFields, landMark };
-            req.flash('error_msg', `Missing required fields: ${missingFields.join(', ')}`);
-            return res.redirect('/profile/add-address');
+        const validatedInputs = {
+            name: validateInput(name),
+            street: validateInput(street),
+            city: validateInput(city),
+            postalCode: validateInput(postalCode),
+            phone: validateInput(phone),
+            apartment: validateInput(apartment),
+            landMark: validateInput(landMark)
+        };
+
+        const errors = {};
+
+        // Name validation
+        if (!validatedInputs.name) {
+            errors.name = 'Full Name is required';
+        } else if (validatedInputs.name.length < 3) {
+            errors.name = 'Name must be at least 3 characters';
+        } else if (!/^[A-Za-z\s]{3,50}$/.test(validatedInputs.name)) {
+            errors.name = 'Name should contain only letters';
         }
 
-        if (postalCode.length !== 6) {
-            req.session.oldValue = { ...requiredFields, landMark };
-            req.flash('error_msg', 'Invalid Postal Code. Must be 6 digits.');
-            return res.redirect('/profile/add-address');
+        // Street validation
+        if (!validatedInputs.street) {
+            errors.street = 'Street Address is required';
+        } else if (validatedInputs.street.length < 5) {
+            errors.street = 'Street address must be at least 5 characters';
         }
 
-        if (phone.length !== 10) {
-            req.session.oldValue = { ...requiredFields, landMark };
-            req.flash('error_msg', 'Invalid Phone Number. Must be 10 digits.');
-            return res.redirect('/profile/add-address');
+        // City validation
+        if (!validatedInputs.city) {
+            errors.city = 'City is required';
+        } else if (!/^[A-Za-z\s]{3,30}$/.test(validatedInputs.city)) {
+            errors.city = 'City should contain only letters';
+        }
+
+        // Postal code validation
+        if (!validatedInputs.postalCode) {
+            errors.postalCode = 'Postal Code is required';
+        } else if (!/^[0-9]{6}$/.test(validatedInputs.postalCode)) {
+            errors.postalCode = 'Please enter a valid 6-digit Postal Code';
+        }
+
+        // Phone validation
+        if (!validatedInputs.phone) {
+            errors.phone = 'Phone Number is required';
+        } else if (!/^[0-9]{10}$/.test(validatedInputs.phone)) {
+            errors.phone = 'Please enter a valid 10-digit Phone Number';
+        }
+
+        if (Object.keys(errors).length > 0) {
+            req.session.oldValue = validatedInputs;
+            req.flash('error_msg', Object.values(errors).join(' | '));
+            return res.redirect(`/profile/edit-address/${addressId}`);
         }
 
         const addressRecord = await Address.findOne({ userId });
@@ -276,23 +331,24 @@ const editAddress = async (req, res, next) => {
         }
 
         address.set({
-            streetAddress: street,
+            name: validatedInputs.name,
+            streetAddress: validatedInputs.street,
             addressType,
-            city,
-            name,
-            landMark,
-            apartment,
-            postalCode,
-            phone
+            city: validatedInputs.city,
+            apartment: validatedInputs.apartment,
+            landMark: validatedInputs.landMark,
+            postalCode: validatedInputs.postalCode,
+            phone: validatedInputs.phone
         });
 
         await addressRecord.save();
-
         req.flash('success_msg', 'Address updated successfully');
         res.redirect('/address');
+
     } catch (error) {
         console.error('Address edit error:', error);
-        next(new Error('Server Error in edit Address'));
+        req.flash('error_msg', 'Server Error in edit Address');
+        res.redirect(`/profile/edit-address/${req.params.id}`);
     }
 };
 
